@@ -35,7 +35,7 @@ jobs:
     - name: Generate SBOM
       run: |
         sbom-tool generate -b thresh/Thresh -bc thresh/Thresh -pn thresh -pv "1.0.0-dev" -ps "dealer426" -nsb https://github.com/dealer426/thresh
-        Move-Item thresh/Thresh/_manifest/spdx_2.2/manifest.spdx.json sbom.json
+        Move-Item -Force thresh/Thresh/_manifest/spdx_2.2/manifest.spdx.json sbom.json
         Remove-Item -Recurse -Force thresh/Thresh/_manifest
       shell: pwsh
       
