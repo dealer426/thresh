@@ -55,7 +55,7 @@ git push origin add-thresh
 ```markdown
 Adds thresh v1.0.0 - Fast, native WSL2 environment provisioning tool
 
-- 12 MB Native AOT binary
+- 16.6 MB Native AOT binary
 - WSL2 integration for Linux environment provisioning
 - AI-powered blueprint generation
 - 12 built-in distributions

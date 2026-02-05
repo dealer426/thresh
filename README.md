@@ -30,7 +30,7 @@
 **Single Binary Design** - Unified .NET Native AOT executable
 
 ```
-thresh.exe (12 MB)
+thresh.exe (16.6 MB)
 ├── CLI Layer (System.CommandLine)
 │   ├── up <blueprint>           - Provision environment
 │   ├── list [--all]             - List environments
