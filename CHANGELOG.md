@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-02-05
+
+### Added
+- Software Bill of Materials (SBOM) in SPDX 2.2 format
+- Automated SBOM generation in CI/CD workflows
+- Supply chain transparency with 33 documented dependencies
+
+### Changed
+- Repository renamed from `eknova` to `thresh`
+- All URLs and references updated to reflect new repository name
+
+### Improved
+- Package manager manifests (winget, chocolatey, scoop) ready for submission
+- GitHub Actions workflows now include SBOM in releases
+
 ## [1.0.0] - 2026-02-05
 
 ### Added - Initial Release
@@ -92,4 +107,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Release History
 
+- **v1.0.1** (2026-02-05) - Add SBOM and repository rename
 - **v1.0.0** (2026-02-05) - Initial release with full feature set
