@@ -1,0 +1,53 @@
+name: Build thresh
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET 9
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore thresh/Thresh/Thresh.csproj
+      
+    - name: Build (Debug)
+      run: dotnet build thresh/Thresh/Thresh.csproj --configuration Debug --no-restore
+      
+    - name: Publish Native AOT (Release)
+      run: dotnet publish thresh/Thresh/Thresh.csproj -c Release -r win-x64 --self-contained
+      
+    - name: Check binary size
+      run: |
+        $size = (Get-Item thresh/Thresh/bin/Release/net9.0/win-x64/publish/thresh.exe).Length
+        $sizeMB = [math]::Round($size / 1MB, 2)
+        Write-Host "Binary size: $sizeMB MB"
+        if ($sizeMB -gt 15) {
+          Write-Warning "Binary size ($sizeMB MB) exceeds expected size (15 MB)"
+        }
+      shell: pwsh
+      
+    - name: Test binary execution
+      run: |
+        cd thresh/Thresh/bin/Release/net9.0/win-x64/publish
+        ./thresh.exe --version
+      shell: pwsh
+      
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: thresh-windows-x64
+        path: thresh/Thresh/bin/Release/net9.0/win-x64/publish/thresh.exe
+        retention-days: 30

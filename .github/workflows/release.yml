@@ -1,0 +1,129 @@
+name: Release thresh
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET 9
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Get version
+      id: version
+      run: |
+        if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+          $VERSION = "${{ inputs.version }}"
+        } else {
+          $VERSION = "${{ github.ref_name }}"
+        }
+        echo "VERSION=$VERSION" >> $env:GITHUB_OUTPUT
+        echo "Release version: $VERSION"
+      shell: pwsh
+      
+    - name: Restore dependencies
+      run: dotnet restore thresh/Thresh/Thresh.csproj
+      
+    - name: Publish Native AOT
+      run: dotnet publish thresh/Thresh/Thresh.csproj -c Release -r win-x64 --self-contained
+      
+    - name: Get binary info
+      id: binary_info
+      run: |
+        $BINARY = "thresh/Thresh/bin/Release/net9.0/win-x64/publish/thresh.exe"
+        $size = (Get-Item $BINARY).Length
+        $sizeMB = [math]::Round($size / 1MB, 2)
+        echo "SIZE_MB=$sizeMB" >> $env:GITHUB_OUTPUT
+        echo "Binary size: $sizeMB MB"
+      shell: pwsh
+      
+    - name: Create release archive
+      run: |
+        cd thresh/Thresh/bin/Release/net9.0/win-x64/publish
+        Compress-Archive -Path thresh.exe -DestinationPath thresh-windows-x64.zip
+      shell: pwsh
+      
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        $NOTES = @"
+        # thresh ${{ steps.version.outputs.VERSION }}
+        
+        ## 🚀 AI-Powered WSL Environment Manager
+        
+        **Single 12MB Native AOT binary for Windows**
+        
+        ### Features
+        - ✅ 12 built-in Linux distributions (Vendor + MS Store)
+        - ✅ AI blueprint generation with OpenAI GPT-4o-mini
+        - ✅ Interactive AI chat for environment creation
+        - ✅ Custom distribution support with AI discovery
+        - ✅ Zero runtime dependencies
+        - ✅ Hybrid distribution system
+        
+        ### Quick Start
+        
+        1. Download ``thresh.exe`` or ``thresh-windows-x64.zip``
+        2. Set OpenAI API key: ``thresh config set openai-api-key sk-...``
+        3. Provision your first environment: ``thresh up alpine-minimal``
+        
+        See [GETTING_STARTED.md](https://github.com/${{ github.repository }}/blob/main/GETTING_STARTED.md) for full instructions.
+        
+        ### Binary Info
+        - **Platform**: Windows x64
+        - **Size**: ${{ steps.binary_info.outputs.SIZE_MB }} MB
+        - **Runtime**: Native AOT (no .NET runtime required)
+        
+        ### Commands
+        ``````bash
+        thresh up <blueprint>       # Provision environment
+        thresh list                 # List environments
+        thresh destroy <name>       # Remove environment
+        thresh generate <prompt>    # AI blueprint generation
+        thresh chat                 # Interactive AI
+        thresh distros              # List all distributions
+        thresh config               # Configuration
+        ``````
+        
+        ### Requirements
+        - Windows 11 with WSL2
+        - OpenAI API key (for AI features)
+        
+        ### What's Changed
+        See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
+        "@
+        
+        # Save to file for release creation
+        $NOTES | Out-File -FilePath release_notes.md -Encoding UTF8
+      shell: pwsh
+      
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        name: thresh ${{ steps.version.outputs.VERSION }}
+        body_path: release_notes.md
+        draft: false
+        prerelease: false
+        files: |
+          thresh/Thresh/bin/Release/net9.0/win-x64/publish/thresh-windows-x64.zip
+          thresh/Thresh/bin/Release/net9.0/win-x64/publish/thresh.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
