@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>thresh</id>
+    <version>1.0.0</version>
+    <title>thresh</title>
+    <authors>dealer426</authors>
+    <owners>dealer426</owners>
+    <licenseUrl>https://github.com/dealer426/eknova/blob/main/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/dealer426/eknova</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>
+thresh is a lightweight, 12 MB native binary that provisions WSL2 Linux environments from declarative YAML blueprints.
+
+Features:
+- Native AOT compilation (12 MB, zero dependencies)
+- WSL2 integration for environment provisioning
+- 12 built-in Linux distributions (Ubuntu, Alpine, Debian, Fedora, Rocky)
+- AI-powered blueprint generation (OpenAI GPT-4o-mini)
+- Blueprint-based environment configuration
+- Custom distribution support
+- Interactive AI chat mode
+
+Requirements:
+- Windows 11 with WSL2 enabled
+- .NET runtime NOT required (self-contained Native AOT binary)
+    </description>
+    <summary>Fast, native WSL2 environment provisioning with AI-powered blueprints</summary>
+    <releaseNotes>https://github.com/dealer426/eknova/releases/tag/v1.0.0</releaseNotes>
+    <tags>wsl wsl2 linux provisioning devops containers infrastructure ai blueprints dotnet native-aot cli</tags>
+    <projectSourceUrl>https://github.com/dealer426/eknova</projectSourceUrl>
+    <packageSourceUrl>https://github.com/dealer426/eknova/tree/main/packages/chocolatey</packageSourceUrl>
+    <bugTrackerUrl>https://github.com/dealer426/eknova/issues</bugTrackerUrl>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

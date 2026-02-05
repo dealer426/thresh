@@ -1,0 +1,20 @@
+# Created using wingetcreate 1.6.5.0
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+
+PackageIdentifier: dealer426.thresh
+PackageVersion: 1.0.0
+Platform:
+- Windows.Desktop
+MinimumOSVersion: 10.0.22000.0
+InstallerType: zip
+ReleaseDate: 2026-02-05
+Installers:
+- Architecture: x64
+  InstallerUrl: https://github.com/dealer426/eknova/releases/download/v1.0.0/thresh-windows-x64.zip
+  InstallerSha256: <TO_BE_UPDATED_AFTER_RELEASE>
+  NestedInstallerType: portable
+  NestedInstallerFiles:
+  - RelativeFilePath: thresh.exe
+    PortableCommandAlias: thresh
+ManifestType: installer
+ManifestVersion: 1.6.0

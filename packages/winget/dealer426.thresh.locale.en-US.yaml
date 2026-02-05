@@ -1,0 +1,65 @@
+# Created using wingetcreate 1.6.5.0
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+
+PackageIdentifier: dealer426.thresh
+PackageVersion: 1.0.0
+PackageLocale: en-US
+Publisher: dealer426
+PublisherUrl: https://github.com/dealer426
+PublisherSupportUrl: https://github.com/dealer426/eknova/issues
+Author: dealer426
+PackageName: thresh
+PackageUrl: https://github.com/dealer426/eknova
+License: MIT
+LicenseUrl: https://github.com/dealer426/eknova/blob/main/LICENSE
+ShortDescription: Fast, native WSL2 environment provisioning with AI-powered blueprints
+Description: |-
+  thresh is a lightweight, 12 MB native binary that provisions WSL2 Linux environments from declarative YAML blueprints.
+  
+  Features:
+  - Native AOT compilation (12 MB, zero dependencies)
+  - WSL2 integration for environment provisioning
+  - 12 built-in Linux distributions (Ubuntu, Alpine, Debian, Fedora, Rocky)
+  - AI-powered blueprint generation (OpenAI GPT-4o-mini)
+  - Blueprint-based environment configuration
+  - Custom distribution support
+  - Interactive AI chat mode
+  
+  Requirements:
+  - Windows 11 with WSL2 enabled
+  - .NET runtime NOT required (self-contained Native AOT binary)
+Moniker: thresh
+Tags:
+- wsl
+- wsl2
+- linux
+- provisioning
+- devops
+- containers
+- infrastructure
+- ai
+- blueprints
+- dotnet
+- native-aot
+- cli
+ReleaseNotes: |-
+  Initial production release (v1.0.0)
+  
+  Features:
+  - Native AOT compilation (12 MB binary)
+  - WSL2 integration and provisioning
+  - 12 built-in Linux distributions
+  - AI-powered blueprint generation
+  - OpenAI GPT-4o-mini integration
+  - Hybrid distribution system (Vendor + MS Store)
+  - Custom distribution support
+  - 8 built-in blueprints
+  
+  Technical:
+  - .NET 9 Native AOT architecture
+  - Zero dependencies, self-contained
+  - 50ms startup time
+  - Windows 11 + WSL2 platform
+ReleaseNotesUrl: https://github.com/dealer426/eknova/releases/tag/v1.0.0
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0
