@@ -29,6 +29,16 @@ jobs:
     - name: Publish Native AOT (Release)
       run: dotnet publish thresh/Thresh/Thresh.csproj -c Release -r win-x64 --self-contained
       
+    - name: Install SBOM tool
+      run: dotnet tool install --global Microsoft.Sbom.DotNetTool
+      
+    - name: Generate SBOM
+      run: |
+        sbom-tool generate -b thresh/Thresh -bc thresh/Thresh -pn thresh -pv "1.0.0-dev" -ps "dealer426" -nsb https://github.com/dealer426/thresh
+        Move-Item thresh/Thresh/_manifest/spdx_2.2/manifest.spdx.json sbom.json
+        Remove-Item -Recurse -Force thresh/Thresh/_manifest
+      shell: pwsh
+      
     - name: Check binary size
       run: |
         $size = (Get-Item thresh/Thresh/bin/Release/net9.0/win-x64/publish/thresh.exe).Length
@@ -49,5 +59,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: thresh-windows-x64
-        path: thresh/Thresh/bin/Release/net9.0/win-x64/publish/thresh.exe
+        path: |
+          thresh/Thresh/bin/Release/net9.0/win-x64/publish/thresh.exe
+          sbom.json
         retention-days: 30
