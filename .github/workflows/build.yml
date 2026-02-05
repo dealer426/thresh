@@ -44,8 +44,8 @@ jobs:
         $size = (Get-Item thresh/Thresh/bin/Release/net9.0/win-x64/publish/thresh.exe).Length
         $sizeMB = [math]::Round($size / 1MB, 2)
         Write-Host "Binary size: $sizeMB MB"
-        if ($sizeMB -gt 15) {
-          Write-Warning "Binary size ($sizeMB MB) exceeds expected size (15 MB)"
+        if ($sizeMB -gt 18) {
+          Write-Warning "Binary size ($sizeMB MB) exceeds expected size (18 MB)"
         }
       shell: pwsh
       

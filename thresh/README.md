@@ -419,7 +419,7 @@ thresh destroy alpine-minimal
 ### Build Results
 
 ```
-Binary Size:     12 MB
+Binary Size:     16.6 MB
 Startup Time:    ~50ms
 Memory (Idle):   ~30MB
 Dependencies:    None (Windows system libraries only)
@@ -451,7 +451,7 @@ This replaces the legacy Java/Quarkus `thresh-cli` with a unified .NET solution.
 | Aspect | Quarkus CLI | thresh (.NET) |
 |--------|-------------|---------------|
 | Language | Java 23 | C# 13 |
-| Binary Size | 25 MB | 12 MB |
+| Binary Size | 25 MB | 16.6 MB |
 | Startup Time | ~10ms | ~50ms |
 | AI Integration | ❌ No (Java only) | ✅ OpenAI SDK |
 | Runtime Required | ❌ None | ❌ None |

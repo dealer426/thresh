@@ -84,7 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Technical Details
 - **Architecture**: .NET 9 Native AOT
-- **Binary Size**: 12 MB (Windows x64)
+- **Binary Size**: 16.6 MB (Windows x64)
 - **Startup Time**: ~50ms
 - **Memory Usage**: ~30MB idle
 - **Dependencies**: None (self-contained)

@@ -78,7 +78,7 @@ thresh.exe (12 MB)
   - GitHub Copilot SDK v0.1.22 (GPT-5, GPT-4, Claude)
 - YAML: YamlDotNet
 - Compilation: Native AOT (PublishAot=true)
-- Binary Size: 12 MB
+- Binary Size: 16.6 MB
 - Dependencies: None (self-contained)
 
 ---
@@ -406,7 +406,7 @@ Thresh/
 ```
 
 **Results**:
-- Binary Size: **12 MB**
+- Binary Size: **16.6 MB**
 - Startup Time: ~50ms
 - Memory Usage: ~30MB idle
 - Dependencies: **None** (Windows system libraries only)
@@ -475,7 +475,7 @@ await foreach (var update in client.CompleteChatStreamingAsync(messages))
 
 | Metric | Value |
 |--------|-------|
-| Binary Size | 12 MB |
+| Binary Size | 16.6 MB |
 | Startup Time | ~50ms |
 | Memory (Idle) | ~30MB |
 | Provision Time (Alpine) | ~15s |
