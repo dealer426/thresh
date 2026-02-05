@@ -38,7 +38,7 @@ git clone https://github.com/YOUR_USERNAME/Main.git scoop-main
 cd scoop-main
 
 # 3. Copy manifest
-cp ../eknova/packages/scoop/thresh.json bucket/
+cp ../thresh/packages/scoop/thresh.json bucket/
 
 # 4. Commit and push
 git checkout -b add-thresh
@@ -60,7 +60,7 @@ Adds thresh v1.0.0 - Fast, native WSL2 environment provisioning tool
 - AI-powered blueprint generation
 - 12 built-in distributions
 
-GitHub: https://github.com/dealer426/eknova
+GitHub: https://github.com/dealer426/thresh
 License: MIT
 ```
 
@@ -111,7 +111,7 @@ cd winget-pkgs
 mkdir -p manifests/d/dealer426/thresh/1.0.0
 
 # 4. Copy manifests
-cp ../eknova/packages/winget/*.yaml manifests/d/dealer426/thresh/1.0.0/
+cp ../thresh/packages/winget/*.yaml manifests/d/dealer426/thresh/1.0.0/
 
 # 5. Commit and push
 git checkout -b dealer426-thresh-1.0.0
@@ -135,7 +135,7 @@ Automated validation should pass all checks.
 - AI-powered blueprint generation (OpenAI GPT-4o-mini)
 - 12 built-in distributions + custom support
 
-Repository: https://github.com/dealer426/eknova
+Repository: https://github.com/dealer426/thresh
 License: MIT
 ```
 
@@ -178,7 +178,7 @@ All should install to PATH and show:
 ```
 thresh 1.0.0
 .NET Native AOT (12 MB)
-https://github.com/dealer426/eknova
+https://github.com/dealer426/thresh
 ```
 
 ---

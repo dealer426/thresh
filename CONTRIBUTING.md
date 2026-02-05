@@ -10,8 +10,8 @@ Before contributing, ensure you have the development environment set up:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/eknova.git
-cd eknova
+git clone https://github.com/dealer426/thresh.git
+cd thresh
 
 # Run the development environment setup
 ./scripts/setup-dev-env.sh
@@ -32,7 +32,7 @@ eknova uses a hybrid architecture with three main components:
 ```bash
 # Fork the repo on GitHub, then clone your fork
 git clone https://github.com/YOUR-USERNAME/eknova.git
-cd eknova
+cd thresh
 
 # Add upstream remote
 git remote add upstream https://github.com/original-username/eknova.git
@@ -71,7 +71,7 @@ Follow the coding standards for each component:
 ```bash
 # Test CLI
 ```bash
-cd eknova-cli
+cd thresh-cli
 ./gradlew quarkusDev
 
 # Test API
@@ -162,7 +162,7 @@ Use the feature request template in GitHub Issues.
 ./scripts/test-all.sh
 
 # Component-specific tests
-cd eknova-cli && ./gradlew test
+cd thresh-cli && ./gradlew test
 cd nova-api && dotnet test  
 cd nova-web && npm test
 ```

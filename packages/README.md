@@ -72,7 +72,7 @@ This directory contains package manifests for distributing thresh via Windows pa
 ### Step 1: Get Release SHA256 Hashes
 ```powershell
 # Download the release zip
-Invoke-WebRequest -Uri "https://github.com/dealer426/eknova/releases/download/v1.0.0/thresh-windows-x64.zip" -OutFile "thresh.zip"
+Invoke-WebRequest -Uri "https://github.com/dealer426/thresh/releases/download/v1.0.0/thresh-windows-x64.zip" -OutFile "thresh.zip"
 
 # Calculate SHA256
 Get-FileHash thresh.zip -Algorithm SHA256 | Select-Object -ExpandProperty Hash
@@ -94,7 +94,7 @@ Replace all `<TO_BE_UPDATED_AFTER_RELEASE>` placeholders with the SHA256 hash.
 git clone https://github.com/YOUR_USERNAME/winget-pkgs.git
 cd winget-pkgs
 mkdir -p manifests/d/dealer426/thresh/1.0.0
-cp ../eknova/packages/winget/*.yaml manifests/d/dealer426/thresh/1.0.0/
+cp ../thresh/packages/winget/*.yaml manifests/d/dealer426/thresh/1.0.0/
 git add .
 git commit -m "Add thresh version 1.0.0"
 git push
@@ -114,7 +114,7 @@ choco push thresh.1.0.0.nupkg --source https://push.chocolatey.org/
 # Fork https://github.com/ScoopInstaller/Main
 git clone https://github.com/YOUR_USERNAME/Main.git
 cd Main
-cp ../eknova/packages/scoop/thresh.json bucket/
+cp ../thresh/packages/scoop/thresh.json bucket/
 git add bucket/thresh.json
 git commit -m "thresh: Add version 1.0.0"
 git push

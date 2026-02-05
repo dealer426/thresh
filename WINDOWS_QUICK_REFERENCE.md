@@ -19,7 +19,7 @@ Working Directory: [paste output of: pwd or cd]
 ### 📁 **Project Context:**
 ```
 Project: eknova CLI - Windows Native Development
-Repository: https://github.com/dealer426/eknova
+Repository: https://github.com/dealer426/thresh
 Main Branch: dev
 CLI Location: eknova\eknova-cli\
 Target Output: build\eknova-cli-1.0.0-SNAPSHOT-runner.exe
@@ -36,7 +36,7 @@ Target Output: build\eknova-cli-1.0.0-SNAPSHOT-runner.exe
 ### 🏗️ **Standard Build Commands:**
 ```cmd
 # Navigate to CLI directory
-cd eknova\eknova-cli
+cd thresh\eknova-cli
 
 # Clean build
 gradlew.bat clean

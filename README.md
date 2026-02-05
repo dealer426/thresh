@@ -127,7 +127,7 @@ eknova/
 **Option 1: Download Release Binary**
 ```powershell
 # Download from GitHub releases
-Invoke-WebRequest -Uri "https://github.com/your-username/eknova/releases/latest/download/thresh.exe" -OutFile "thresh.exe"
+Invoke-WebRequest -Uri "https://github.com/dealer426/thresh/releases/latest/download/thresh.exe" -OutFile "thresh.exe"
 
 # Move to PATH
 Move-Item thresh.exe C:\Windows\System32\
@@ -136,8 +136,8 @@ Move-Item thresh.exe C:\Windows\System32\
 **Option 2: Build from Source**
 ```powershell
 # Clone repository
-git clone https://github.com/your-username/eknova.git
-cd eknova\thresh\Thresh
+git clone https://github.com/dealer426/thresh.git
+cd thresh\thresh\Thresh
 
 # Build Native AOT binary
 dotnet publish -c Release -r win-x64 --self-contained
@@ -289,8 +289,8 @@ scripts:
 # - Git
 
 # Clone repository
-git clone https://github.com/your-username/eknova.git
-cd eknova\thresh\Thresh
+git clone https://github.com/dealer426/thresh.git
+cd thresh\thresh\Thresh
 
 # Development build (JIT, fast iteration)
 dotnet build
@@ -488,8 +488,8 @@ Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidel
 **Development Setup**:
 ```powershell
 # Fork and clone
-git clone https://github.com/your-username/eknova.git
-cd eknova\thresh\Thresh
+git clone https://github.com/dealer426/thresh.git
+cd thresh\thresh\Thresh
 
 # Create feature branch
 git checkout -b feature/my-feature
@@ -520,18 +520,18 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-username/eknova/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-username/eknova/discussions)
+- **Issues**: [GitHub Issues](https://github.com/dealer426/thresh/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/dealer426/thresh/discussions)
 - **Documentation**: [docs/](docs/)
 
 ---
 
 **Built with ❤️ using .NET 9 Native AOT**
-cd eknova-api  
+cd thresh-api  
 dotnet build
 
 # Web UI
-cd eknova-web
+cd thresh-web
 npm run build
 ```
 
@@ -539,26 +539,26 @@ npm run build
 
 ```bash
 # CLI (JVM mode for faster iteration)
-cd eknova-cli && ./gradlew quarkusDev
+cd thresh-cli && ./gradlew quarkusDev
 
 # API (Hot reload)
-cd eknova-api && dotnet watch --project eknova-api.AppHost
+cd thresh-api && dotnet watch --project eknova-api.AppHost
 
 # Web UI (Hot reload)
-cd eknova-web && npm run dev
+cd thresh-web && npm run dev
 ```
 
 ### Testing
 
 ```bash
 # CLI tests
-cd eknova-cli && ./gradlew test
+cd thresh-cli && ./gradlew test
 
 # API tests  
-cd eknova-api && dotnet test
+cd thresh-api && dotnet test
 
 # Web UI tests
-cd eknova-web && npm test
+cd thresh-web && npm test
 ```
 
 ---

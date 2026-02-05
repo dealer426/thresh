@@ -6,12 +6,12 @@ PackageVersion: 1.0.0
 PackageLocale: en-US
 Publisher: dealer426
 PublisherUrl: https://github.com/dealer426
-PublisherSupportUrl: https://github.com/dealer426/eknova/issues
+PublisherSupportUrl: https://github.com/dealer426/thresh/issues
 Author: dealer426
 PackageName: thresh
-PackageUrl: https://github.com/dealer426/eknova
+PackageUrl: https://github.com/dealer426/thresh
 License: MIT
-LicenseUrl: https://github.com/dealer426/eknova/blob/main/LICENSE
+LicenseUrl: https://github.com/dealer426/thresh/blob/main/LICENSE
 ShortDescription: Fast, native WSL2 environment provisioning with AI-powered blueprints
 Description: |-
   thresh is a lightweight, 12 MB native binary that provisions WSL2 Linux environments from declarative YAML blueprints.
@@ -60,6 +60,6 @@ ReleaseNotes: |-
   - Zero dependencies, self-contained
   - 50ms startup time
   - Windows 11 + WSL2 platform
-ReleaseNotesUrl: https://github.com/dealer426/eknova/releases/tag/v1.0.0
+ReleaseNotesUrl: https://github.com/dealer426/thresh/releases/tag/v1.0.0
 ManifestType: defaultLocale
 ManifestVersion: 1.6.0

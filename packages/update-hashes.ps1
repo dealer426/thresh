@@ -11,7 +11,7 @@ Write-Host "=== thresh Package Hash Updater ===" -ForegroundColor Cyan
 Write-Host ""
 
 # Download release zip
-$zipUrl = "https://github.com/dealer426/eknova/releases/download/v$Version/thresh-windows-x64.zip"
+$zipUrl = "https://github.com/dealer426/thresh/releases/download/v$Version/thresh-windows-x64.zip"
 $zipPath = "$env:TEMP\thresh-windows-x64.zip"
 
 Write-Host "Downloading release zip..." -ForegroundColor Yellow

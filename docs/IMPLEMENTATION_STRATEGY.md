@@ -83,7 +83,7 @@ Add GitHub Actions for multi-platform builds:
 # Create new .NET CLI project
 cd /mnt/c/Users/burns/source/repos/eknova
 mkdir eknova-cli-dotnet
-cd eknova-cli-dotnet
+cd thresh-cli-dotnet
 
 # Initialize .NET console app
 dotnet new console -n EknovaCli

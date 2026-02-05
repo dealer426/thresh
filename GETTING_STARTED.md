@@ -36,7 +36,7 @@ wsl --install
 New-Item -ItemType Directory -Force -Path C:\thresh
 
 # Download latest release (replace URL with actual release)
-Invoke-WebRequest -Uri "https://github.com/dealer426/eknova/releases/latest/download/thresh.exe" -OutFile "C:\thresh\thresh.exe"
+Invoke-WebRequest -Uri "https://github.com/dealer426/thresh/releases/latest/download/thresh.exe" -OutFile "C:\thresh\thresh.exe"
 
 # Add to PATH for current session
 $env:Path += ";C:\thresh"
@@ -50,8 +50,8 @@ thresh --version
 ```powershell
 # Clone repository
 cd C:\Users\$env:USERNAME\source\repos
-git clone https://github.com/dealer426/eknova.git
-cd eknova\thresh\Thresh
+git clone https://github.com/dealer426/thresh.git
+cd thresh\thresh\Thresh
 
 # Build Native AOT binary
 dotnet publish -c Release -r win-x64 --self-contained
@@ -422,8 +422,8 @@ thresh up alpine-minimal
 - **Documentation**: [README.md](README.md)
 - **Technical Details**: [thresh/README.md](thresh/README.md)
 - **Migration Plan**: [docs/CLI_CONSOLIDATION_PLAN.md](docs/CLI_CONSOLIDATION_PLAN.md)
-- **Issues**: [GitHub Issues](https://github.com/dealer426/eknova/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/dealer426/eknova/discussions)
+- **Issues**: [GitHub Issues](https://github.com/dealer426/thresh/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/dealer426/thresh/discussions)
 
 ---
 

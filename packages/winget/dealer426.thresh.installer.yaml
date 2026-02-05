@@ -10,7 +10,7 @@ InstallerType: zip
 ReleaseDate: 2026-02-05
 Installers:
 - Architecture: x64
-  InstallerUrl: https://github.com/dealer426/eknova/releases/download/v1.0.0/thresh-windows-x64.zip
+  InstallerUrl: https://github.com/dealer426/thresh/releases/download/v1.0.0/thresh-windows-x64.zip
   InstallerSha256: <TO_BE_UPDATED_AFTER_RELEASE>
   NestedInstallerType: portable
   NestedInstallerFiles:

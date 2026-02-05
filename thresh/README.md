@@ -514,8 +514,8 @@ MIT License - see [LICENSE](../LICENSE)
 
 ## Links
 
-- **Repository**: [github.com/your-username/eknova](https://github.com/your-username/eknova)
-- **Issues**: [GitHub Issues](https://github.com/your-username/eknova/issues)
+- **Repository**: [github.com/dealer426/thresh](https://github.com/dealer426/thresh)
+- **Issues**: [GitHub Issues](https://github.com/dealer426/thresh/issues)
 - **Documentation**: [docs/](../docs/)
 - **CLI Consolidation Plan**: [CLI_CONSOLIDATION_PLAN.md](../docs/CLI_CONSOLIDATION_PLAN.md)
 

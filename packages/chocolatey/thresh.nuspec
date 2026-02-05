@@ -6,8 +6,8 @@
     <title>thresh</title>
     <authors>dealer426</authors>
     <owners>dealer426</owners>
-    <licenseUrl>https://github.com/dealer426/eknova/blob/main/LICENSE</licenseUrl>
-    <projectUrl>https://github.com/dealer426/eknova</projectUrl>
+    <licenseUrl>https://github.com/dealer426/thresh/blob/main/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/dealer426/thresh</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>
 thresh is a lightweight, 12 MB native binary that provisions WSL2 Linux environments from declarative YAML blueprints.
@@ -26,11 +26,11 @@ Requirements:
 - .NET runtime NOT required (self-contained Native AOT binary)
     </description>
     <summary>Fast, native WSL2 environment provisioning with AI-powered blueprints</summary>
-    <releaseNotes>https://github.com/dealer426/eknova/releases/tag/v1.0.0</releaseNotes>
+    <releaseNotes>https://github.com/dealer426/thresh/releases/tag/v1.0.0</releaseNotes>
     <tags>wsl wsl2 linux provisioning devops containers infrastructure ai blueprints dotnet native-aot cli</tags>
-    <projectSourceUrl>https://github.com/dealer426/eknova</projectSourceUrl>
-    <packageSourceUrl>https://github.com/dealer426/eknova/tree/main/packages/chocolatey</packageSourceUrl>
-    <bugTrackerUrl>https://github.com/dealer426/eknova/issues</bugTrackerUrl>
+    <projectSourceUrl>https://github.com/dealer426/thresh</projectSourceUrl>
+    <packageSourceUrl>https://github.com/dealer426/thresh/tree/main/packages/chocolatey</packageSourceUrl>
+    <bugTrackerUrl>https://github.com/dealer426/thresh/issues</bugTrackerUrl>
   </metadata>
   <files>
     <file src="tools\**" target="tools" />

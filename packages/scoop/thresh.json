@@ -1,16 +1,16 @@
 {
     "version": "1.0.0",
     "description": "Fast, native WSL2 environment provisioning with AI-powered blueprints",
-    "homepage": "https://github.com/dealer426/eknova",
+    "homepage": "https://github.com/dealer426/thresh",
     "license": "MIT",
-    "url": "https://github.com/dealer426/eknova/releases/download/v1.0.0/thresh-windows-x64.zip",
+    "url": "https://github.com/dealer426/thresh/releases/download/v1.0.0/thresh-windows-x64.zip",
     "hash": "<TO_BE_UPDATED_AFTER_RELEASE>",
     "bin": "thresh.exe",
     "checkver": {
-        "github": "https://github.com/dealer426/eknova"
+        "github": "https://github.com/dealer426/thresh"
     },
     "autoupdate": {
-        "url": "https://github.com/dealer426/eknova/releases/download/v$version/thresh-windows-x64.zip"
+        "url": "https://github.com/dealer426/thresh/releases/download/v$version/thresh-windows-x64.zip"
     },
     "notes": [
         "Requirements:",
@@ -21,6 +21,6 @@
         "  thresh list",
         "  thresh distros",
         "",
-        "Documentation: https://github.com/dealer426/eknova"
+        "Documentation: https://github.com/dealer426/thresh"
     ]
 }
