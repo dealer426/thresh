@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace EknovaCli.Utilities;
+namespace Thresh.Utilities;
 
 /// <summary>
 /// Utility class for executing external processes, particularly WSL commands

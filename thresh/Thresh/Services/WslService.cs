@@ -1,11 +1,11 @@
 using System.Text.RegularExpressions;
-using EknovaCli.Models;
-using EknovaCli.Utilities;
+using Thresh.Models;
+using Thresh.Utilities;
 
-namespace EknovaCli.Services;
+namespace Thresh.Services;
 
 /// <summary>
-/// Service for managing WSL distributions and eknova environments
+/// Service for managing WSL distributions and thresh environments
 /// </summary>
 public partial class WslService
 {
@@ -138,7 +138,7 @@ public partial class WslService
     }
 
     /// <summary>
-    /// List all eknova environments
+    /// List all thresh environments
     /// </summary>
     public async Task<List<Models.Environment>> ListEnvironmentsAsync()
     {
@@ -219,7 +219,7 @@ public partial class WslService
 
             // Extract environment name from distribution name
             var envName = distributionName;
-            var blueprint = "system"; // Default for non-eknova distributions
+            var blueprint = "system"; // Default for non-thresh distributions
 
             if (distributionName.StartsWith(ThreshPrefix))
             {
@@ -233,7 +233,7 @@ public partial class WslService
                 WslDistributionName = distributionName,
                 Status = status,
                 Version = version,
-                Created = null, // TODO: Get from metadata file for eknova envs
+                Created = null, // TODO: Get from metadata file for thresh envs
                 Blueprint = blueprint
             };
 

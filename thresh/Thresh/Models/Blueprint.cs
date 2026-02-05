@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace EknovaCli.Models;
+namespace Thresh.Models;
 
 /// <summary>
 /// Blueprint model representing an environment template

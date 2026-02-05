@@ -4,7 +4,7 @@ using OpenAI;
 using OpenAI.Chat;
 using System.ClientModel;
 
-namespace EknovaCli.Services;
+namespace Thresh.Services;
 
 /// <summary>
 /// Factory for creating OpenAI chat clients based on configured provider

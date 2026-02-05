@@ -1,13 +1,13 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using EknovaCli.Mcp.Models;
-using EknovaCli.Services;
+using Thresh.Mcp.Models;
+using Thresh.Services;
 
-namespace EknovaCli.Mcp;
+namespace Thresh.Mcp;
 
 /// <summary>
-/// MCP (Model Context Protocol) Server for eknova
+/// MCP (Model Context Protocol) Server for thresh
 /// Exposes CLI functionality to AI agents via HTTP endpoints
 /// </summary>
 public class McpServer

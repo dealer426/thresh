@@ -10,7 +10,7 @@
 
 ## Overview
 
-`thresh` is a **.NET 9 Native AOT** command-line tool that provisions WSL2 environments using AI-generated blueprints. It replaces the legacy Quarkus-based `eknova-cli` with a unified, dependency-free solution.
+`thresh` is a **.NET 9 Native AOT** command-line tool that provisions WSL2 environments using AI-generated blueprints. It replaces the legacy Quarkus-based `thresh-cli` with a unified, dependency-free solution.
 
 **Key Features**:
 - 🚀 **12 MB native binary** - No .NET runtime required
@@ -444,7 +444,7 @@ Warnings:        2 (Azure SDK trim warnings - acceptable)
 
 ## Migration from Quarkus CLI
 
-This replaces the legacy Java/Quarkus `eknova-cli` with a unified .NET solution.
+This replaces the legacy Java/Quarkus `thresh-cli` with a unified .NET solution.
 
 ### Why Migrate?
 

@@ -1,7 +1,7 @@
-namespace EknovaCli.Models;
+namespace Thresh.Models;
 
 /// <summary>
-/// Status of an eknova environment
+/// Status of a thresh environment
 /// </summary>
 public enum EnvironmentStatus
 {

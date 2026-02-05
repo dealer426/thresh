@@ -15,7 +15,7 @@
 
 ### Key Features
 
-- 🤖 **AI Blueprint Generation** - Natural language to WSL environment: *"Python ML environment with Jupyter and TensorFlow"*
+- 🤖 **Dual AI Providers** - Choose between OpenAI or GitHub Copilot SDK for blueprint generation
 - ⚡ **Instant Provisioning** - WSL2 distributions installed and configured in seconds
 - 📦 **12 Built-in Distros** - Ubuntu, Alpine, Debian, Kali, Oracle Linux, openSUSE + custom support
 - 🎯 **Hybrid Distribution System** - Direct vendor downloads + Microsoft Store wrapper
@@ -47,7 +47,10 @@ thresh.exe (12 MB)
 │   ├── BlueprintService         - Environment provisioning
 │   ├── RootfsRegistry           - Distribution catalog
 │   ├── ConfigurationService     - Secure settings storage
-│   └── OpenAI ChatClient        - AI integration
+│   ├── IAIService               - AI provider abstraction
+│   ├── OpenAIService            - OpenAI GPT integration
+│   ├── GitHubCopilotService     - GitHub Copilot SDK integration
+│   └── AIServiceFactory         - Provider selection
 │
 └── Distribution Sources
     ├── Vendor (10)              - Direct tar.gz downloads
@@ -70,7 +73,9 @@ thresh.exe (12 MB)
 **Tech Stack:**
 - Language: C# 13 / .NET 9.0
 - CLI Framework: System.CommandLine
-- AI: OpenAI SDK (GPT-4o-mini)
+- AI Providers: 
+  - OpenAI SDK (GPT-4o, GPT-4o-mini, GPT-3.5)
+  - GitHub Copilot SDK v0.1.22 (GPT-5, GPT-4, Claude)
 - YAML: YamlDotNet
 - Compilation: Native AOT (PublishAot=true)
 - Binary Size: 12 MB
@@ -81,7 +86,7 @@ thresh.exe (12 MB)
 ## 🛠️ Project Structure
 
 ```
-eknova/
+thresh/
 ├── thresh/                      # .NET 9 Native AOT CLI (12 MB)
 │   ├── Thresh/
 │   │   ├── Program.cs           # CLI entry point & commands
@@ -104,9 +109,9 @@ eknova/
 │   │       └── python-dev.yaml
 │   └── README.md
 │
-├── eknova-cli/                  # [ARCHIVED] Legacy Quarkus CLI
-├── eknova-api/                  # [FUTURE] Aspire API
-├── eknova-web/                  # [FUTURE] Next.js Web UI
+├── thresh-cli/                  # [ARCHIVED] Legacy Quarkus CLI
+├── thresh-api/                  # [FUTURE] Aspire API
+├── thresh-web/                  # [FUTURE] Next.js Web UI
 ├── docs/
 │   ├── CLI_CONSOLIDATION_PLAN.md
 │   └── SESSION_SUMMARY.md
@@ -149,12 +154,38 @@ dotnet publish -c Release -r win-x64 --self-contained
 ### Configuration
 
 ```powershell
-# Set OpenAI API key (required for AI features)
-thresh config set openai-api-key sk-...
+# Configure AI Provider (OpenAI or GitHub Copilot SDK)
+
+# Option 1: OpenAI (default)
+thresh config set aiprovider openai
+thresh config set openai-api-key sk-proj-...
+
+# Option 2: GitHub Copilot SDK (requires GitHub Copilot CLI)
+thresh config set aiprovider copilot
+thresh config set github-token ghp_...  # Optional, uses logged-in user if not provided
+
+# Set default model (optional)
+thresh config set default-model gpt-4o-mini  # For OpenAI
+thresh config set default-model gpt-5        # For GitHub Copilot
+
+# View configuration
+thresh config list
 
 # Verify installation
 thresh --version
 ```
+
+**AI Provider Comparison:**
+
+| Feature | OpenAI | GitHub Copilot SDK |
+|---------|--------|-------------------|
+| Models | GPT-4o, GPT-4o-mini, GPT-3.5 | GPT-5, GPT-4, Claude Sonnet |
+| Setup | API key only | Copilot CLI + auth |
+| Cost | Pay per token | Included with Copilot subscription |
+| Streaming | ✅ | ✅ |
+| Custom distro discovery | ✅ | ❌ |
+
+See [docs/DUAL_AI_PROVIDERS.md](docs/DUAL_AI_PROVIDERS.md) for detailed configuration.
 
 ---
 
@@ -542,7 +573,7 @@ npm run build
 cd thresh-cli && ./gradlew quarkusDev
 
 # API (Hot reload)
-cd thresh-api && dotnet watch --project eknova-api.AppHost
+cd thresh-api && dotnet watch --project thresh-api.AppHost
 
 # Web UI (Hot reload)
 cd thresh-web && npm run dev
@@ -595,13 +626,13 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 📬 Community
 
-- 💬 **Discord** - [Join our community](https://discord.gg/eknova-dev)
-- 🐦 **Twitter** - [@eknova_dev](https://twitter.com/eknova_dev)
-- 📧 **Email** - [hello@eknova.dev](mailto:hello@eknova.dev)
-- 📖 **Docs** - [docs.eknova.dev](https://docs.eknova.dev)
+- 💬 **Discord** - [Join our community](https://discord.gg/thresh-dev)
+- 🐦 **Twitter** - [@thresh_dev](https://twitter.com/thresh_dev)
+- 📧 **Email** - [hello@thresh.dev](mailto:hello@thresh.dev)
+- 📖 **Docs** - [docs.thresh.dev](https://docs.thresh.dev)
 
 ---
 
-**eknova** - *Your environments, your way, instantly.* ⚡
+**thresh** - *Your environments, your way, instantly.* ⚡
 
 Built with ❤️ for the Windows + WSL developer community.

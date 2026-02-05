@@ -1,7 +1,7 @@
-namespace EknovaCli.Models;
+namespace Thresh.Models;
 
 /// <summary>
-/// Represents an eknova environment with its metadata
+/// Represents a thresh environment with its metadata
 /// </summary>
 public class Environment
 {

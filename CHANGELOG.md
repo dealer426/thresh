@@ -90,14 +90,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dependencies**: None (self-contained)
 - **Platform**: Windows 11 with WSL2
 
-### Migration from eknova-cli
-- **Breaking Change**: Replaced Java/Quarkus CLI with .NET Native AOT
-- Removed eknova-cli (25 MB Quarkus binary)
-- Removed eknova-api (Aspire - moved to future work)
-- Removed eknova-web (Next.js - moved to future work)
-- All legacy scripts and documentation removed
-- Single focused repository structure
-
 ### Performance
 - Binary: 12 MB (vs 25 MB Quarkus, 60% smaller)
 - Provision time: 15-25s depending on distribution

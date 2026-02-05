@@ -1,4 +1,4 @@
-namespace EknovaCli.Models;
+namespace Thresh.Models;
 
 /// <summary>
 /// WSL system information

@@ -8,16 +8,19 @@ using Thresh.Models;
 namespace Thresh.Services;
 
 /// <summary>
-/// Service for AI-powered blueprint generation and interactive chat
+/// OpenAI-based AI service implementation
 /// Supports OpenAI, Azure OpenAI, and GitHub Models via Azure.AI.OpenAI SDK
 /// </summary>
-public class CopilotService
+public class OpenAIService : IAIService
 {
     private readonly ChatClient _chatClient;
     private readonly string _modelId;
     private readonly ConfigurationService _configService;
 
-    public CopilotService(ConfigurationService configService, string? modelId = null, string? provider = null)
+    public string ProviderName => "OpenAI";
+    public string ModelId => _modelId;
+
+    public OpenAIService(ConfigurationService configService, string? modelId = null, string? provider = null)
     {
         _configService = configService;
         var factory = new AiProviderFactory(configService);
@@ -83,7 +86,7 @@ Rules:
 
         if (streaming)
         {
-            Console.WriteLine($"🤖 Generating blueprint with {_modelId}...\n");
+            Console.WriteLine($"🤖 Generating blueprint with {ProviderName} ({_modelId})...\n");
             
             var updates = _chatClient.CompleteChatStreamingAsync(messages, options);
             await foreach (var update in updates)
@@ -117,7 +120,8 @@ Rules:
         Console.WriteLine("║     Thresh AI Chat - Blueprint Assistant     ║");
         Console.WriteLine("╚═══════════════════════════════════════════════╝");
         Console.WriteLine();
-        Console.WriteLine($"🤖 Model: {_modelId}");
+        Console.WriteLine($"🤖 Provider: {ProviderName}");
+        Console.WriteLine($"📦 Model: {_modelId}");
         Console.WriteLine("💬 Ask about blueprints, WSL environments, or development setups");
         Console.WriteLine("⌨️  Type 'exit' or 'quit' to end the session");
         Console.WriteLine("🔄 Type 'clear' to reset conversation history");
@@ -330,4 +334,3 @@ Return ONLY the JSON, no explanations.";
         }
     }
 }
-

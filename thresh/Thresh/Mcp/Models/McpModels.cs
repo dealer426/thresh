@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace EknovaCli.Mcp.Models;
+namespace Thresh.Mcp.Models;
 
 public class ServerInfo
 {

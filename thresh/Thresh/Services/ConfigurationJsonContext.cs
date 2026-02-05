@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 using System.Text.Json;
-using EknovaCli.Models;
+using Thresh.Models;
 
-namespace EknovaCli.Services;
+namespace Thresh.Services;
 
 /// <summary>
 /// JSON serialization context for Native AOT compilation - Configuration

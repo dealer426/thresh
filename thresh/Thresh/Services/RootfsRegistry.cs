@@ -1,4 +1,4 @@
-namespace EknovaCli.Services;
+namespace Thresh.Services;
 
 /// <summary>
 /// Registry of supported Linux distributions and their rootfs download URLs

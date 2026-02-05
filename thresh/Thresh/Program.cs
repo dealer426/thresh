@@ -1,7 +1,8 @@
 using System.CommandLine;
-using EknovaCli.Models;
+using Thresh.Models;
+using Thresh.Services;
 
-namespace EknovaCli;
+namespace Thresh;
 
 class Program
 {
@@ -62,11 +63,12 @@ class Program
         Console.WriteLine("  --help           Display help information");
         Console.WriteLine();
         Console.WriteLine("Examples:");
-        Console.WriteLine("  ekn version");
-        Console.WriteLine("  ekn up alpine-minimal");
-        Console.WriteLine("  ekn generate 'Python ML environment with Jupyter'");
-        Console.WriteLine("  ekn list");
-        Console.WriteLine("  ekn config set github-token <token>");
+        Console.WriteLine("  thresh version");
+        Console.WriteLine("  thresh up alpine-minimal");
+        Console.WriteLine("  thresh generate 'Python ML environment with Jupyter'");
+        Console.WriteLine("  thresh list");
+        Console.WriteLine("  thresh config set openai-api-key <key>");
+        Console.WriteLine("  thresh config set aiprovider openai");  // or 'copilot'
     }
     
     private static void AddVersionCommand(RootCommand rootCommand)
@@ -149,7 +151,7 @@ class Program
                 if (await wslService.EnvironmentExistsAsync(envName))
                 {
                     Console.WriteLine($"❌ Environment '{envName}' already exists");
-                    Console.WriteLine($"   Remove it first: ekn destroy {envName}");
+                    Console.WriteLine($"   Remove it first: thresh destroy {envName}");
                     return;
                 }
                 
@@ -194,7 +196,7 @@ class Program
     private static void AddListCommand(RootCommand rootCommand)
     {
         var listCommand = new Command("list", "List WSL environments");
-        var allOption = new Option<bool>("--all", "Include all WSL distributions, not just eknova environments");
+        var allOption = new Option<bool>("--all", "Include all WSL distributions, not just thresh environments");
         listCommand.AddOption(allOption);
         
         listCommand.SetHandler(async (bool all) =>
@@ -349,9 +351,9 @@ class Program
             try
             {
                 var configService = new Services.ConfigurationService();
-                var copilot = new Services.CopilotService(configService, model, provider);
+                var aiService = Utilities.AIServiceFactory.CreateAIService(configService, model, provider);
                 
-                var jsonContent = await copilot.GenerateBlueprintAsync(prompt, streaming: !noStream);
+                var jsonContent = await aiService.GenerateBlueprintAsync(prompt, streaming: !noStream);
                 
                 if (noStream)
                 {
@@ -359,8 +361,8 @@ class Program
                     Console.WriteLine();
                 }
                 
-                // Clean the output
-                var cleanedJson = copilot.CleanJsonOutput(jsonContent);
+                // Clean the output (OpenAI service has CleanJsonOutput method)
+                var cleanedJson = (aiService as OpenAIService)?.CleanJsonOutput(jsonContent) ?? jsonContent;
                 
                 // Save to file if requested
                 if (!string.IsNullOrEmpty(output))
@@ -567,8 +569,8 @@ class Program
             {
                 // AI-powered discovery
                 Console.WriteLine($"🤖 Using AI to discover {name} distribution...");
-                var copilotService = new Services.CopilotService(configService);
-                var distro = await copilotService.DiscoverDistributionAsync(name);
+                var aiService = Utilities.AIServiceFactory.CreateAIService(configService) as OpenAIService;
+                var distro = await aiService?.DiscoverDistributionAsync(name);
                 
                 if (distro == null)
                 {

@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
-using EknovaCli.Mcp.Models;
+using Thresh.Mcp.Models;
 
-namespace EknovaCli.Mcp;
+namespace Thresh.Mcp;
 
 /// <summary>
 /// JSON serialization context for MCP models (AOT compatibility)

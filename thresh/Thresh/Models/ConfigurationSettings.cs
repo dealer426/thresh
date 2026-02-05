@@ -1,7 +1,7 @@
-namespace EknovaCli.Models;
+namespace Thresh.Models;
 
 /// <summary>
-/// Configuration settings for the ekn CLI
+/// Configuration settings for the thresh CLI
 /// </summary>
 public class ConfigurationSettings
 {
@@ -24,6 +24,11 @@ public class ConfigurationSettings
     /// Default AI model to use
     /// </summary>
     public string? DefaultModel { get; set; } = "gpt-4";
+
+    /// <summary>
+    /// AI provider to use: "openai" or "copilot"
+    /// </summary>
+    public string? AIProvider { get; set; } = "openai";
 
     /// <summary>
     /// GitHub token for Copilot features

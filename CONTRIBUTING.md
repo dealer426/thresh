@@ -1,6 +1,6 @@
-# Contributing to eknova
+# Contributing to thresh
 
-Thank you for your interest in contributing to eknova! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to thresh! This document provides guidelines and information for contributors.
 
 ## 🚀 Getting Started
 
@@ -19,11 +19,11 @@ cd thresh
 
 ### Development Environment
 
-eknova uses a hybrid architecture with three main components:
+thresh is a unified .NET 9 Native AOT CLI application:
 
-- **eknova-cli** - Quarkus (Java 23 + Gradle)
-- **nova-api** - Aspire (.NET 9.0)  
-- **nova-web** - Next.js (TypeScript + Tailwind)
+- **thresh** - .NET 9 Native AOT (12 MB single binary)
+- **AI providers** - OpenAI SDK + GitHub Copilot SDK
+- **Distribution support** - 12+ built-in distros + custom support
 
 ## 🛠️ Development Workflow
 
@@ -31,11 +31,11 @@ eknova uses a hybrid architecture with three main components:
 
 ```bash
 # Fork the repo on GitHub, then clone your fork
-git clone https://github.com/YOUR-USERNAME/eknova.git
+git clone https://github.com/YOUR-USERNAME/thresh.git
 cd thresh
 
 # Add upstream remote
-git remote add upstream https://github.com/original-username/eknova.git
+git remote add upstream https://github.com/dealer426/thresh.git
 ```
 
 ### 2. Create a Feature Branch
@@ -48,39 +48,27 @@ git checkout -b feature/your-feature-name
 
 Follow the coding standards for each component:
 
-#### CLI (Java/Quarkus)
-- Use Java 23 features where appropriate
-- Follow standard Java naming conventions
-- Add unit tests for new functionality
-- Use Picocli annotations for commands
-
-#### API (.NET/Aspire)
+#### CLI (.NET 9 Native AOT)
 - Follow C# coding conventions
-- Use Aspire service defaults
-- Add API documentation with XML comments
-- Include unit and integration tests
-
-#### Web UI (TypeScript/Next.js)
-- Use TypeScript strictly
-- Follow Next.js 15+ app router patterns
-- Use Tailwind for styling
-- Add component tests with Jest/Testing Library
+- Use System.CommandLine for commands
+- Add XML documentation comments
+- Include unit tests for new functionality
+- Ensure Native AOT compatibility
+- Test both JIT and AOT builds
 
 ### 4. Test Your Changes
 
 ```bash
-# Test CLI
-```bash
-cd thresh-cli
-./gradlew quarkusDev
-
-# Test API
-cd nova-api
+# Test thresh CLI
+cd thresh/Thresh
 dotnet test
 
-# Test Web UI
-cd nova-web
-npm test
+# Build and test Native AOT
+dotnet build -c Release
+dotnet publish -c Release -r win-x64
+
+# Run CLI tests
+./bin/Release/net9.0/win-x64/publish/thresh.exe --version
 ```
 
 ### 5. Commit and Push
@@ -133,7 +121,7 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 When reporting bugs, please include:
 
 - **OS and version** (Windows 11, WSL2 distro)
-- **eknova version** (`nova --version`)
+- **thresh version** (`thresh --version`)
 - **Steps to reproduce** 
 - **Expected vs actual behavior**
 - **Error messages or logs**
@@ -158,13 +146,13 @@ Use the feature request template in GitHub Issues.
 ### Running Tests
 
 ```bash
-# All tests
-./scripts/test-all.sh
+# Run all tests
+cd thresh/Thresh
+dotnet test
 
-# Component-specific tests
-cd thresh-cli && ./gradlew test
-cd nova-api && dotnet test  
-cd nova-web && npm test
+# Build and verify
+dotnet build -c Release
+dotnet publish -c Release -r win-x64
 ```
 
 ### Writing Tests
@@ -178,15 +166,15 @@ cd nova-web && npm test
 
 Aim for:
 - **CLI**: >80% coverage on core logic
-- **API**: >90% coverage on business logic  
-- **Web UI**: >85% coverage on components
+- **Services**: >85% coverage on business logic
+- **Models**: >90% coverage on data models
 
 ## 📦 Blueprint Contributions
 
 ### Adding Template Blueprints
 
-1. Create blueprint YAML in `blueprints/templates/`
-2. Test with multiple environments
+1. Create blueprint YAML in `thresh/Thresh/blueprints/`
+2. Test with multiple WSL environments
 3. Add documentation and examples
 4. Submit PR with blueprint details
 
@@ -249,9 +237,11 @@ We use semantic versioning (semver):
 
 ### Technologies Used
 
-- **Quarkus** - [quarkus.io](https://quarkus.io)
-- **Aspire** - [learn.microsoft.com/aspire](https://learn.microsoft.com/dotnet/aspire)
-- **Next.js** - [nextjs.org](https://nextjs.org)
+- **.NET 9** - [dotnet.microsoft.com](https://dotnet.microsoft.com)
+- **Native AOT** - [learn.microsoft.com/dotnet/core/deploying/native-aot](https://learn.microsoft.com/dotnet/core/deploying/native-aot)
+- **System.CommandLine** - [github.com/dotnet/command-line-api](https://github.com/dotnet/command-line-api)
+- **Azure.AI.OpenAI** - [learn.microsoft.com/dotnet/api/azure.ai.openai](https://learn.microsoft.com/dotnet/api/azure.ai.openai)
+- **GitHub.Copilot.SDK** - [nuget.org/packages/GitHub.Copilot.SDK](https://www.nuget.org/packages/GitHub.Copilot.SDK)
 - **WSL2** - [docs.microsoft.com/wsl](https://docs.microsoft.com/windows/wsl)
 
 ### Development Tools
@@ -279,4 +269,4 @@ Contributors are recognized through:
 - **Community shoutouts**
 - **Contributor of the month**
 
-Thank you for contributing to eknova! 🚀
+Thank you for contributing to thresh! 🚀

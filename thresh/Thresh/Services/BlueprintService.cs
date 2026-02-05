@@ -1,8 +1,8 @@
 using System.Text.Json;
-using EknovaCli.Models;
-using EknovaCli.Utilities;
+using Thresh.Models;
+using Thresh.Utilities;
 
-namespace EknovaCli.Services;
+namespace Thresh.Services;
 
 /// <summary>
 /// Service for managing and provisioning blueprints
@@ -236,7 +236,7 @@ public class BlueprintService
             throw new Exception($"Failed to export {distroInfo.WslInstallName}: {result.Output}");
         }
 
-        var installPath = Path.Combine(homeDir, "AppData", "Local", "eknova", distroName);
+        var installPath = Path.Combine(homeDir, "AppData", "Local", "thresh", distroName);
         await ImportDistroAsync(distroName, installPath, tempExport, verbose);
 
         // Clean up temp export and original MS Store distro
@@ -267,7 +267,7 @@ public class BlueprintService
         }
 
         // Import as our custom-named environment
-        var installPath = Path.Combine(homeDir, "AppData", "Local", "eknova", environmentName);
+        var installPath = Path.Combine(homeDir, "AppData", "Local", "thresh", environmentName);
 
         if (verbose)
         {

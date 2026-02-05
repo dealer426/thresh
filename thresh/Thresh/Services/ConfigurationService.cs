@@ -1,9 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using EknovaCli.Models;
+using Thresh.Models;
 
-namespace EknovaCli.Services;
+namespace Thresh.Services;
 
 /// <summary>
 /// Service for managing user configuration and secure API key storage
@@ -18,7 +18,7 @@ public class ConfigurationService
     );
     
     private static readonly string ConfigFilePath = Path.Combine(ConfigDirectory, "config.json");
-    private static readonly byte[] AdditionalEntropy = Encoding.UTF8.GetBytes("ekn-cli-v1");
+    private static readonly byte[] AdditionalEntropy = Encoding.UTF8.GetBytes("thresh-cli-v1");
 
     private ConfigurationSettings? _cachedSettings;
 
