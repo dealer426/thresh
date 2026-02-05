@@ -4,14 +4,14 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![.NET](https://img.shields.io/badge/.NET-9.0-purple.svg)
-![Native AOT](https://img.shields.io/badge/Native%20AOT-12MB-green.svg)
+![Native AOT](https://img.shields.io/badge/Native%20AOT-16.6MB-green.svg)
 ![WSL](https://img.shields.io/badge/WSL-2.0-blue.svg)
 
 ---
 
 ## 🚀 What is thresh?
 
-**thresh** is a single-binary CLI tool that uses AI to generate and provision **WSL (Windows Subsystem for Linux) development environments** instantly. Built with .NET 9 Native AOT, it delivers a **12MB executable with zero runtime dependencies**.
+**thresh** is a single-binary CLI tool that uses AI to generate and provision **WSL (Windows Subsystem for Linux) development environments** instantly. Built with .NET 9 Native AOT, it delivers a **16.6MB executable with zero runtime dependencies**.
 
 ### Key Features
 
@@ -505,10 +505,10 @@ await foreach (var update in client.CompleteChatStreamingAsync(messages))
 
 ### 🔮 Future (v2.0)
 - [ ] Web UI (Next.js)
-- [ ] Aspire API orchestration
 - [ ] GitHub Actions integration
 - [ ] Container hybrid mode
 - [ ] Remote environment support
+- [ ] Cloud provider templates (Azure, AWS, GCP)
 
 ---
 
@@ -617,9 +617,8 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 🙏 Acknowledgments
 
-- **Microsoft** - Aspire, Semantic Kernel, WSL2
-- **Red Hat** - Quarkus framework
-- **Vercel** - Next.js framework
+- **Microsoft** - .NET 9 Native AOT, WSL2, GitHub Copilot SDK
+- **OpenAI** - GPT-4o and GPT-4o-mini API
 - **Community** - All the amazing contributors
 
 ---

@@ -3,7 +3,7 @@
 **Single-binary CLI for provisioning WSL development environments with AI**
 
 ![.NET 9](https://img.shields.io/badge/.NET-9.0-purple.svg)
-![Native AOT](https://img.shields.io/badge/Native%20AOT-12MB-green.svg)
+![Native AOT](https://img.shields.io/badge/Native%20AOT-16.6MB-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
 ---
