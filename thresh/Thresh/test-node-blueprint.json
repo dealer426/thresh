@@ -1,0 +1,22 @@
+{
+  "name": "nodejs-microservice",
+  "description": "Development environment for Node.js microservice with Redis and MongoDB",
+  "base": "ubuntu-22.04",
+  "packages": [
+    "nodejs",
+    "npm",
+    "curl",
+    "git",
+    "redis-server",
+    "mongodb"
+  ],
+  "scripts": {
+    "setup": "#!/bin/bash\necho \u0027Setting up Node.js microservice environment...\u0027",
+    "postInstall": "#!/bin/bash\necho \u0027Starting Redis and MongoDB services...\u0027\nsudo service redis-server start\nsudo service mongodb start"
+  },
+  "environment": {
+    "NODE_ENV": "development",
+    "MONGO_URI": "mongodb://localhost:27017/mydatabase",
+    "REDIS_URL": "redis://localhost:6379"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "alpine-python",
+  "description": "Alpine Linux with Python (minimal footprint)",
+  "base": "alpine-3.19",
+  "packages": [
+    "python3",
+    "py3-pip",
+    "git",
+    "curl",
+    "bash",
+    "build-base"
+  ],
+  "scripts": {
+    "setup": "# Set bash as default shell\nsed -i 's|/bin/ash|/bin/bash|g' /etc/passwd\n\n# Upgrade pip\npip3 install --upgrade pip\n\n# Create workspace\nmkdir -p /workspace\n",
+    "postInstall": "# Clean up cache\nrm -rf /var/cache/apk/*\n\n# Show Python version\npython3 --version\npip3 --version\n\necho \"Alpine Python environment ready!\"\n"
+  },
+  "environment": {
+    "PYTHONUNBUFFERED": "1",
+    "WORKSPACE": "/workspace"
+  }
+}
