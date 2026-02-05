@@ -153,7 +153,7 @@ choco install thresh
 scoop install thresh
 ```
 
-All three methods install the same 12 MB native binary from GitHub Releases.
+All three methods install the same 16.6 MB native binary from GitHub Releases.
 
 ---
 

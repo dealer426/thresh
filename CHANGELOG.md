@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - Initial Release
 - **Core Features**
-  - Native AOT compilation (12 MB binary, zero dependencies)
+  - Native AOT compilation (16.6 MB binary, zero dependencies)
   - WSL2 integration for environment provisioning
   - Blueprint-based environment configuration (YAML)
   - 12 built-in Linux distributions
@@ -91,7 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Platform**: Windows 11 with WSL2
 
 ### Performance
-- Binary: 12 MB (vs 25 MB Quarkus, 60% smaller)
+- Binary: 16.6 MB (vs 25 MB Quarkus, 34% smaller)
 - Provision time: 15-25s depending on distribution
 - First-class Windows support with Native AOT
 

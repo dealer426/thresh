@@ -13,7 +13,7 @@
 `thresh` is a **.NET 9 Native AOT** command-line tool that provisions WSL2 environments using AI-generated blueprints. It replaces the legacy Quarkus-based `thresh-cli` with a unified, dependency-free solution.
 
 **Key Features**:
-- 🚀 **12 MB native binary** - No .NET runtime required
+- 🚀 **16.6 MB native binary** - No .NET runtime required
 - 🤖 **AI blueprint generation** - OpenAI GPT-4o-mini integration
 - 📦 **12 built-in distros** - Ubuntu, Alpine, Debian, Kali, Oracle, openSUSE
 - 🔧 **Custom distro support** - Add any Linux with AI discovery
@@ -351,7 +351,7 @@ dotnet run -- up alpine-minimal
 dotnet publish -c Release -r win-x64 --self-contained
 
 # Output
-bin\Release\net9.0\win-x64\publish\thresh.exe  # 12 MB
+bin\Release\net9.0\win-x64\publish\thresh.exe  # 16.6 MB
 
 # Verify no .NET runtime dependency
 # Binary runs on systems without .NET installed
@@ -432,7 +432,7 @@ Warnings:        2 (Azure SDK trim warnings - acceptable)
 
 | Metric | Value |
 |--------|-------|
-| Binary Size | 12 MB |
+| Binary Size | 16.6 MB |
 | Startup Time | ~50ms |
 | Memory Usage (Idle) | ~30MB |
 | Provision Time (Alpine) | ~15s |
@@ -521,4 +521,4 @@ MIT License - see [LICENSE](../LICENSE)
 
 ---
 
-**Built with .NET 9 Native AOT** | **12 MB Binary** | **Zero Dependencies**
+**Built with .NET 9 Native AOT** | **16.6 MB Binary** | **Zero Dependencies**

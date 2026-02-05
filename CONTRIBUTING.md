@@ -21,7 +21,7 @@ cd thresh
 
 thresh is a unified .NET 9 Native AOT CLI application:
 
-- **thresh** - .NET 9 Native AOT (12 MB single binary)
+- **thresh** - .NET 9 Native AOT (16.6 MB single binary)
 - **AI providers** - OpenAI SDK + GitHub Copilot SDK
 - **Distribution support** - 12+ built-in distros + custom support
 

@@ -130,7 +130,7 @@ Adds thresh v1.0.0 - Fast, native WSL2 environment provisioning tool with AI-pow
 
 Automated validation should pass all checks.
 
-- 12 MB Native AOT binary (.NET 9)
+- 16.6 MB Native AOT binary (.NET 9)
 - WSL2 integration for Linux environments
 - AI-powered blueprint generation (OpenAI GPT-4o-mini)
 - 12 built-in distributions + custom support
@@ -177,7 +177,7 @@ thresh --version
 All should install to PATH and show:
 ```
 thresh 1.0.0
-.NET Native AOT (12 MB)
+.NET Native AOT (16.6 MB)
 https://github.com/dealer426/thresh
 ```
 

@@ -14,10 +14,10 @@ License: MIT
 LicenseUrl: https://github.com/dealer426/thresh/blob/main/LICENSE
 ShortDescription: Fast, native WSL2 environment provisioning with AI-powered blueprints
 Description: |-
-  thresh is a lightweight, 12 MB native binary that provisions WSL2 Linux environments from declarative YAML blueprints.
+  thresh is a lightweight, 16.6 MB native binary that provisions WSL2 Linux environments from declarative YAML blueprints.
   
   Features:
-  - Native AOT compilation (12 MB, zero dependencies)
+  - Native AOT compilation (16.6 MB, zero dependencies)
   - WSL2 integration for environment provisioning
   - 12 built-in Linux distributions (Ubuntu, Alpine, Debian, Fedora, Rocky)
   - AI-powered blueprint generation (OpenAI GPT-4o-mini)
@@ -46,7 +46,7 @@ ReleaseNotes: |-
   Initial production release (v1.0.0)
   
   Features:
-  - Native AOT compilation (12 MB binary)
+  - Native AOT compilation (16.6 MB binary)
   - WSL2 integration and provisioning
   - 12 built-in Linux distributions
   - AI-powered blueprint generation

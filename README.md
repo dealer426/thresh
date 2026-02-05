@@ -87,7 +87,7 @@ thresh.exe (12 MB)
 
 ```
 thresh/
-├── thresh/                      # .NET 9 Native AOT CLI (12 MB)
+├── thresh/                      # .NET 9 Native AOT CLI (16.6 MB)
 │   ├── Thresh/
 │   │   ├── Program.cs           # CLI entry point & commands
 │   │   ├── Services/
@@ -331,7 +331,7 @@ dotnet run -- --version
 dotnet publish -c Release -r win-x64 --self-contained
 
 # Output
-# bin\Release\net9.0\win-x64\publish\thresh.exe (12 MB)
+# bin\Release\net9.0\win-x64\publish\thresh.exe (16.6 MB)
 ```
 
 ### Project Structure
@@ -487,7 +487,7 @@ await foreach (var update in client.CompleteChatStreamingAsync(messages))
 ## 🗺️ Roadmap
 
 ### ✅ Completed (v1.0)
-- [x] .NET Native AOT migration (12 MB binary)
+- [x] .NET Native AOT migration (16.6 MB binary)
 - [x] WSL2 integration
 - [x] Blueprint provisioning
 - [x] 12 built-in distributions
