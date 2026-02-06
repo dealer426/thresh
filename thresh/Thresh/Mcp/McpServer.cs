@@ -12,7 +12,7 @@ namespace Thresh.Mcp;
 /// </summary>
 public class McpServer
 {
-    private readonly WslService _wslService;
+    private readonly IContainerService _containerService;
     private readonly BlueprintService _blueprintService;
     private readonly HttpListener _listener;
     private readonly CancellationTokenSource _cts;
@@ -23,9 +23,10 @@ public class McpServer
     {
         _port = port;
         _host = host;
-        _wslService = new WslService();
-        var rootfsRegistry = new RootfsRegistry();
-        _blueprintService = new BlueprintService(_wslService, rootfsRegistry);
+        _containerService = ContainerServiceFactory.Create();
+        var configService = new ConfigurationService();
+        var rootfsRegistry = new RootfsRegistry(configService);
+        _blueprintService = new BlueprintService(_containerService, rootfsRegistry);
         _listener = new HttpListener();
         _cts = new CancellationTokenSource();
     }
@@ -49,7 +50,7 @@ public class McpServer
             Console.WriteLine($"  POST {prefix}mcp/tools/call");
             Console.WriteLine();
             Console.WriteLine("Available tools:");
-            Console.WriteLine("  - list_environments: List all WSL environments");
+            Console.WriteLine($"  - list_environments: List all {_containerService.RuntimeName} environments");
             Console.WriteLine("  - provision_environment: Create new environment from blueprint");
             Console.WriteLine("  - list_blueprints: Show available blueprints");
             Console.WriteLine("  - get_blueprint: Get blueprint details");
@@ -212,11 +213,11 @@ public class McpServer
             {
                 Tools = new List<Tool>
                 {
-                    new() { Name = "list_environments", Description = "List all WSL environments managed by thresh" },
-                    new() { Name = "provision_environment", Description = "Provision a new WSL environment from a blueprint" },
+                    new() { Name = "list_environments", Description = $"List all {_containerService.RuntimeName} environments managed by thresh" },
+                    new() { Name = "provision_environment", Description = $"Provision a new {_containerService.RuntimeName} environment from a blueprint" },
                     new() { Name = "list_blueprints", Description = "List all available blueprints" },
                     new() { Name = "get_blueprint", Description = "Get details of a specific blueprint" },
-                    new() { Name = "destroy_environment", Description = "Destroy a WSL environment" },
+                    new() { Name = "destroy_environment", Description = $"Destroy a {_containerService.RuntimeName} environment" },
                     new() { Name = "check_requirements", Description = "Check system requirements for thresh" }
                 }
             }
@@ -262,9 +263,9 @@ public class McpServer
     {
         try
         {
-            var environments = await _wslService.ListEnvironmentsAsync();
+            var environments = await _containerService.ListEnvironmentsAsync();
             var result = new StringBuilder();
-            result.AppendLine($"WSL Environments ({environments.Count}):");
+            result.AppendLine($"{_containerService.RuntimeName} Environments ({environments.Count}):");
             result.AppendLine();
 
             foreach (var env in environments)
@@ -405,7 +406,7 @@ public class McpServer
 
         try
         {
-            await _wslService.RemoveEnvironmentAsync(envName);
+            await _containerService.RemoveEnvironmentAsync(envName);
             return ToolCallResponse.Success($"Environment '{envName}' destroyed successfully");
         }
         catch (Exception ex)
@@ -422,17 +423,17 @@ public class McpServer
             result.AppendLine("System Requirements Check:");
             result.AppendLine();
 
-            // Check WSL availability
-            var wslAvailable = await _wslService.IsWslAvailableAsync();
-            result.AppendLine($"  WSL: {(wslAvailable ? "✅ Available" : "❌ Not available")}");
+            // Check runtime availability
+            var runtimeAvailable = await _containerService.IsAvailableAsync();
+            result.AppendLine($"  {_containerService.RuntimeName}: {(runtimeAvailable ? "✅ Available" : "❌ Not available")}");
 
-            if (wslAvailable)
+            if (runtimeAvailable)
             {
-                var wslInfo = await _wslService.GetWslInfoAsync();
-                if (wslInfo != null)
+                var runtimeInfo = await _containerService.GetRuntimeInfoAsync();
+                if (runtimeInfo.IsAvailable)
                 {
-                    result.AppendLine($"  WSL Version: {wslInfo.Version}");
-                    result.AppendLine($"  Distributions: {wslInfo.DistributionCount}");
+                    result.AppendLine($"  Version: {runtimeInfo.Version}");
+                    result.AppendLine($"  Environments: {runtimeInfo.ContainerCount}");
                 }
             }
 

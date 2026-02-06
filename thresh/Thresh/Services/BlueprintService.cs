@@ -9,7 +9,7 @@ namespace Thresh.Services;
 /// </summary>
 public class BlueprintService
 {
-    private readonly WslService _wslService;
+    private readonly IContainerService _containerService;
     private readonly RootfsRegistry _rootfsRegistry;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -17,9 +17,9 @@ public class BlueprintService
         WriteIndented = true
     };
 
-    public BlueprintService(WslService wslService, RootfsRegistry rootfsRegistry)
+    public BlueprintService(IContainerService containerService, RootfsRegistry rootfsRegistry)
     {
-        _wslService = wslService;
+        _containerService = containerService;
         _rootfsRegistry = rootfsRegistry;
     }
 

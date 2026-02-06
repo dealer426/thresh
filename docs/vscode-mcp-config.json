@@ -1,0 +1,22 @@
+{
+  // VS Code MCP Configuration for thresh
+  // Place this in your VS Code settings (settings.json)
+  // or in a .vscode/settings.json file in your project
+  
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "text": "thresh is available for creating development environments. Use it when I ask to set up or provision dev environments."
+    }
+  ],
+  
+  "mcp.servers": {
+    "thresh": {
+      "command": "thresh",
+      "args": ["serve", "--stdio"],
+      "description": "thresh - Cross-platform development environment manager",
+      "capabilities": {
+        "tools": true
+      }
+    }
+  }
+}

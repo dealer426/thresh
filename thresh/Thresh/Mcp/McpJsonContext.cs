@@ -14,6 +14,17 @@ namespace Thresh.Mcp;
 [JsonSerializable(typeof(ToolCallResponse))]
 [JsonSerializable(typeof(TextContent))]
 [JsonSerializable(typeof(Dictionary<string, object>))]
+[JsonSerializable(typeof(JsonRpcResponse<InitializeResult>))]
+[JsonSerializable(typeof(JsonRpcResponse<ToolErrorResult>))]
+[JsonSerializable(typeof(JsonRpcResponse<ToolsListResult>))]
+[JsonSerializable(typeof(JsonRpcResponse<GenericResult>))]
+[JsonSerializable(typeof(JsonRpcErrorResponse))]
+[JsonSerializable(typeof(JsonRpcError))]
+[JsonSerializable(typeof(InitializeResult))]
+[JsonSerializable(typeof(ServerInfoResult))]
+[JsonSerializable(typeof(ToolErrorResult))]
+[JsonSerializable(typeof(ContentItem))]
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 internal partial class McpJsonContext : JsonSerializerContext
 {
 }

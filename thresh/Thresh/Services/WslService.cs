@@ -7,7 +7,7 @@ namespace Thresh.Services;
 /// <summary>
 /// Service for managing WSL distributions and thresh environments
 /// </summary>
-public partial class WslService
+public partial class WslService : IContainerService
 {
     private const string ThreshPrefix = "thresh-";
 
@@ -15,21 +15,36 @@ public partial class WslService
     private static partial Regex WslListPattern();
 
     /// <summary>
-    /// Check if WSL is available on the system
+    /// Runtime name for this service
     /// </summary>
-    public async Task<bool> IsWslAvailableAsync()
+    public string RuntimeName => "WSL";
+
+    /// <summary>
+    /// Platform this runtime operates on
+    /// </summary>
+    public string Platform => "Windows";
+
+    /// <summary>
+    /// Check if the runtime is available on the system
+    /// </summary>
+    public async Task<bool> IsAvailableAsync()
     {
         return await ProcessHelper.IsCommandAvailableAsync("wsl");
     }
 
     /// <summary>
-    /// Get WSL version information
+    /// Check if WSL is available on the system (legacy)
     /// </summary>
-    public async Task<WslInfo> GetWslInfoAsync()
+    public async Task<bool> IsWslAvailableAsync() => await IsAvailableAsync();
+
+    /// <summary>
+    /// Get runtime version and information
+    /// </summary>
+    public async Task<RuntimeInfo> GetRuntimeInfoAsync()
     {
-        if (!await IsWslAvailableAsync())
+        if (!await IsAvailableAsync())
         {
-            return new WslInfo(false, "Not available");
+            return RuntimeInfo.Unavailable("WSL not available");
         }
 
         try
@@ -50,7 +65,8 @@ public partial class WslService
 
                 if (wslVersion != null)
                 {
-                    return new WslInfo(true, wslVersion, kernelVersion, output, await GetDistributionCountAsync());
+                    var details = kernelVersion != null ? $"Kernel: {kernelVersion}" : null;
+                    return RuntimeInfo.Available(wslVersion, await GetDistributionCountAsync(), details, output);
                 }
 
                 // If parsing failed, check if output contains version info differently
@@ -60,7 +76,7 @@ public partial class WslService
                     var lines = output.Split('\n');
                     if (lines.Length > 0)
                     {
-                        return new WslInfo(true, lines[0].Trim(), null, output, await GetDistributionCountAsync());
+                        return RuntimeInfo.Available(lines[0].Trim(), await GetDistributionCountAsync(), null, output);
                     }
                 }
             }
@@ -72,11 +88,11 @@ public partial class WslService
                 var output = statusResult.GetOutputAsString();
                 if (output.Contains("WSL 2"))
                 {
-                    return new WslInfo(true, "WSL 2", null, null, await GetDistributionCountAsync());
+                    return RuntimeInfo.Available("WSL 2", await GetDistributionCountAsync());
                 }
                 else if (output.Contains("WSL 1"))
                 {
-                    return new WslInfo(true, "WSL 1", null, null, await GetDistributionCountAsync());
+                    return RuntimeInfo.Available("WSL 1", await GetDistributionCountAsync());
                 }
             }
 
@@ -84,15 +100,29 @@ public partial class WslService
             var listResult = await ProcessHelper.ExecuteAsync("wsl", "--list", "--quiet");
             if (listResult.IsSuccess)
             {
-                return new WslInfo(true, "WSL (version unknown)", null, null, await GetDistributionCountAsync());
+                return RuntimeInfo.Available("WSL (version unknown)", await GetDistributionCountAsync());
             }
 
-            return new WslInfo(false, "Not functional");
+            return RuntimeInfo.Unavailable("WSL not functional");
         }
         catch (Exception ex)
         {
-            return new WslInfo(false, $"Error: {ex.Message}");
+            return RuntimeInfo.Unavailable($"Error: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Get WSL version information (legacy, preserved for compatibility)
+    /// </summary>
+    public async Task<WslInfo> GetWslInfoAsync()
+    {
+        var runtimeInfo = await GetRuntimeInfoAsync();
+        return new WslInfo(
+            runtimeInfo.IsAvailable,
+            runtimeInfo.Version,
+            runtimeInfo.Details,
+            runtimeInfo.RawOutput,
+            runtimeInfo.ContainerCount);
     }
 
     /// <summary>
