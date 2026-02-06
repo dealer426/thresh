@@ -1,3 +1,5 @@
+using Thresh.Mcp.Models;
+
 namespace Thresh.Mcp;
 
 /// <summary>
@@ -5,7 +7,7 @@ namespace Thresh.Mcp;
 /// </summary>
 internal class ToolsListResult
 {
-    public object[]? Tools { get; set; }
+    public Tool[]? Tools { get; set; }
 }
 
 /// <summary>

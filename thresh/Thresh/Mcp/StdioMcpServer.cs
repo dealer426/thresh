@@ -124,9 +124,9 @@ public class StdioMcpServer
         var response = new InitializeResult
         {
             ProtocolVersion = "2024-11-05",
-            Capabilities = new
+            Capabilities = new CapabilitiesResult
             {
-                tools = new { }
+                Tools = new ToolsCapability()
             },
             ServerInfo = new ServerInfoResult
             {
@@ -155,130 +155,123 @@ public class StdioMcpServer
     /// </summary>
     private string HandleListTools()
     {
-        object[] tools = new[]
+        var tools = new Tool[]
         {
-            new
+            new Tool
             {
-                name = "list_environments",
-                description = $"List all {_containerService.RuntimeName} development environments managed by thresh",
-                inputSchema = new
+                Name = "list_environments",
+                Description = $"List all {_containerService.RuntimeName} development environments managed by thresh",
+                InputSchema = new JsonSchema
                 {
-                    type = "object",
-                    properties = new
+                    Properties = new Dictionary<string, JsonSchemaProperty>
                     {
-                        include_all = new
+                        ["include_all"] = new JsonSchemaProperty
                         {
-                            type = "boolean",
-                            description = "Include all containers, not just thresh-managed ones"
+                            Type = "boolean",
+                            Description = "Include all containers, not just thresh-managed ones"
                         }
                     }
                 }
             },
-            new
+            new Tool
             {
-                name = "create_environment",
-                description = "Create a new development environment from a blueprint",
-                inputSchema = new
+                Name = "create_environment",
+                Description = "Create a new development environment from a blueprint",
+                InputSchema = new JsonSchema
                 {
-                    type = "object",
-                    properties = new
+                    Properties = new Dictionary<string, JsonSchemaProperty>
                     {
-                        blueprint = new
+                        ["blueprint"] = new JsonSchemaProperty
                         {
-                            type = "string",
-                            description = "Blueprint name (e.g., 'python-dev', 'node-dev', 'ubuntu-dev')"
+                            Type = "string",
+                            Description = "Blueprint name (e.g., 'python-dev', 'node-dev', 'ubuntu-dev')"
                         },
-                        name = new
+                        ["name"] = new JsonSchemaProperty
                         {
-                            type = "string",
-                            description = "Name for the new environment"
+                            Type = "string",
+                            Description = "Name for the new environment"
                         },
-                        verbose = new
+                        ["verbose"] = new JsonSchemaProperty
                         {
-                            type = "boolean",
-                            description = "Show detailed provisioning output"
+                            Type = "boolean",
+                            Description = "Show detailed provisioning output"
                         }
                     },
-                    required = new[] { "blueprint", "name" }
+                    Required = new List<string> { "blueprint", "name" }
                 }
             },
-            new
+            new Tool
             {
-                name = "destroy_environment",
-                description = "Destroy/remove a development environment",
-                inputSchema = new
+                Name = "destroy_environment",
+                Description = "Destroy/remove a development environment",
+                InputSchema = new JsonSchema
                 {
-                    type = "object",
-                    properties = new
+                    Properties = new Dictionary<string, JsonSchemaProperty>
                     {
-                        name = new
+                        ["name"] = new JsonSchemaProperty
                         {
-                            type = "string",
-                            description = "Name of the environment to destroy"
+                            Type = "string",
+                            Description = "Name of the environment to destroy"
                         }
                     },
-                    required = new[] { "name" }
+                    Required = new List<string> { "name" }
                 }
             },
-            new
+            new Tool
             {
-                name = "list_blueprints",
-                description = "List all available blueprints for creating environments",
-                inputSchema = new
+                Name = "list_blueprints",
+                Description = "List all available blueprints for creating environments",
+                InputSchema = new JsonSchema
                 {
-                    type = "object",
-                    properties = new { }
+                    Properties = new Dictionary<string, JsonSchemaProperty>()
                 }
             },
-            new
+            new Tool
             {
-                name = "get_blueprint",
-                description = "Get detailed information about a specific blueprint",
-                inputSchema = new
+                Name = "get_blueprint",
+                Description = "Get detailed information about a specific blueprint",
+                InputSchema = new JsonSchema
                 {
-                    type = "object",
-                    properties = new
+                    Properties = new Dictionary<string, JsonSchemaProperty>
                     {
-                        name = new
+                        ["name"] = new JsonSchemaProperty
                         {
-                            type = "string",
-                            description = "Blueprint name"
+                            Type = "string",
+                            Description = "Blueprint name"
                         }
                     },
-                    required = new[] { "name" }
+                    Required = new List<string> { "name" }
                 }
             },
-            new
+            new Tool
             {
-                name = "get_version",
-                description = "Get thresh version and runtime information",
-                inputSchema = new
+                Name = "get_version",
+                Description = "Get thresh version and runtime information",
+                InputSchema = new JsonSchema
                 {
-                    type = "object",
-                    properties = new { }
+                    Properties = new Dictionary<string, JsonSchemaProperty>()
                 }
             },
-            new
+            new Tool
             {
-                name = "generate_blueprint",
-                description = "Generate a custom blueprint using AI from a natural language description",
-                inputSchema = new
+                Name = "generate_blueprint",
+                Description = "Generate a custom blueprint using AI from a natural language description",
+                InputSchema = new JsonSchema
                 {
-                    type = "object",
-                    properties = new
+                    Properties = new Dictionary<string, JsonSchemaProperty>
                     {
-                        prompt = new
+                        ["prompt"] = new JsonSchemaProperty
                         {
-                            type = "string",
-                            description = "Natural language description of the desired environment"
+                            Type = "string",
+                            Description = "Natural language description of the desired environment"
                         },
-                        model = new
+                        ["model"] = new JsonSchemaProperty
                         {
-                            type = "string",
-                            description = "AI model to use (default: gpt-4o)"
+                            Type = "string",
+                            Description = "AI model to use (default: gpt-4o)"
                         }
                     },
-                    required = new[] { "prompt" }
+                    Required = new List<string> { "prompt" }
                 }
             }
         };

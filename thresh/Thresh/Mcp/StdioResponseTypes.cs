@@ -22,10 +22,20 @@ internal class JsonRpcError
     public string? Message { get; set; }
 }
 
+internal class CapabilitiesResult
+{
+    public ToolsCapability? Tools { get; set; }
+}
+
+internal class ToolsCapability
+{
+    // Empty object for now, can add properties later
+}
+
 internal class InitializeResult
 {
     public string? ProtocolVersion { get; set; }
-    public object? Capabilities { get; set; }
+    public CapabilitiesResult? Capabilities { get; set; }
     public ServerInfoResult? ServerInfo { get; set; }
     public string? Instructions { get; set; }
 }

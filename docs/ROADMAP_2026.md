@@ -78,6 +78,7 @@ thresh destroy python-dev
 - [x] Add input schemas for all tools
 - [x] Add stdio transport for AI editors
 - [x] Test with VS Code Copilot (manual testing ready)
+- [x] Blueprint generation via MCP tested (Node.js/Express)
 
 **Deliverables:**
 ```bash

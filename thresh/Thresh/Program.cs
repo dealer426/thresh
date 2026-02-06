@@ -31,6 +31,7 @@ class Program
         AddMetricsCommand(rootCommand);
         AddServeCommand(rootCommand);
         AddVersionCommand(rootCommand);
+        AddTestSdkCommand(rootCommand);
         
         // Root handler (when no command specified)
         rootCommand.SetHandler((bool verbose) =>
@@ -363,8 +364,13 @@ class Program
                     Console.WriteLine();
                 }
                 
-                // Clean the output (OpenAI service has CleanJsonOutput method)
-                var cleanedJson = (aiService as OpenAIService)?.CleanJsonOutput(jsonContent) ?? jsonContent;
+                // Clean the output (remove markdown code blocks)
+                var cleanedJson = aiService switch
+                {
+                    OpenAIService openAi => openAi.CleanJsonOutput(jsonContent),
+                    GitHubCopilotService copilot => copilot.CleanJsonOutput(jsonContent),
+                    _ => jsonContent
+                };
                 
                 // Save to file if requested
                 if (!string.IsNullOrEmpty(output))
@@ -865,5 +871,17 @@ class Program
         }, jsonOption);
         
         rootCommand.AddCommand(metricsCommand);
+    }
+
+    private static void AddTestSdkCommand(RootCommand rootCommand)
+    {
+        var testCommand = new Command("test-sdk", "Test GitHub Copilot SDK connection");
+        
+        testCommand.SetHandler(async () =>
+        {
+            await CopilotSdkTest.RunAsync();
+        });
+        
+        rootCommand.AddCommand(testCommand);
     }
 }
