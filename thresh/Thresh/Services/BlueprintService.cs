@@ -405,7 +405,10 @@ fi";
 
     private async Task ExecuteInDistroAsync(string distroName, string command, bool verbose)
     {
-        var result = await ProcessHelper.ExecuteAsync(300, "wsl", "-d", distroName, "--", "sh", "-c", command);
+        // Normalize line endings to Unix format (LF only) to avoid sh interpretation issues
+        var normalizedCommand = command.Replace("\r\n", "\n").Replace("\r", "\n");
+        
+        var result = await ProcessHelper.ExecuteAsync(300, "wsl", "-d", distroName, "--", "sh", "-c", normalizedCommand);
 
         if (verbose && result.HasOutput())
         {
