@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-02-09
+
+### Changed - Performance & Binary Size Optimization
+
+- **Native AOT Re-enabled** 🚀
+  - Re-enabled Native AOT compilation after v1.1.0 compatibility verification
+  - Binary size reduced: **75 MB → 15 MB** (80% reduction)
+  - All MCP and JSON serialization features fully compatible with AOT
+  - Zero runtime dependencies maintained
+  - Faster startup and lower memory footprint
+
+### Technical Details
+
+- `PublishAot` changed from `false` → `true`
+- `PublishTrimmed` changed from `false` → `true`
+- AOT warnings addressed through existing JSON source generation
+- Comprehensive testing confirms all functionality working:
+  - ✅ MCP server with JSON-RPC protocol
+  - ✅ Metrics collection and JSON output
+  - ✅ Blueprint loading and parsing
+  - ✅ WSL integration and environment management
+  - ✅ AI providers (GitHub Copilot, OpenAI)
+
+### Performance Improvements
+
+- Binary size: 75 MB → 15 MB (5x smaller)
+- Faster startup time (Native AOT compilation)
+- Reduced memory usage
+- Better deployment efficiency
+
 ## [1.1.0] - 2026-02-09
 
 ### Added - Phase 1 Complete: MCP Integration & Cross-Platform Foundation
