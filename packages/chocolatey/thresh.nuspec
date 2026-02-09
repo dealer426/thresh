@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>thresh</id>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <title>thresh</title>
     <authors>dealer426</authors>
     <owners>dealer426</owners>
@@ -10,23 +10,27 @@
     <projectUrl>https://github.com/dealer426/thresh</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>
-thresh is a lightweight, 16.6 MB native binary that provisions WSL2 Linux environments from declarative YAML blueprints.
+thresh is a powerful 75 MB native binary that provisions WSL2 Linux environments from declarative YAML blueprints.
 
 Features:
-- Native AOT compilation (16.6 MB, zero dependencies)
+- Native AOT compilation (75 MB, zero dependencies)
+- Model Context Protocol (MCP) integration for AI editors (VS Code, Cursor, Windsurf)
+- Cross-platform container support (WSL2, containerd/nerdctl)
+- GitHub Copilot SDK integration
 - WSL2 integration for environment provisioning
 - 12 built-in Linux distributions (Ubuntu, Alpine, Debian, Fedora, Rocky)
-- AI-powered blueprint generation (OpenAI GPT-4o-mini)
+- AI-powered blueprint generation (OpenAI GPT-4o-mini, GitHub Copilot)
 - Blueprint-based environment configuration
 - Custom distribution support
 - Interactive AI chat mode
+- Real-time metrics and monitoring
 
 Requirements:
 - Windows 11 with WSL2 enabled
 - .NET runtime NOT required (self-contained Native AOT binary)
     </description>
-    <summary>Fast, native WSL2 environment provisioning with AI-powered blueprints</summary>
-    <releaseNotes>https://github.com/dealer426/thresh/releases/tag/v1.0.0</releaseNotes>
+    <summary>Fast, native WSL2 environment provisioning with AI-powered blueprints and MCP integration</summary>
+    <releaseNotes>https://github.com/dealer426/thresh/releases/tag/v1.1.0</releaseNotes>
     <tags>wsl wsl2 linux provisioning devops containers infrastructure ai blueprints dotnet native-aot cli</tags>
     <projectSourceUrl>https://github.com/dealer426/thresh</projectSourceUrl>
     <packageSourceUrl>https://github.com/dealer426/thresh/tree/main/packages/chocolatey</packageSourceUrl>
