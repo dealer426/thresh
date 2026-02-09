@@ -14,7 +14,8 @@
 
 **Key Features**:
 - 🚀 **14 MB native binary** - No .NET runtime required
-- 🤖 **AI blueprint generation** - OpenAI GPT-4o-mini integration
+- 🤖 **Multi-Provider AI** - OpenAI, Azure OpenAI, GitHub Models (FREE), or GitHub Copilot SDK
+- 🎯 **40+ AI Models** - GPT-4o, Claude, o1, Phi, Llama, Mistral, and more
 - 📦 **12 built-in distros** - Ubuntu, Alpine, Debian, Kali, Oracle, openSUSE
 - 🔧 **Custom distro support** - Add any Linux with AI discovery
 - 💬 **Interactive AI chat** - Streaming responses for blueprint help
@@ -41,12 +42,39 @@ copy .\bin\Release\net9.0\win-x64\publish\thresh.exe C:\Windows\System32\
 ### Configuration
 
 ```powershell
-# Set OpenAI API key
-thresh config set openai-api-key sk-...
+# Configure AI Provider (Choose one)
+
+# Option 1: OpenAI (default, all models)
+thresh config set default-provider openai
+thresh config set openai-api-key sk-proj-xxxxx
+thresh config set default-model gpt-4o-mini  # or gpt-4o, o1-preview, etc.
+
+# Option 2: Azure OpenAI (enterprise)
+thresh config set default-provider azure
+thresh config set azure-openai-endpoint https://your-resource.openai.azure.com
+thresh config set azure-openai-key xxxxx
+
+# Option 3: GitHub Models (FREE tier)
+thresh config set default-provider github
+thresh config set github-token ghp_xxxxx
+thresh config set default-model gpt-4o-mini  # or Phi-3, Llama, Mistral
+
+# Option 4: GitHub Copilot SDK
+thresh config set aiprovider copilot
+thresh config set default-model gpt-4o  # or claude-3.5-sonnet
 
 # Verify
 thresh --version
+thresh config list
 ```
+
+**Supported Models**:
+- **OpenAI**: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo, o1-preview, o1-mini
+- **Azure OpenAI**: Same as OpenAI (deployment-based)
+- **GitHub Models**: gpt-4o, gpt-4o-mini, Phi-3, Llama-3.1, Mistral, Cohere (FREE)
+- **GitHub Copilot**: gpt-4o, claude-3.5-sonnet, o1-preview, o1-mini
+
+See [DUAL_AI_PROVIDERS.md](../docs/DUAL_AI_PROVIDERS.md) for detailed model comparison.
 
 ---
 
