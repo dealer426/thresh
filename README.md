@@ -4,14 +4,14 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![.NET](https://img.shields.io/badge/.NET-9.0-purple.svg)
-![Native AOT](https://img.shields.io/badge/Native%20AOT-16.6MB-green.svg)
+![Native AOT](https://img.shields.io/badge/Native%20AOT-14MB-green.svg)
 ![WSL](https://img.shields.io/badge/WSL-2.0-blue.svg)
 
 ---
 
 ## 🚀 What is thresh?
 
-**thresh** is a single-binary CLI tool that uses AI to generate and provision **WSL (Windows Subsystem for Linux) development environments** instantly. Built with .NET 9 Native AOT, it delivers a **16.6MB executable with zero runtime dependencies**.
+**thresh** is a single-binary CLI tool that uses AI to generate and provision **WSL (Windows Subsystem for Linux) development environments** instantly. Built with .NET 9 Native AOT, it delivers a **14MB executable with zero runtime dependencies**.
 
 ### Key Features
 
@@ -22,6 +22,8 @@
 - 🔧 **Zero Dependencies** - Single native binary, no .NET runtime required
 - 🔐 **Custom Distros** - Add any Linux distro with AI discovery or manual configuration
 - 💬 **Interactive AI Chat** - Stream responses for blueprint creation and troubleshooting
+- 🔌 **MCP Integration** - Model Context Protocol server for VS Code, Cursor, and Windsurf
+- 📊 **System Metrics** - Real-time host and container monitoring with JSON export
 
 ---
 
@@ -30,7 +32,7 @@
 **Single Binary Design** - Unified .NET Native AOT executable
 
 ```
-thresh.exe (16.6 MB)
+thresh.exe (14 MB)
 ├── CLI Layer (System.CommandLine)
 │   ├── up <blueprint>           - Provision environment
 │   ├── list [--all]             - List environments
@@ -40,7 +42,9 @@ thresh.exe (16.6 MB)
 │   ├── config                   - Configuration management
 │   ├── distro                   - Custom distro management
 │   ├── distros                  - List all available distros
-│   └── blueprints               - List available blueprints
+│   ├── blueprints               - List available blueprints
+│   ├── metrics                  - System and container metrics
+│   └── serve                    - Start MCP server for AI editors
 │
 ├── Services Layer
 │   ├── WslService               - WSL integration (wsl.exe wrapper)
@@ -50,7 +54,11 @@ thresh.exe (16.6 MB)
 │   ├── IAIService               - AI provider abstraction
 │   ├── OpenAIService            - OpenAI GPT integration
 │   ├── GitHubCopilotService     - GitHub Copilot SDK integration
-│   └── AIServiceFactory         - Provider selection
+│   ├── AIServiceFactory         - Provider selection
+│   ├── MetricsService           - Host and container monitoring
+│   ├── IContainerService        - Container abstraction
+│   ├── ContainerdService        - Linux/macOS container support
+│   └── ContainerServiceFactory  - Platform detection
 │
 └── Distribution Sources
     ├── Vendor (10)              - Direct tar.gz downloads
@@ -78,8 +86,9 @@ thresh.exe (16.6 MB)
   - GitHub Copilot SDK v0.1.22 (GPT-5, GPT-4, Claude)
 - YAML: YamlDotNet
 - Compilation: Native AOT (PublishAot=true)
-- Binary Size: 16.6 MB
+- Binary Size: 14 MB
 - Dependencies: None (self-contained)
+- MCP Server: StreamJsonRpc 2.24.84 for JSON-RPC 2.0
 
 ---
 
@@ -87,7 +96,7 @@ thresh.exe (16.6 MB)
 
 ```
 thresh/
-├── thresh/                      # .NET 9 Native AOT CLI (16.6 MB)
+├── thresh/                      # .NET 9 Native AOT CLI (14 MB)
 │   ├── Thresh/
 │   │   ├── Program.cs           # CLI entry point & commands
 │   │   ├── Services/
@@ -254,6 +263,59 @@ thresh config status
 thresh config reset
 ```
 
+### System Metrics & Monitoring
+
+```powershell
+# Display system metrics (CPU, memory, storage, containers)
+thresh metrics
+
+# Export metrics as JSON for monitoring tools
+thresh metrics --json
+
+# Example JSON output
+{
+  "hostname": "DESKTOP-ABC123",
+  "platform": "Windows",
+  "runtime": "WSL",
+  "runtime_version": "2.1.5.0",
+  "cpu_cores": 8,
+  "cpu_percent": 23.5,
+  "memory_used_gb": 12.4,
+  "memory_total_gb": 32.0,
+  "memory_percent": 38.75,
+  "storage_free_gb": 450.2,
+  "storage_total_gb": 950.0,
+  "containers": 5
+}
+```
+
+### MCP Server Integration
+
+```powershell
+# Start MCP server for AI editor integration (VS Code, Cursor, Windsurf)
+thresh serve
+
+# Available MCP tools:
+# - list_environments - List all WSL environments
+# - create_environment - Create environments from blueprints
+# - destroy_environment - Remove environments
+# - list_blueprints - Show available blueprints
+# - get_blueprint - Get blueprint details
+# - get_version - Show thresh version and runtime info
+# - generate_blueprint - AI-powered blueprint generation
+
+# Configure in VS Code settings.json:
+{
+  "mcp.servers": {
+    "thresh": {
+      "command": "C:\\path\\to\\thresh.exe",
+      "args": ["serve"],
+      "serverType": "stdio"
+    }
+  }
+}
+```
+
 ---
 
 ## 🎯 Blueprint Examples
@@ -331,7 +393,7 @@ dotnet run -- --version
 dotnet publish -c Release -r win-x64 --self-contained
 
 # Output
-# bin\Release\net9.0\win-x64\publish\thresh.exe (16.6 MB)
+# bin\Release\net9.0\win-x64\publish\thresh.exe (14 MB)
 ```
 
 ### Project Structure
@@ -343,19 +405,28 @@ Thresh/
 │   ├── WslService.cs            # WSL integration (259 lines)
 │   ├── BlueprintService.cs      # Provisioning logic (476 lines)
 │   ├── RootfsRegistry.cs        # Distribution catalog (257 lines)
-│   └── ConfigurationService.cs  # Settings management (144 lines)
+│   ├── ConfigurationService.cs  # Settings management (144 lines)
+│   ├── MetricsService.cs        # System metrics (458 lines)
+│   ├── IContainerService.cs     # Container abstraction (80 lines)
+│   ├── ContainerdService.cs     # containerd/nerdctl support (473 lines)
+│   └── ContainerServiceFactory.cs # Platform detection (60 lines)
 ├── Models/
 │   ├── Blueprint.cs             # Blueprint YAML model
 │   ├── EnvironmentMetadata.cs   # Environment tracking
-│   └── DistributionInfo.cs      # Distro metadata
+│   ├── DistributionInfo.cs      # Distro metadata
+│   ├── HostMetrics.cs           # Metrics data model (105 lines)
+│   └── RuntimeInfo.cs           # Runtime information (24 lines)
 ├── Utilities/
-│   └── ProcessHelper.cs         # Process execution
+│   └── ProcessHelper.cs         # Process execution (114 lines)
 ├── Mcp/
-│   └── McpServer.cs             # MCP protocol server
+│   ├── McpServer.cs             # MCP HTTP server
+│   ├── StdioMcpServer.cs        # MCP stdio transport (607 lines)
+│   ├── McpJsonContext.cs        # JSON source generation
+│   └── Models/                  # MCP protocol models
 └── blueprints/                  # Built-in blueprints
-    ├── alpine-minimal.yaml
-    ├── ubuntu-dev.yaml
-    └── python-dev.yaml
+    ├── alpine-minimal.json
+    ├── ubuntu-dev.json
+    └── python-dev.json
 ```
 
 ### Configuration Files
@@ -406,7 +477,7 @@ Thresh/
 ```
 
 **Results**:
-- Binary Size: **16.6 MB**
+- Binary Size: **14 MB**
 - Startup Time: ~50ms
 - Memory Usage: ~30MB idle
 - Dependencies: **None** (Windows system libraries only)
@@ -475,7 +546,7 @@ await foreach (var update in client.CompleteChatStreamingAsync(messages))
 
 | Metric | Value |
 |--------|-------|
-| Binary Size | 16.6 MB |
+| Binary Size | 14 MB |
 | Startup Time | ~50ms |
 | Memory (Idle) | ~30MB |
 | Provision Time (Alpine) | ~15s |
@@ -487,7 +558,7 @@ await foreach (var update in client.CompleteChatStreamingAsync(messages))
 ## 🗺️ Roadmap
 
 ### ✅ Completed (v1.0)
-- [x] .NET Native AOT migration (16.6 MB binary)
+- [x] .NET Native AOT migration (14 MB binary)
 - [x] WSL2 integration
 - [x] Blueprint provisioning
 - [x] 12 built-in distributions

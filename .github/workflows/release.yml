@@ -78,13 +78,16 @@ jobs:
         
         ## 🚀 AI-Powered WSL Environment Manager
         
-        **Single 12MB Native AOT binary for Windows**
+        **Single 14MB Native AOT binary for Windows**
         
         ### Features
         - ✅ 12 built-in Linux distributions (Vendor + MS Store)
-        - ✅ AI blueprint generation with OpenAI GPT-4o-mini
+        - ✅ Dual AI providers (OpenAI GPT-4o-mini, GitHub Copilot SDK)
+        - ✅ MCP server integration for VS Code, Cursor, and Windsurf
+        - ✅ System metrics and monitoring with JSON export
         - ✅ Interactive AI chat for environment creation
         - ✅ Custom distribution support with AI discovery
+        - ✅ Cross-platform container abstraction (WSL2, containerd)
         - ✅ Zero runtime dependencies
         - ✅ Hybrid distribution system
         
@@ -108,6 +111,8 @@ jobs:
         thresh destroy <name>       # Remove environment
         thresh generate <prompt>    # AI blueprint generation
         thresh chat                 # Interactive AI
+        thresh metrics              # System metrics
+        thresh serve                # Start MCP server
         thresh distros              # List all distributions
         thresh config               # Configuration
         ``````

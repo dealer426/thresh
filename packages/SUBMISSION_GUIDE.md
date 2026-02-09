@@ -55,7 +55,7 @@ git push origin add-thresh
 ```markdown
 Adds thresh v1.0.0 - Fast, native WSL2 environment provisioning tool
 
-- 16.6 MB Native AOT binary
+- 14 MB Native AOT binary
 - WSL2 integration for Linux environment provisioning
 - AI-powered blueprint generation
 - 12 built-in distributions
@@ -130,7 +130,7 @@ Adds thresh v1.0.0 - Fast, native WSL2 environment provisioning tool with AI-pow
 
 Automated validation should pass all checks.
 
-- 16.6 MB Native AOT binary (.NET 9)
+- 14 MB Native AOT binary (.NET 9)
 - WSL2 integration for Linux environments
 - AI-powered blueprint generation (OpenAI GPT-4o-mini)
 - 12 built-in distributions + custom support
@@ -177,7 +177,7 @@ thresh --version
 All should install to PATH and show:
 ```
 thresh 1.0.0
-.NET Native AOT (16.6 MB)
+.NET Native AOT (14 MB)
 https://github.com/dealer426/thresh
 ```
 

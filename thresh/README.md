@@ -3,7 +3,7 @@
 **Single-binary CLI for provisioning WSL development environments with AI**
 
 ![.NET 9](https://img.shields.io/badge/.NET-9.0-purple.svg)
-![Native AOT](https://img.shields.io/badge/Native%20AOT-16.6MB-green.svg)
+![Native AOT](https://img.shields.io/badge/Native%20AOT-14MB-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
 ---
@@ -13,7 +13,7 @@
 `thresh` is a **.NET 9 Native AOT** command-line tool that provisions WSL2 environments using AI-generated blueprints. It replaces the legacy Quarkus-based `thresh-cli` with a unified, dependency-free solution.
 
 **Key Features**:
-- 🚀 **16.6 MB native binary** - No .NET runtime required
+- 🚀 **14 MB native binary** - No .NET runtime required
 - 🤖 **AI blueprint generation** - OpenAI GPT-4o-mini integration
 - 📦 **12 built-in distros** - Ubuntu, Alpine, Debian, Kali, Oracle, openSUSE
 - 🔧 **Custom distro support** - Add any Linux with AI discovery
@@ -351,7 +351,7 @@ dotnet run -- up alpine-minimal
 dotnet publish -c Release -r win-x64 --self-contained
 
 # Output
-bin\Release\net9.0\win-x64\publish\thresh.exe  # 16.6 MB
+bin\Release\net9.0\win-x64\publish\thresh.exe  # 14 MB
 
 # Verify no .NET runtime dependency
 # Binary runs on systems without .NET installed
@@ -419,11 +419,11 @@ thresh destroy alpine-minimal
 ### Build Results
 
 ```
-Binary Size:     16.6 MB
+Binary Size:     14 MB
 Startup Time:    ~50ms
 Memory (Idle):   ~30MB
 Dependencies:    None (Windows system libraries only)
-Warnings:        2 (Azure SDK trim warnings - acceptable)
+Warnings:        12 (Azure SDK and StreamJsonRpc trim warnings - acceptable)
 ```
 
 ---
@@ -432,7 +432,7 @@ Warnings:        2 (Azure SDK trim warnings - acceptable)
 
 | Metric | Value |
 |--------|-------|
-| Binary Size | 16.6 MB |
+| Binary Size | 14 MB |
 | Startup Time | ~50ms |
 | Memory Usage (Idle) | ~30MB |
 | Provision Time (Alpine) | ~15s |
@@ -451,7 +451,7 @@ This replaces the legacy Java/Quarkus `thresh-cli` with a unified .NET solution.
 | Aspect | Quarkus CLI | thresh (.NET) |
 |--------|-------------|---------------|
 | Language | Java 23 | C# 13 |
-| Binary Size | 25 MB | 16.6 MB |
+| Binary Size | 25 MB | 14 MB |
 | Startup Time | ~10ms | ~50ms |
 | AI Integration | ❌ No (Java only) | ✅ OpenAI SDK |
 | Runtime Required | ❌ None | ❌ None |
@@ -521,4 +521,4 @@ MIT License - see [LICENSE](../LICENSE)
 
 ---
 
-**Built with .NET 9 Native AOT** | **16.6 MB Binary** | **Zero Dependencies**
+**Built with .NET 9 Native AOT** | **14 MB Binary** | **Zero Dependencies**
