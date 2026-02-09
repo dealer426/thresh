@@ -21,8 +21,16 @@ function HomepageHeader() {
           <Link
             className="button button--secondary button--lg"
             to="/docs/intro">
-            Docusaurus Tutorial - 5min ⏱️
+            Get Started - 5min ⏱️
           </Link>
+          <Link
+            className="button button--primary button--lg margin-left--md"
+            to="https://github.com/dealer426/thresh/releases/latest">
+            Download v1.2.0
+          </Link>
+        </div>
+        <div className="margin-top--lg">
+          <code>winget install dealer426.thresh</code>
         </div>
       </div>
     </header>
@@ -33,8 +41,8 @@ export default function Home(): ReactNode {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />">
+      title="Lightweight Development Environment Orchestration"
+      description="Cross-platform CLI for provisioning isolated development environments with AI-powered blueprint generation">
       <HomepageHeader />
       <main>
         <HomepageFeatures />
