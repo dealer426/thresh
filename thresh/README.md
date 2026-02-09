@@ -147,7 +147,7 @@ Thresh/
 │       └── JSON persistence (~/.thresh/config.json)
 │
 ├── Models/
-│   ├── Blueprint.cs             # YAML blueprint model
+│   ├── Blueprint.cs             # JSON blueprint model
 │   ├── EnvironmentMetadata.cs   # Environment tracking
 │   ├── DistributionInfo.cs      # Distro metadata
 │   └── UserConfiguration.cs     # User settings
@@ -159,11 +159,11 @@ Thresh/
 │   └── McpServer.cs             # Model Context Protocol server
 │
 └── blueprints/                  # Built-in blueprints
-    ├── alpine-minimal.yaml
-    ├── ubuntu-dev.yaml
-    ├── python-dev.yaml
-    ├── node-dev.yaml
-    └── debian-stable.yaml
+    ├── alpine-minimal.json
+    ├── ubuntu-dev.json
+    ├── python-dev.json
+    ├── node-dev.json
+    └── debian-stable.json
 ```
 
 ### Distribution Sources
@@ -188,7 +188,7 @@ Thresh/
 ### Provisioning Workflow
 
 ```
-1. Parse Blueprint (YAML → Blueprint object)
+1. Parse Blueprint (JSON → Blueprint object)
    ├─→ Validate base distribution
    ├─→ Validate packages list
    └─→ Validate scripts syntax
@@ -226,63 +226,58 @@ Thresh/
 
 ## Blueprint Format
 
-### YAML Schema
+### JSON Schema
 
-```yaml
-name: string              # Environment name (required)
-description: string       # Description (optional)
-base: string             # Base distribution key (required)
-                         # e.g., ubuntu-22.04, alpine-3.19, kali
+```json
+{
+  "name": "string",              // Environment name (required)
+  "description": "string",       // Description (optional)
+  "base": "string",              // Base distribution key (required)
+                                  // e.g., ubuntu-22.04, alpine-3.19, kali
 
-packages:                # List of packages to install
-  - package1
-  - package2
+  "packages": [                   // List of packages to install
+    "package1",
+    "package2"
+  ],
 
-environment:             # Environment variables (key-value)
-  VAR_NAME: value
+  "environment": {                // Environment variables (key-value)
+    "VAR_NAME": "value"
+  },
 
-scripts:
-  setup: |               # Pre-install script (optional)
-    echo "Setup script"
-  
-  postInstall: |         # Post-install script (optional)
-    echo "Post-install script"
+  "scripts": {
+    "setup": "echo 'Setup script'",           // Pre-install script (optional)
+    "postInstall": "echo 'Post-install script'" // Post-install script (optional)
+  }
+}
 ```
 
 ### Example: Python ML Environment
 
-```yaml
-name: python-ml
-description: Python machine learning environment with Jupyter
-base: ubuntu-22.04
+```json
+{
+  "name": "python-ml",
+  "description": "Python machine learning environment with Jupyter",
+  "base": "ubuntu-22.04",
 
-packages:
-  - python3
-  - python3-pip
-  - python3-venv
-  - build-essential
-  - git
-  - curl
+  "packages": [
+    "python3",
+    "python3-pip",
+    "python3-venv",
+    "build-essential",
+    "git",
+    "curl"
+  ],
 
-environment:
-  PYTHONUNBUFFERED: "1"
-  JUPYTER_ENABLE_LAB: "yes"
+  "environment": {
+    "PYTHONUNBUFFERED": "1",
+    "JUPYTER_ENABLE_LAB": "yes"
+  },
 
-scripts:
-  setup: |
-    # Upgrade pip
-    pip3 install --upgrade pip
-  
-  postInstall: |
-    # Install ML packages
-    pip3 install jupyter pandas numpy scipy scikit-learn matplotlib seaborn
-    
-    # Create workspace
-    mkdir -p ~/notebooks
-    
-    # Print success message
-    echo "✅ Python ML environment ready!"
-    echo "Run: jupyter lab --ip=0.0.0.0"
+  "scripts": {
+    "setup": "pip3 install --upgrade pip",
+    "postInstall": "pip3 install jupyter pandas numpy scipy scikit-learn matplotlib seaborn\nmkdir -p ~/notebooks\necho '✅ Python ML environment ready!'\necho 'Run: jupyter lab --ip=0.0.0.0'"
+  }
+}
 ```
 
 ---
@@ -407,12 +402,12 @@ thresh destroy alpine-minimal
   
   <!-- AI Integration -->
   <PackageReference Include="OpenAI" Version="2.1.0" />
+  <PackageReference Include="Azure.AI.OpenAI" Version="2.0.0" />
+  <PackageReference Include="GitHub.Copilot.SDK" Version="0.1.23-preview.1" />
   
-  <!-- YAML Parsing -->
-  <PackageReference Include="YamlDotNet" Version="16.2.1" />
-  
-  <!-- Configuration -->
+  <!-- Configuration & Security -->
   <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
+  <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.0" />
 </ItemGroup>
 ```
 

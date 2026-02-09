@@ -84,7 +84,7 @@ thresh.exe (14 MB)
 - AI Providers: 
   - OpenAI SDK (GPT-4o, GPT-4o-mini, GPT-3.5)
   - GitHub Copilot SDK v0.1.22 (GPT-5, GPT-4, Claude)
-- YAML: YamlDotNet
+- Blueprints: JSON with System.Text.Json source generation
 - Compilation: Native AOT (PublishAot=true)
 - Binary Size: 14 MB
 - Dependencies: None (self-contained)
@@ -113,9 +113,9 @@ thresh/
 │   │   ├── Mcp/
 │   │   │   └── McpServer.cs     # MCP protocol support
 │   │   └── blueprints/          # Built-in blueprints
-│   │       ├── alpine-minimal.yaml
-│   │       ├── ubuntu-dev.yaml
-│   │       └── python-dev.yaml
+│   │       ├── alpine-minimal.json
+│   │       ├── ubuntu-dev.json
+│   │       └── python-dev.json
 │   └── README.md
 │
 ├── thresh-cli/                  # [ARCHIVED] Legacy Quarkus CLI
@@ -321,53 +321,61 @@ thresh serve
 ## 🎯 Blueprint Examples
 
 ### Alpine Minimal
-```yaml
-name: alpine-minimal
-description: Minimal Alpine Linux environment
-base: alpine-3.19
-packages:
-  - curl
-  - git
-  - vim
-environment:
-  EDITOR: vim
-scripts:
-  setup: |
-    echo "Minimal Alpine setup complete"
+```json
+{
+  "name": "alpine-minimal",
+  "description": "Minimal Alpine Linux environment",
+  "base": "alpine-3.19",
+  "packages": [
+    "curl",
+    "git",
+    "vim"
+  ],
+  "environment": {
+    "EDITOR": "vim"
+  },
+  "scripts": {
+    "setup": "echo 'Minimal Alpine setup complete'"
+  }
+}
 ```
 
 ### Python Development
-```yaml
-name: python-dev
-description: Python development environment with common tools
-base: ubuntu-22.04
-packages:
-  - python3
-  - python3-pip
-  - python3-venv
-  - build-essential
-  - git
-environment:
-  PYTHONUNBUFFERED: "1"
-scripts:
-  setup: |
-    pip3 install --upgrade pip
-    pip3 install virtualenv pytest black flake8
+```json
+{
+  "name": "python-dev",
+  "description": "Python development environment with common tools",
+  "base": "ubuntu-22.04",
+  "packages": [
+    "python3",
+    "python3-pip",
+    "python3-venv",
+    "build-essential",
+    "git"
+  ],
+  "environment": {
+    "PYTHONUNBUFFERED": "1"
+  },
+  "scripts": {
+    "setup": "pip3 install --upgrade pip\npip3 install virtualenv pytest black flake8"
+  }
+}
 ```
 
 ### Node.js Development
-```yaml
-name: node-dev
-description: Node.js development environment
-base: ubuntu-24.04
-packages:
-  - curl
-  - git
-scripts:
-  setup: |
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-    apt-get install -y nodejs
-    npm install -g typescript @types/node pnpm
+```json
+{
+  "name": "node-dev",
+  "description": "Node.js development environment",
+  "base": "ubuntu-24.04",
+  "packages": [
+    "curl",
+    "git"
+  ],
+  "scripts": {
+    "setup": "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -\napt-get install -y nodejs\nnpm install -g typescript @types/node pnpm"
+  }
+}
 ```
 
 ---
@@ -411,7 +419,7 @@ Thresh/
 │   ├── ContainerdService.cs     # containerd/nerdctl support (473 lines)
 │   └── ContainerServiceFactory.cs # Platform detection (60 lines)
 ├── Models/
-│   ├── Blueprint.cs             # Blueprint YAML model
+│   ├── Blueprint.cs             # Blueprint JSON model
 │   ├── EnvironmentMetadata.cs   # Environment tracking
 │   ├── DistributionInfo.cs      # Distro metadata
 │   ├── HostMetrics.cs           # Metrics data model (105 lines)
@@ -537,7 +545,7 @@ await foreach (var update in client.CompleteChatStreamingAsync(messages))
 ```
 
 **System Prompts**:
-- **Generate**: "You are a WSL blueprint expert. Generate YAML configurations with: name, description, base, packages, environment, scripts. Output only valid YAML, no markdown."
+- **Generate**: "You are a WSL blueprint expert. Generate JSON configurations with: name, description, base, packages, environment, scripts. Output only valid JSON, no markdown."
 - **Chat**: "You are an AI assistant helping users create WSL development environment blueprints. Provide helpful, concise responses."
 
 ---
