@@ -23,6 +23,14 @@ public static class ProcessHelper
     /// </summary>
     public static async Task<ProcessResult> ExecuteAsync(int timeoutSeconds, params string[] command)
     {
+        return await ExecuteAsync(null, timeoutSeconds, command);
+    }
+
+    /// <summary>
+    /// Execute a command with a timeout, custom environment variables, and return the result
+    /// </summary>
+    public static async Task<ProcessResult> ExecuteAsync(Dictionary<string, string>? environmentVariables, int timeoutSeconds, params string[] command)
+    {
         if (command.Length == 0)
             return new ProcessResult(false, -1, [], "No command specified");
 
@@ -41,6 +49,15 @@ public static class ProcessHelper
             for (int i = 1; i < command.Length; i++)
             {
                 startInfo.ArgumentList.Add(command[i]);
+            }
+
+            // Add custom environment variables (inherits parent environment by default)
+            if (environmentVariables != null)
+            {
+                foreach (var (key, value) in environmentVariables)
+                {
+                    startInfo.Environment[key] = value;
+                }
             }
 
             using var process = new Process { StartInfo = startInfo };
@@ -81,6 +98,103 @@ public static class ProcessHelper
             var allOutput = outputLines.Concat(errorLines).ToList();
             
             return new ProcessResult(exitCode == 0, exitCode, allOutput, 
+                errorLines.Count > 0 ? string.Join("\n", errorLines) : null);
+        }
+        catch (Exception ex)
+        {
+            return new ProcessResult(false, -1, [], $"Process execution failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Execute a command with real-time output streaming
+    /// </summary>
+    public static async Task<ProcessResult> ExecuteWithStreamingAsync(
+        Action<string>? onOutputLine, 
+        int timeoutSeconds, 
+        params string[] command)
+    {
+        return await ExecuteWithStreamingAsync(onOutputLine, null, timeoutSeconds, command);
+    }
+
+    /// <summary>
+    /// Execute a command with real-time output streaming and custom environment variables
+    /// </summary>
+    public static async Task<ProcessResult> ExecuteWithStreamingAsync(
+        Action<string>? onOutputLine,
+        Dictionary<string, string>? environmentVariables,
+        int timeoutSeconds, 
+        params string[] command)
+    {
+        if (command.Length == 0)
+            return new ProcessResult(false, -1, [], "No command specified");
+
+        try
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = command[0],
+                RedirectStandardOutput = true,
+               RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            // Add arguments
+            for (int i = 1; i < command.Length; i++)
+            {
+                startInfo.ArgumentList.Add(command[i]);
+            }
+
+            // Add custom environment variables (inherits parent environment by default)
+            if (environmentVariables != null)
+            {
+                foreach (var (key, value) in environmentVariables)
+                {
+                    startInfo.Environment[key] = value;
+                }
+            }
+
+            using var process = new Process { StartInfo = startInfo };
+            
+            var outputLines = new List<string>();
+            var errorLines = new List<string>();
+
+            // Capture output asynchronously with callback
+            process.OutputDataReceived += (sender, e) =>
+            {
+                if (e.Data != null)
+                {
+                    lock (outputLines) { outputLines.Add(e.Data); }
+                    onOutputLine?.Invoke(e.Data);
+                }
+            };
+
+            process.ErrorDataReceived += (sender, e) =>
+            {
+                if (e.Data != null)
+                    lock (errorLines) { errorLines.Add(e.Data); }
+            };
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            // Wait for completion with timeout
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+            try
+            {
+                await process.WaitForExitAsync(cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                process.Kill(entireProcessTree: true);
+                return new ProcessResult(false, -1, outputLines, $"Process timed out after {timeoutSeconds} seconds");
+            }
+
+            var exitCode = process.ExitCode;
+            
+            return new ProcessResult(exitCode == 0, exitCode, outputLines, 
                 errorLines.Count > 0 ? string.Join("\n", errorLines) : null);
         }
         catch (Exception ex)

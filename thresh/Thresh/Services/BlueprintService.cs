@@ -9,7 +9,7 @@ namespace Thresh.Services;
 /// </summary>
 public class BlueprintService
 {
-    private readonly WslService _wslService;
+    private readonly IContainerService _containerService;
     private readonly RootfsRegistry _rootfsRegistry;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -17,9 +17,9 @@ public class BlueprintService
         WriteIndented = true
     };
 
-    public BlueprintService(WslService wslService, RootfsRegistry rootfsRegistry)
+    public BlueprintService(IContainerService containerService, RootfsRegistry rootfsRegistry)
     {
-        _wslService = wslService;
+        _containerService = containerService;
         _rootfsRegistry = rootfsRegistry;
     }
 
@@ -405,7 +405,10 @@ fi";
 
     private async Task ExecuteInDistroAsync(string distroName, string command, bool verbose)
     {
-        var result = await ProcessHelper.ExecuteAsync(300, "wsl", "-d", distroName, "--", "sh", "-c", command);
+        // Normalize line endings to Unix format (LF only) to avoid sh interpretation issues
+        var normalizedCommand = command.Replace("\r\n", "\n").Replace("\r", "\n");
+        
+        var result = await ProcessHelper.ExecuteAsync(300, "wsl", "-d", distroName, "--", "sh", "-c", normalizedCommand);
 
         if (verbose && result.HasOutput())
         {

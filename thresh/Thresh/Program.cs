@@ -6,7 +6,7 @@ namespace Thresh;
 
 class Program
 {
-    private const string Version = "1.0.0-phase0";
+    private const string Version = "1.1.0";
     
     static async Task<int> Main(string[] args)
     {
@@ -28,8 +28,10 @@ class Program
         AddConfigCommand(rootCommand);
         AddDistroCommand(rootCommand);
         AddDistrosCommand(rootCommand);
+        AddMetricsCommand(rootCommand);
         AddServeCommand(rootCommand);
         AddVersionCommand(rootCommand);
+        AddTestSdkCommand(rootCommand);
         
         // Root handler (when no command specified)
         rootCommand.SetHandler((bool verbose) =>
@@ -56,6 +58,7 @@ class Program
         Console.WriteLine("  config      Manage configuration");
         Console.WriteLine("  distro      Manage custom distributions");
         Console.WriteLine("  distros     List all available distributions");
+        Console.WriteLine("  metrics     Display host system metrics");
         Console.WriteLine("  serve       Start MCP server");
         Console.WriteLine();
         Console.WriteLine("Options:");
@@ -83,20 +86,20 @@ class Program
             Console.WriteLine("Native AOT: Yes");
             Console.WriteLine();
             
-            // Show WSL info
-            var wslService = new Services.WslService();
-            var wslInfo = await wslService.GetWslInfoAsync();
+            // Show runtime info
+            var containerService = Services.ContainerServiceFactory.Create();
+            var runtimeInfo = await containerService.GetRuntimeInfoAsync();
             
-            if (wslInfo.Available)
+            if (runtimeInfo.IsAvailable)
             {
-                Console.WriteLine($"WSL: {wslInfo.Version}");
-                if (wslInfo.KernelVersion != null)
-                    Console.WriteLine($"Kernel: {wslInfo.KernelVersion}");
-                Console.WriteLine($"Distributions: {wslInfo.DistributionCount}");
+                Console.WriteLine($"{containerService.RuntimeName}: {runtimeInfo.Version}");
+                if (runtimeInfo.Details != null)
+                    Console.WriteLine($"Details: {runtimeInfo.Details}");
+                Console.WriteLine($"Environments: {runtimeInfo.ContainerCount}");
             }
             else
             {
-                Console.WriteLine($"WSL: Not available ({wslInfo.Version})");
+                Console.WriteLine($"{containerService.RuntimeName}: Not available ({runtimeInfo.Version})");
             }
         });
         
@@ -116,16 +119,16 @@ class Program
         
         upCommand.SetHandler(async (string blueprint, string? name, bool verbose) =>
         {
-            var wslService = new Services.WslService();
+            var containerService = Services.ContainerServiceFactory.Create();
             var configService = new Services.ConfigurationService();
             var rootfsRegistry = new Services.RootfsRegistry(configService);
-            var blueprintService = new Services.BlueprintService(wslService, rootfsRegistry);
+            var blueprintService = new Services.BlueprintService(containerService, rootfsRegistry);
             
-            // Check if WSL is available
-            if (!await wslService.IsWslAvailableAsync())
+            // Check if runtime is available
+            if (!await containerService.IsAvailableAsync())
             {
-                Console.WriteLine("❌ WSL is not available on this system");
-                Console.WriteLine("   Install WSL: wsl --install");
+                Console.WriteLine($"❌ {containerService.RuntimeName} is not available on this system");
+                Console.WriteLine($"   Platform: {Services.ContainerServiceFactory.GetPlatformName()}");
                 return;
             }
             
@@ -148,7 +151,7 @@ class Program
                 var envName = name ?? blueprint.Replace(".json", "").Replace("blueprints/", "");
                 
                 // Check if environment already exists
-                if (await wslService.EnvironmentExistsAsync(envName))
+                if (await containerService.EnvironmentExistsAsync(envName))
                 {
                     Console.WriteLine($"❌ Environment '{envName}' already exists");
                     Console.WriteLine($"   Remove it first: thresh destroy {envName}");
@@ -201,23 +204,23 @@ class Program
         
         listCommand.SetHandler(async (bool all) =>
         {
-            var wslService = new Services.WslService();
+            var containerService = Services.ContainerServiceFactory.Create();
             
-            // Check if WSL is available
-            if (!await wslService.IsWslAvailableAsync())
+            // Check if runtime is available
+            if (!await containerService.IsAvailableAsync())
             {
-                Console.WriteLine("❌ WSL is not available on this system");
-                Console.WriteLine("   Install WSL: wsl --install");
+                Console.WriteLine($"❌ {containerService.RuntimeName} is not available on this system");
+                Console.WriteLine($"   Platform: {Services.ContainerServiceFactory.GetPlatformName()}");
                 return;
             }
             
-            var environments = await wslService.ListEnvironmentsAsync(all);
+            var environments = await containerService.ListEnvironmentsAsync(all);
             
             if (environments.Count == 0)
             {
                 Console.WriteLine("No environments found.");
                 if (!all)
-                    Console.WriteLine("Use --all to see all WSL distributions.");
+                    Console.WriteLine("Use --all to see all environments.");
                 return;
             }
             
@@ -244,17 +247,17 @@ class Program
         
         destroyCommand.SetHandler(async (string name, bool force) =>
         {
-            var wslService = new Services.WslService();
+            var containerService = Services.ContainerServiceFactory.Create();
             
-            // Check if WSL is available
-            if (!await wslService.IsWslAvailableAsync())
+            // Check if runtime is available
+            if (!await containerService.IsAvailableAsync())
             {
-                Console.WriteLine("❌ WSL is not available on this system");
+                Console.WriteLine($"❌ {containerService.RuntimeName} is not available on this system");
                 return;
             }
             
             // Check if environment exists
-            if (!await wslService.EnvironmentExistsAsync(name))
+            if (!await containerService.EnvironmentExistsAsync(name))
             {
                 Console.WriteLine($"❌ Environment '{name}' not found");
                 return;
@@ -273,7 +276,7 @@ class Program
             }
             
             Console.WriteLine($"Removing environment: {name}");
-            if (await wslService.RemoveEnvironmentAsync(name))
+            if (await containerService.RemoveEnvironmentAsync(name))
             {
                 Console.WriteLine($"✅ Environment '{name}' removed successfully");
             }
@@ -292,10 +295,10 @@ class Program
         
         blueprintsCommand.SetHandler(() =>
         {
-            var wslService = new Services.WslService();
+            var containerService = Services.ContainerServiceFactory.Create();
             var configService = new Services.ConfigurationService();
             var rootfsRegistry = new Services.RootfsRegistry(configService);
-            var blueprintService = new Services.BlueprintService(wslService, rootfsRegistry);
+            var blueprintService = new Services.BlueprintService(containerService, rootfsRegistry);
             
             var blueprints = blueprintService.ListBundledBlueprints();
             
@@ -361,8 +364,13 @@ class Program
                     Console.WriteLine();
                 }
                 
-                // Clean the output (OpenAI service has CleanJsonOutput method)
-                var cleanedJson = (aiService as OpenAIService)?.CleanJsonOutput(jsonContent) ?? jsonContent;
+                // Clean the output (remove markdown code blocks)
+                var cleanedJson = aiService switch
+                {
+                    OpenAIService openAi => openAi.CleanJsonOutput(jsonContent),
+                    GitHubCopilotService copilot => copilot.CleanJsonOutput(jsonContent),
+                    _ => jsonContent
+                };
                 
                 // Save to file if requested
                 if (!string.IsNullOrEmpty(output))
@@ -567,10 +575,17 @@ class Program
             
             if (useAi)
             {
-                // AI-powered discovery
+                // AI-powered discovery  
                 Console.WriteLine($"🤖 Using AI to discover {name} distribution...");
                 var aiService = Utilities.AIServiceFactory.CreateAIService(configService) as OpenAIService;
-                var distro = await aiService?.DiscoverDistributionAsync(name);
+                
+                if (aiService == null)
+                {
+                    Console.WriteLine("❌ AI service not available");
+                    return;
+                }
+                
+                var distro = await aiService.DiscoverDistributionAsync(name);
                 
                 if (distro == null)
                 {
@@ -736,34 +751,137 @@ class Program
     
     private static void AddServeCommand(RootCommand rootCommand)
     {
-        var serveCommand = new Command("serve", "Start MCP server");
-        var portOption = new Option<int>("--port", () => 8080, "Port to listen on");
-        var hostOption = new Option<string>("--host", () => "localhost", "Host to bind to");
+        var serveCommand = new Command("serve", "Start MCP server for AI agent integration");
+        var portOption = new Option<int>("--port", () => 8080, "Port to listen on (HTTP mode only)");
+        var hostOption = new Option<string>("--host", () => "localhost", "Host to bind to (HTTP mode only)");
+        var stdioOption = new Option<bool>("--stdio", "Use stdio transport (for VS Code, Cursor, Windsurf)");
         
         serveCommand.AddOption(portOption);
         serveCommand.AddOption(hostOption);
+        serveCommand.AddOption(stdioOption);
         
-        serveCommand.SetHandler(async (int port, string host) =>
+        serveCommand.SetHandler(async (int port, string host, bool stdio) =>
         {
             try
             {
-                var server = new Mcp.McpServer(port, host);
-                
-                // Handle Ctrl+C gracefully
-                Console.CancelKeyPress += (sender, e) =>
+                if (stdio)
                 {
-                    e.Cancel = true;
-                    server.Stop();
-                };
+                    // STDIO mode for VS Code and other MCP clients
+                    var server = new Mcp.StdioMcpServer();
+                    
+                    // Handle Ctrl+C gracefully
+                    Console.CancelKeyPress += (sender, e) =>
+                    {
+                        e.Cancel = true;
+                        server.Stop();
+                    };
 
-                await server.StartAsync();
+                    await server.RunAsync();
+                }
+                else
+                {
+                    // HTTP mode for testing and debugging
+                    var server = new Mcp.McpServer(port, host);
+                    
+                    // Handle Ctrl+C gracefully
+                    Console.CancelKeyPress += (sender, e) =>
+                    {
+                        e.Cancel = true;
+                        server.Stop();
+                    };
+
+                    await server.StartAsync();
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ MCP server failed: {ex.Message}");
             }
-        }, portOption, hostOption);
+        }, portOption, hostOption, stdioOption);
         
         rootCommand.AddCommand(serveCommand);
+    }
+    
+    private static void AddMetricsCommand(RootCommand rootCommand)
+    {
+        var metricsCommand = new Command("metrics", "Display host system metrics");
+        var jsonOption = new Option<bool>("--json", "Output as JSON");
+        
+        metricsCommand.AddOption(jsonOption);
+        
+        metricsCommand.SetHandler(async (bool json) =>
+        {
+            var containerService = Services.ContainerServiceFactory.Create();
+            var metricsService = new Services.MetricsService(containerService);
+            
+            try
+            {
+                var metrics = await metricsService.CollectMetricsAsync();
+                
+                if (json)
+                {
+                    // Output as JSON using source-generated context for AOT compatibility
+                    var jsonText = System.Text.Json.JsonSerializer.Serialize(metrics, Models.MetricsJsonContext.Default.HostMetrics);
+                    Console.WriteLine(jsonText);
+                }
+                else
+                {
+                    // Output as formatted text
+                    Console.WriteLine("📊 Host Metrics");
+                    Console.WriteLine("═══════════════");
+                    Console.WriteLine();
+                    Console.WriteLine($"🖥️  Hostname: {metrics.Hostname}");
+                    Console.WriteLine($"🔧 Platform: {metrics.Platform}");
+                    Console.WriteLine($"📦 Runtime: {metrics.Runtime} {metrics.RuntimeVersion}");
+                    Console.WriteLine();
+                    
+                    Console.WriteLine( $"⚙️  CPU:");
+                    Console.WriteLine($"   Cores: {metrics.CpuCores}");
+                    Console.WriteLine($"   Usage: {metrics.CpuPercent:F1}%");
+                    Console.WriteLine();
+                    
+                    Console.WriteLine($"💾 Memory:");
+                    Console.WriteLine($"   Total: {metrics.MemoryTotalGb:F2} GB");
+                    Console.WriteLine($"   Used:  {metrics.MemoryUsedGb:F2} GB");
+                    Console.WriteLine($"   Usage: {metrics.MemoryPercent:F1}%");
+                    Console.WriteLine();
+                    
+                    Console.WriteLine($"💿 Storage:");
+                    Console.WriteLine($"   Total: {metrics.StorageTotalGb:F2} GB");
+                    Console.WriteLine($"   Free:  {metrics.StorageFreeGb:F2} GB");
+                    Console.WriteLine($"   Usage: {metrics.StoragePercent:F1}%");
+                    Console.WriteLine();
+                    
+                    Console.WriteLine($"📦 Containers: {metrics.Containers}");
+                    
+                    if (metrics.UptimeSeconds.HasValue)
+                    {
+                        var uptime = TimeSpan.FromSeconds(metrics.UptimeSeconds.Value);
+                        Console.WriteLine($"⏱️  Uptime: {uptime.Days}d {uptime.Hours}h {uptime.Minutes}m");
+                    }
+                    
+                    Console.WriteLine();
+                    Console.WriteLine($"🕐 Collected: {metrics.Timestamp:yyyy-MM-dd HH:mm:ss} UTC");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Failed to collect metrics: {ex.Message}");
+            }
+        }, jsonOption);
+        
+        rootCommand.AddCommand(metricsCommand);
+    }
+
+    private static void AddTestSdkCommand(RootCommand rootCommand)
+    {
+        var testCommand = new Command("test-sdk", "Test GitHub Copilot SDK connection");
+        
+        testCommand.SetHandler(async () =>
+        {
+            await CopilotSdkTest.RunAsync();
+        });
+        
+        rootCommand.AddCommand(testCommand);
     }
 }

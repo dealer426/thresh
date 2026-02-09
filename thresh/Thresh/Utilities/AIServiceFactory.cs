@@ -17,6 +17,7 @@ public static class AIServiceFactory
         return provider.ToLowerInvariant() switch
         {
             "copilot" => new GitHubCopilotService(configService, modelId),
+            "github" => new GitHubCopilotService(configService, modelId),
             "openai" => new OpenAIService(configService, modelId, providerOverride),
             _ => new OpenAIService(configService, modelId, providerOverride) // Default to OpenAI
         };

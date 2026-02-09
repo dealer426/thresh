@@ -85,3 +85,28 @@ public class ToolCallResponse
         };
     }
 }
+
+// JSON Schema types for tool input schemas
+public class JsonSchema
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "object";
+
+    [JsonPropertyName("properties")]
+    public Dictionary<string, JsonSchemaProperty>? Properties { get; set; }
+
+    [JsonPropertyName("required")]
+    public List<string>? Required { get; set; }
+}
+
+public class JsonSchemaProperty
+{
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    [JsonPropertyName("enum")]
+    public List<string>? Enum { get; set; }
+}
