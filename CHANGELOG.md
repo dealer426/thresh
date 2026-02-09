@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Native AOT Re-enabled** 🚀
   - Re-enabled Native AOT compilation after v1.1.0 compatibility verification
-  - Binary size reduced: **75 MB → 15 MB** (80% reduction)
+  - Binary size reduced: **75 MB → 14 MB** (81% reduction)
   - All MCP and JSON serialization features fully compatible with AOT
   - Zero runtime dependencies maintained
   - Faster startup and lower memory footprint
@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Performance Improvements
 
-- Binary size: 75 MB → 15 MB (5x smaller)
+- Binary size: 75 MB → 14 MB (5.4x smaller)
 - Faster startup time (Native AOT compilation)
 - Reduced memory usage
 - Better deployment efficiency
@@ -136,7 +136,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Performance
 
-- Binary size: Stable at 16.6 MB
+- Binary size: Stable at 14 MB (Native AOT re-enabled in v1.2.0)
 - Startup time: <50ms
 - MCP server response time: <100ms for tool listing
 - Environment provisioning: 15-25s (all phases complete)
