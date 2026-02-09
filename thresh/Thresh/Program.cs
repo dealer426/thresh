@@ -6,7 +6,7 @@ namespace Thresh;
 
 class Program
 {
-    private const string Version = "1.0.0-phase0";
+    private const string Version = "1.1.0";
     
     static async Task<int> Main(string[] args)
     {
