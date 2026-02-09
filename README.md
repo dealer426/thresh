@@ -84,7 +84,6 @@ thresh.exe (14 MB)
 - AI Providers: 
   - **OpenAI**: GPT-4o, GPT-4o-mini, GPT-4 Turbo, GPT-4, GPT-3.5 Turbo, o1-preview, o1-mini
   - **Azure OpenAI**: All OpenAI models via Azure deployments
-  - **GitHub Models**: GPT-4o, GPT-4o-mini, Phi-3, Llama, Mistral (via Azure AI)
   - **GitHub Copilot SDK**: gpt-4o, claude-3.5-sonnet, o1-preview, o1-mini
 - Blueprints: JSON with System.Text.Json source generation
 - Compilation: Native AOT (PublishAot=true)
@@ -165,25 +164,20 @@ dotnet publish -c Release -r win-x64 --self-contained
 ### Configuration
 
 ```powershell
-# Configure AI Provider (Multiple Options)
+# Configure AI Provider (Choose One)
 
 # Option 1: OpenAI (default)
 thresh config set default-provider openai
 thresh config set openai-api-key sk-proj-...
 thresh config set default-model gpt-4o-mini  # or gpt-4o, gpt-4-turbo, o1-preview, etc.
 
-# Option 2: Azure OpenAI
+# Option 2: Azure OpenAI (enterprise)
 thresh config set default-provider azure
 thresh config set azure-openai-endpoint https://your-resource.openai.azure.com
 thresh config set azure-openai-key your-key
 thresh config set default-model your-deployment-name
 
-# Option 3: GitHub Models (FREE for public repos)
-thresh config set default-provider github
-thresh config set github-token ghp_...
-thresh config set default-model gpt-4o-mini  # or gpt-4o, Phi-3-medium-4k-instruct, etc.
-
-# Option 4: GitHub Copilot SDK (requires Copilot subscription)
+# Option 3: GitHub Copilot SDK (requires Copilot subscription)
 thresh config set aiprovider copilot
 thresh config set default-model gpt-4o  # or claude-3.5-sonnet, o1-preview
 
@@ -196,14 +190,14 @@ thresh --version
 
 **AI Provider Comparison:**
 
-| Feature | OpenAI | Azure OpenAI | GitHub Models | GitHub Copilot SDK |
-|---------|--------|--------------|---------------|-------------------|
-| **Models** | GPT-4o, GPT-4o-mini, GPT-4 Turbo, GPT-4, GPT-3.5 Turbo, o1-preview, o1-mini | Same as OpenAI (deployment-based) | GPT-4o, GPT-4o-mini, Phi-3, Llama, Mistral | gpt-4o, claude-3.5-sonnet, o1-preview, o1-mini |
-| **Setup** | API key | Endpoint + API key | GitHub token | Copilot CLI installed |
-| **Cost** | Pay per token | Pay per token (Azure billing) | FREE for public repos, paid for private | Included with Copilot subscription |
-| **Streaming** | ✅ | ✅ | ✅ | ✅ |
-| **Authentication** | API key | Azure credentials | GitHub token | GitHub auth |
-| **Best For** | Production, all models | Enterprise, compliance | Free tier, experimentation | Copilot subscribers |
+| Feature | OpenAI | Azure OpenAI | GitHub Copilot SDK |
+|---------|--------|--------------|-------------------|
+| **Models** | GPT-4o, GPT-4o-mini, GPT-4 Turbo, GPT-4, GPT-3.5 Turbo, o1-preview, o1-mini | Same as OpenAI (deployment-based) | gpt-4o, claude-3.5-sonnet, o1-preview, o1-mini |
+| **Setup** | API key | Endpoint + API key | Copilot CLI + auth |
+| **Cost** | Pay per token | Pay per token (Azure billing) | Included with Copilot subscription |
+| **Streaming** | ✅ | ✅ | ✅ |
+| **Authentication** | API key | Azure credentials | GitHub auth |
+| **Best For** | Production, all models | Enterprise, compliance | Copilot subscribers |
 
 See [docs/DUAL_AI_PROVIDERS.md](docs/DUAL_AI_PROVIDERS.md) for detailed configuration.
 

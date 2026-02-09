@@ -2,12 +2,11 @@
 
 ## Overview
 
-thresh supports **four AI provider options** for blueprint generation and chat interactions:
+thresh supports **three AI provider options** for blueprint generation and chat interactions:
 
 1. **OpenAI** (default) - Direct OpenAI API with all latest models
 2. **Azure OpenAI** - Enterprise OpenAI via Azure with compliance features
-3. **GitHub Models** - Free-tier access to multiple models via GitHub
-4. **GitHub Copilot SDK** - Integrated with Copilot subscription
+3. **GitHub Copilot SDK** - Integrated with Copilot subscription
 
 ## Supported Models
 
@@ -45,37 +44,6 @@ Supports all OpenAI models via Azure deployments. Model names match your Azure d
 - Private networking and VNet integration
 - Azure billing and cost management
 - Regional data residency
-
-### GitHub Models Provider
-
-**OpenAI Models** (via Azure AI):
-- `gpt-4o` - GPT-4o via GitHub Models
-- `gpt-4o-mini` - Cost-effective GPT-4o variant
-
-**Microsoft Phi Models**:
-- `Phi-3-medium-4k-instruct` - 4K context instruction model
-- `Phi-3-medium-128k-instruct` - Extended 128K context
-- `Phi-3-mini-4k-instruct` - Lightweight 4K model
-- `Phi-3-mini-128k-instruct` - Lightweight 128K model
-- `Phi-3-small-8k-instruct` - Balanced model
-- `Phi-3-small-128k-instruct` - Extended version
-
-**Meta Llama Models**:
-- `Meta-Llama-3-70B-Instruct` - Large instruction model
-- `Meta-Llama-3-8B-Instruct` - Efficient variant
-- `Meta-Llama-3.1-405B-Instruct` - Largest model
-- `Meta-Llama-3.1-70B-Instruct` - Production-ready
-- `Meta-Llama-3.1-8B-Instruct` - Fast inference
-
-**Mistral AI Models**:
-- `Mistral-large` - Flagship model (128K context)
-- `Mistral-large-2407` - July 2024 version
-- `Mistral-Nemo` - Efficient 12B model
-- `Mistral-small` - Fast, cost-effective
-
-**Cohere Models**:
-- `Cohere-command-r` - Command model
-- `Cohere-command-r-plus` - Enhanced version
 
 ### GitHub Copilot SDK Provider
 
@@ -178,30 +146,7 @@ thresh config set azure-openai-key xxxxx
 thresh config set default-model your-gpt4o-deployment
 ```
 
-#### 3. GitHub Models (FREE Tier)
-
-```bash
-# Set GitHub Models as provider
-thresh config set default-provider github
-
-# Configure GitHub token (create at https://github.com/settings/tokens)
-# Requires 'models:read' scope
-thresh config set github-token ghp_xxxxx
-
-# Select model
-thresh config set default-model gpt-4o-mini              # Free GPT-4o
-thresh config set default-model Phi-3-medium-128k-instruct  # Microsoft Phi
-thresh config set default-model Meta-Llama-3.1-8B-Instruct # Meta Llama
-thresh config set default-model Mistral-small             # Mistral AI
-```
-
-**GitHub Models Benefits**:
-- ✅ FREE for public repositories
-- ✅ Generous rate limits for experimentation
-- ✅ Access to GPT-4o, Phi, Llama, Mistral models
-- ✅ No credit card required
-
-#### 4. GitHub Copilot SDK
+#### 3. GitHub Copilot SDK
 
 ```bash
 # Set Copilot SDK as provider
@@ -230,9 +175,6 @@ thresh config set default-provider openai
 # Use Azure OpenAI
 thresh config set default-provider azure
 
-# Use GitHub Models
-thresh config set default-provider github
-
 # Use GitHub Copilot SDK
 thresh config set aiprovider copilot
 ```
@@ -246,9 +188,9 @@ thresh config list
 Output example:
 ```
 Configuration:
-  default-provider: github
+  default-provider: openai
   default-model: gpt-4o-mini
-  github-token: ghp_xxxxx
+  openai-api-key: sk-proj-xxxxx
 ```
 
 ## Requirements by Provider
@@ -264,13 +206,7 @@ Configuration:
 - ✅ Model deployment created in Azure Portal
 - ✅ VNet/private endpoint support (optional)
 
-### 3. GitHub Models Provider
-- ✅ GitHub account (free tier available)
-- ✅ GitHub Personal Access Token with `models:read` scope
-- ✅ FREE for public repositories
-- ✅ Rate limits: generous for experimentation
-
-### 4. GitHub Copilot SDK Provider
+### 3. GitHub Copilot SDK Provider
 - ✅ Active GitHub Copilot subscription ($10/month or $100/year)
 - ✅ GitHub Copilot CLI installed
 - ✅ GitHub authentication configured
@@ -304,13 +240,6 @@ thresh config set default-model my-gpt4o-deployment
 thresh generate "Node.js microservices environment"
 ```
 
-#### Using GitHub Models (FREE)
-```bash
-thresh config set default-provider github
-thresh config set default-model gpt-4o-mini  # or Phi-3-medium-128k-instruct
-thresh generate "Go development environment with Docker"
-```
-
 #### Using GitHub Copilot SDK
 ```bash
 thresh config set aiprovider copilot
@@ -326,11 +255,6 @@ thresh config set default-provider openai
 thresh config set default-model o1-preview
 thresh chat
 
-# GitHub Models with Llama
-thresh config set default-provider github
-thresh config set default-model Meta-Llama-3.1-70B-Instruct
-thresh chat
-
 # Copilot with Claude
 thresh config set aiprovider copilot
 thresh config set default-model claude-3.5-sonnet
@@ -338,14 +262,6 @@ thresh chat
 ```
 
 ### Provider-Specific Use Cases
-
-#### Cost Optimization (GitHub Models FREE)
-```bash
-# Use GitHub Models for free experimentation
-thresh config set default-provider github
-thresh config set default-model gpt-4o-mini
-thresh generate "Test environment for learning Kubernetes"
-```
 
 #### Enterprise/Compliance (Azure OpenAI)
 ```bash
@@ -373,17 +289,17 @@ thresh generate "Multi-stage build environment with optimization"
 
 ## Features Comparison
 
-| Feature | OpenAI | Azure OpenAI | GitHub Models | GitHub Copilot SDK |
-|---------|--------|--------------|---------------|-------------------|
-| **Available Models** | GPT-4o, GPT-4 Turbo, GPT-4, GPT-3.5 Turbo, o1 | Same as OpenAI | GPT-4o, Phi-3, Llama, Mistral, Cohere | gpt-4o, claude-3.5-sonnet, o1 |
-| **Streaming** | ✅ | ✅ | ✅ | ✅ |
-| **Blueprint generation** | ✅ | ✅ | ✅ | ✅ |
-| **Chat mode** | ✅ | ✅ | ✅ | ✅ |
-| **Distribution discovery** | ✅ | ✅ | ✅ | ❌ |
-| **Authentication** | API key | Endpoint + key | GitHub token | GitHub auth |
-| **Cost** | Pay per token | Azure billing | FREE (public repos) | Copilot subscription |
-| **Best For** | All models access | Enterprise/compliance | Free experimentation | Copilot users |
-| **Rate Limits** | Tier-based | Custom quotas | Generous free tier | Copilot limits |
+| Feature | OpenAI | Azure OpenAI | GitHub Copilot SDK |
+|---------|--------|--------------|-------------------|
+| **Available Models** | GPT-4o, GPT-4 Turbo, GPT-4, GPT-3.5 Turbo, o1 | Same as OpenAI | gpt-4o, claude-3.5-sonnet, o1 |
+| **Streaming** | ✅ | ✅ | ✅ |
+| **Blueprint generation** | ✅ | ✅ | ✅ |
+| **Chat mode** | ✅ | ✅ | ✅ |
+| **Distribution discovery** | ✅ | ✅ | ❌ |
+| **Authentication** | API key | Endpoint + key | GitHub auth |
+| **Cost** | Pay per token | Azure billing | Copilot subscription |
+| **Best For** | All models access | Enterprise/compliance | Copilot users |
+| **Rate Limits** | Tier-based | Custom quotas | Copilot limits |
 | External dependency | None | GitHub Copilot CLI required |
 
 ## Implementation Details
