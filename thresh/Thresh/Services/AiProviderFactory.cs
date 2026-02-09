@@ -69,7 +69,7 @@ public class AiProviderFactory
                 "Get your credentials from Azure Portal: https://portal.azure.com");
         }
 
-        var client = new AzureOpenAIClient(new Uri(endpoint), new AzureKeyCredential(apiKey));
+        var client = new AzureOpenAIClient(new Uri(endpoint), new ApiKeyCredential(apiKey));
         return client.GetChatClient(modelId);
     }
 
@@ -87,7 +87,7 @@ public class AiProviderFactory
 
         // GitHub Models uses Azure OpenAI endpoint with GitHub token
         var endpoint = new Uri("https://models.inference.ai.azure.com");
-        var client = new AzureOpenAIClient(endpoint, new AzureKeyCredential(githubToken));
+        var client = new AzureOpenAIClient(endpoint, new ApiKeyCredential(githubToken));
         
         // For GitHub Models, use their model IDs (e.g., gpt-4o, gpt-4o-mini)
         return client.GetChatClient(modelId);

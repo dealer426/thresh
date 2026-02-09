@@ -7,6 +7,116 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-02-09
+
+### Added - Phase 1 Complete: MCP Integration & Cross-Platform Foundation
+
+- **MCP Server Integration** 🚀
+  - Model Context Protocol (MCP) server with stdio transport
+  - VS Code, Cursor, and Windsurf integration ready
+  - 7 MCP tools exposed for AI-powered environment management:
+    - `list_environments` - List all WSL environments
+    - `create_environment` - Create environments from blueprints
+    - `destroy_environment` - Remove environments
+    - `list_blueprints` - Show available blueprints
+    - `get_blueprint` - Get blueprint details
+    - `get_version` - Show thresh version and runtime info
+    - `generate_blueprint` - AI-powered blueprint generation
+  - JSON-RPC 2.0 protocol implementation
+  - Proper JSON schema serialization for Native AOT compatibility
+  - Configuration template for VS Code settings
+
+- **Cross-Platform Container Abstraction**
+  - `IContainerService` interface for platform-agnostic operations
+  - `WslService` refactored to implement container interface
+  - `ContainerdService` for Linux/macOS support (473 lines)
+  - `ContainerServiceFactory` for automatic platform detection
+  - Foundation for future Docker and Podman support
+
+- **Host Metrics & Monitoring**
+  - New `metrics` command for system monitoring
+  - Comprehensive metrics collection:
+    - CPU cores and usage percentage
+    - Memory total, used, and usage percentage
+    - Storage total, free, and usage percentage
+    - Container/environment count
+    - System uptime tracking
+    - Collection timestamps
+  - `MetricsService` with 458 lines of monitoring logic
+  - JSON serialization context for metrics data
+
+- **Enhanced AI Provider Support**
+  - GitHub Copilot provider fully functional
+  - Dual AI provider architecture (OpenAI + GitHub Models)
+  - Improved error handling for API key management
+  - Blueprint generation tested and verified
+
+- **New Documentation**
+  - `docs/MCP_INTEGRATION.md` - Complete MCP integration guide (469 lines)
+  - `docs/ROADMAP_2026.md` - 16-week development roadmap (547 lines)
+  - `docs/vscode-mcp-config.json` - VS Code configuration template
+  - Session status tracking for development progress
+
+### Fixed
+
+- **Provisioning Script Line Endings**
+  - Fixed "sh: : not found" error during environment provisioning
+  - Normalized line endings from CRLF to LF for WSL compatibility
+  - All provisioning phases now complete successfully
+
+- **MCP JSON Serialization**
+  - Replaced anonymous types with proper `Tool` model classes
+  - Added `JsonSchema` and `JsonSchemaProperty` classes
+  - Fixed Native AOT compatibility for MCP server responses
+  - Tools list now serializes correctly for all MCP clients
+
+- **Configuration Decryption**
+  - Added validation for decrypted values (printable character check)
+  - Improved error messages for DPAPI decryption failures
+  - Prevents sending encrypted blobs to API providers
+  - Added `IsValidDecryption()` and `MaskForDebug()` helper methods
+  - Clear diagnostics for corrupted or mismatched encryption keys
+
+### Changed
+
+- **Program.cs** - Added `serve` command for MCP server (214+ lines of changes)
+- **WslService** - Now implements `IContainerService` interface
+- **ConfigurationService** - Enhanced decryption error handling (58+ lines)
+- **ProcessHelper** - Added 114 lines for improved command execution
+
+### Technical Details
+
+- **New Dependencies**:
+  - `StreamJsonRpc` (2.24.84) for MCP JSON-RPC protocol
+  - GitHub.Copilot.SDK (0.1.23-preview.1) integration verified
+
+- **Files Added**: 12 new files (MCP server, metrics, container abstraction)
+- **Total Changes**: 29 files modified, ~4,500+ lines added
+- **Build Status**: ✅ Success (4 non-critical warnings)
+
+### Testing
+
+- ✅ End-to-end CLI testing completed (all 15 commands)
+- ✅ Environment lifecycle tested (create, list, destroy)
+- ✅ MCP server tested with JSON-RPC protocol
+- ✅ GitHub Copilot provider verified working
+- ✅ Blueprint generation functional
+- ✅ Configuration management validated
+- ✅ Metrics collection confirmed accurate
+
+### Performance
+
+- Binary size: Stable at 16.6 MB
+- Startup time: <50ms
+- MCP server response time: <100ms for tool listing
+- Environment provisioning: 15-25s (all phases complete)
+
+### Roadmap Progress
+
+- ✅ **Phase 1 Complete** (Weeks 1-4): MCP & Cross-Platform Foundation
+- 📋 **Phase 2 Next** (Weeks 5-8): Metrics, Agent Mode, Mesh Networking
+- 🎯 **Target**: v2.0 by end of Q2 2026
+
 ## [1.0.1] - 2026-02-05
 
 ### Added

@@ -337,7 +337,8 @@ public class ConfigurationService
             {
                 var base64 = value.Substring(4);
                 var bytes = Convert.FromBase64String(base64);
-                return Encoding.UTF8.GetString(bytes);
+                var decrypted = Encoding.UTF8.GetString(bytes);
+                return decrypted;
             }
 
             if (OperatingSystem.IsWindows())
@@ -345,7 +346,18 @@ public class ConfigurationService
                 // Decrypt using DPAPI on Windows
                 var encrypted = Convert.FromBase64String(value);
                 var bytes = ProtectedData.Unprotect(encrypted, AdditionalEntropy, DataProtectionScope.CurrentUser);
-                return Encoding.UTF8.GetString(bytes);
+                var decrypted = Encoding.UTF8.GetString(bytes);
+                
+                // Validate that decryption worked - check if result is printable ASCII/UTF-8
+                if (IsValidDecryption(decrypted))
+                {
+                    return decrypted;
+                }
+                else
+                {
+                    Console.Error.WriteLine($"⚠️  Decryption produced invalid output. Value may be corrupted.");
+                    throw new InvalidOperationException("Decryption failed - invalid output");
+                }
             }
             else
             {
@@ -353,11 +365,47 @@ public class ConfigurationService
                 return value;
             }
         }
-        catch
+        catch (Exception ex) when (ex is not InvalidOperationException)
         {
-            // If decryption fails, return the value as-is (might be plain text)
-            return value;
+            // Log the actual error
+            Console.Error.WriteLine($"❌ Decryption failed: {ex.GetType().Name}");
+            Console.Error.WriteLine($"   This usually means the key was encrypted on a different machine or user account.");
+            Console.Error.WriteLine($"   Please delete and re-set the configuration value.");
+            
+            // Don't silently return encrypted value - throw so the caller knows something is wrong
+            throw new InvalidOperationException(
+                $"Failed to decrypt configuration value. It may have been encrypted on a different machine or user account. " +
+                $"Please delete and re-set the value using 'thresh config set <key> <value>'.", ex);
         }
+    }
+
+    /// <summary>
+    /// Check if decrypted value is valid (contains printable characters)
+    /// </summary>
+    private bool IsValidDecryption(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return false;
+
+        // Check if value contains mostly printable ASCII characters (API keys should be)
+        int printableCount = value.Count(c => c >= 32 && c <= 126);
+        double printableRatio = (double)printableCount / value.Length;
+        
+        return printableRatio > 0.95; // At least 95% printable characters
+    }
+
+    /// <summary>
+    /// Mask a value for debug output
+    /// </summary>
+    private string MaskForDebug(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return "[empty]";
+        
+        if (value.Length <= 8)
+            return new string('*', value.Length);
+        
+        return $"{value.Substring(0, 4)}...{value.Substring(value.Length - 4)}";
     }
 
     /// <summary>
