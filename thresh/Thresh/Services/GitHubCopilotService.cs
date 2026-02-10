@@ -230,14 +230,14 @@ Requirements:
             cleaned = string.Join("\n", jsonLines).Trim();
         }
 
-        // Validate JSON; prefer pretty-printed output when possible, with AOT-safe fallback
+        // Validate JSON
         try
         {
             using var jsonDoc = JsonDocument.Parse(cleaned);
 
             try
             {
-                // Prefer source-generated serialization (AOT-friendly)
+                // Normalized JSON via source-generated context
                 return JsonSerializer.Serialize(jsonDoc, BlueprintJsonContext.Default.JsonDocument);
             }
             catch (Exception)
