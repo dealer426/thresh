@@ -3,8 +3,10 @@ using Thresh.Services;
 namespace Thresh.Utilities;
 
 /// <summary>
-/// Factory for creating AI service instances based on configuration
+/// Legacy factory for creating AI service instances
+/// Deprecated: Use AiProviderFactory in Services namespace instead
 /// </summary>
+[Obsolete("Use AiProviderFactory.CreateAIService() instead")]
 public static class AIServiceFactory
 {
     /// <summary>
@@ -12,14 +14,8 @@ public static class AIServiceFactory
     /// </summary>
     public static IAIService CreateAIService(ConfigurationService configService, string? modelId = null, string? providerOverride = null)
     {
-        var provider = providerOverride ?? configService.GetValue("aiprovider") ?? "openai";
-        
-        return provider.ToLowerInvariant() switch
-        {
-            "copilot" => new GitHubCopilotService(configService, modelId),
-            "github" => new GitHubCopilotService(configService, modelId),
-            "openai" => new OpenAIService(configService, modelId, providerOverride),
-            _ => new OpenAIService(configService, modelId, providerOverride) // Default to OpenAI
-        };
+        // Delegate to the new factory
+        var factory = new AiProviderFactory(configService);
+        return factory.CreateAIService(modelId, providerOverride);
     }
 }

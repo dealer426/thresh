@@ -7,8 +7,8 @@ using System.ClientModel;
 namespace Thresh.Services;
 
 /// <summary>
-/// Factory for creating OpenAI chat clients based on configured provider
-/// Supports OpenAI, Azure OpenAI, and GitHub Models (all via Azure.AI.OpenAI SDK)
+/// Factory for creating AI service instances
+/// Supports OpenAI, Azure OpenAI, GitHub Models, and GitHub Copilot SDK
 /// </summary>
 public class AiProviderFactory
 {
@@ -20,9 +20,30 @@ public class AiProviderFactory
     }
 
     /// <summary>
-    /// Create a ChatClient based on configuration
-    /// Priority: 1) Explicit provider parameter, 2) configured default-provider, 3) detect from available keys
+    /// Create an AI service instance based on provider configuration
+    /// Supports OpenAI, Azure OpenAI, GitHub Models, and GitHub Copilot SDK
     /// </summary>
+    public IAIService CreateAIService(string? modelId = null, string? provider = null)
+    {
+        provider ??= _configService.GetValue("default-provider") ?? DetectProvider();
+        modelId ??= _configService.GetValue("default-model") ?? "gpt-4o";
+
+        return provider.ToLowerInvariant() switch
+        {
+            "openai" => new OpenAIService(_configService, modelId),
+            "azure" or "azure-openai" => new AzureOpenAIService(_configService, modelId),
+            "github" or "github-models" => new GitHubModelsService(_configService, modelId),
+            "copilot" or "github-copilot" => new GitHubCopilotService(_configService, modelId),
+            _ => throw new InvalidOperationException(
+                $"Unknown AI provider: {provider}. Supported: openai, azure, github, copilot")
+        };
+    }
+
+    /// <summary>
+    /// Legacy method for backward compatibility - creates ChatClient directly
+    /// Deprecated: Use CreateAIService() instead for better encapsulation
+    /// </summary>
+    [Obsolete("Use CreateAIService() instead for better encapsulation")]
     public ChatClient CreateChatClient(string? modelId = null, string? provider = null)
     {
         // Determine provider

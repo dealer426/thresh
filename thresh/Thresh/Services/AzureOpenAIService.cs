@@ -1,6 +1,6 @@
 using Azure.AI.OpenAI;
-using OpenAI;
 using OpenAI.Chat;
+using System.ClientModel;
 using System.Text;
 using System.Text.Json;
 using Thresh.Models;
@@ -8,47 +8,50 @@ using Thresh.Models;
 namespace Thresh.Services;
 
 /// <summary>
-/// OpenAI AI service implementation
-/// Uses OpenAI API with API key authentication
+/// Azure OpenAI AI service implementation
+/// Uses Azure OpenAI endpoint with API key authentication
 /// </summary>
-public class OpenAIService : IAIService
+public class AzureOpenAIService : IAIService
 {
     private readonly ChatClient _chatClient;
     private readonly string _modelId;
     private readonly ConfigurationService _configService;
 
-    public string ProviderName => "OpenAI";
+    public string ProviderName => "Azure OpenAI";
     public string ModelId => _modelId;
 
-    public OpenAIService(ConfigurationService configService, string? modelId = null)
+    public AzureOpenAIService(ConfigurationService configService, string? modelId = null)
     {
         _configService = configService;
         _modelId = modelId ?? configService.GetValue("default-model") ?? "gpt-4o";
         
-        var apiKey = configService.GetSecretValue("openai-api-key");
-        if (string.IsNullOrEmpty(apiKey))
+        var endpoint = configService.GetValue("azure-openai-endpoint");
+        var apiKey = configService.GetSecretValue("azure-openai-key");
+
+        if (string.IsNullOrEmpty(endpoint) || string.IsNullOrEmpty(apiKey))
         {
             throw new InvalidOperationException(
-                "OpenAI API key not configured. Set it with:\n" +
-                "  thresh config set openai-api-key <your-key>\n" +
-                "Get your key from: https://platform.openai.com/api-keys");
+                "Azure OpenAI not configured. Set credentials with:\n" +
+                "  thresh config set azure-openai-endpoint <your-endpoint>\n" +
+                "  thresh config set azure-openai-key <your-key>\n" +
+                "Get your credentials from Azure Portal: https://portal.azure.com");
         }
 
         try
         {
-            var client = new OpenAIClient(apiKey);
+            var client = new AzureOpenAIClient(new Uri(endpoint), new ApiKeyCredential(apiKey));
             _chatClient = client.GetChatClient(_modelId);
         }
         catch (TypeInitializationException ex)
         {
             throw new InvalidOperationException(
-                "OpenAI SDK is not fully compatible with Native AOT compilation.\n\n" +
+                "Azure OpenAI SDK is not fully compatible with Native AOT compilation.\n\n" +
                 "Please use GitHub Models instead (recommended):\n" +
                 "  thresh config set default-provider github\n" +
                 "  thresh config set github-token <your-token>\n\n" +
                 "GitHub Models are free for public repos and fully AOT-compatible.\n" +
                 "Get your token at: https://github.com/settings/tokens\n\n" +
-                "Alternatively, use the non-AOT debug build for OpenAI access.",
+                "Alternatively, use the non-AOT debug build for Azure OpenAI access.",
                 ex);
         }
     }
