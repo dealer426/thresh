@@ -44,10 +44,10 @@ public class OpenAIService : IAIService
             throw new InvalidOperationException(
                 "OpenAI SDK is not fully compatible with Native AOT compilation.\n\n" +
                 "Please use GitHub Copilot instead (recommended):\n" +
-                "  thresh config set default-provider github-copilot\n" +
-                "  thresh config set github-token <your-token>\n\n" +
-                "GitHub Copilot models are free for public repos and fully AOT-compatible.\n" +
-                "Get your token at: https://github.com/settings/tokens\n\n" +
+                "  gh auth login\n" +
+                "  thresh config set default-provider github-copilot\n\n" +
+                "GitHub Copilot is free for public repos and fully AOT-compatible.\n" +
+                "Install GitHub CLI: https://cli.github.com\n\n" +
                 "Alternatively, use the non-AOT debug build for OpenAI access.",
                 ex);
         }

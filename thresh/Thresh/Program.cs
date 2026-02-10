@@ -402,11 +402,11 @@ class Program
                     Console.WriteLine();
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine("💡 Solution: Switch to GitHub Copilot (recommended):");
+                    Console.WriteLine("   gh auth login");
                     Console.WriteLine("   thresh config set default-provider github-copilot");
-                    Console.WriteLine("   thresh config set github-token <your-token>");
                     Console.WriteLine();
-                    Console.WriteLine("   Get your token at: https://github.com/settings/tokens");
-                    Console.WriteLine("   GitHub Copilot models are free and fully AOT-compatible!");
+                    Console.WriteLine("   Install GitHub CLI: https://cli.github.com");
+                    Console.WriteLine("   GitHub Copilot is free for public repos and fully AOT-compatible!");
                     Console.ResetColor();
                 }
                 else
