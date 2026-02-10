@@ -354,7 +354,8 @@ class Program
             try
             {
                 var configService = new Services.ConfigurationService();
-                var aiService = Utilities.AIServiceFactory.CreateAIService(configService, model, provider);
+                var factory = new Services.AiProviderFactory(configService);
+                var aiService = factory.CreateAIService(model, provider);
                 
                 var jsonContent = await aiService.GenerateBlueprintAsync(prompt, streaming: !noStream);
                 
@@ -598,15 +599,29 @@ class Program
             {
                 // AI-powered discovery  
                 Console.WriteLine($"🤖 Using AI to discover {name} distribution...");
-                var aiService = Utilities.AIServiceFactory.CreateAIService(configService) as OpenAIService;
+                var factory = new Services.AiProviderFactory(configService);
+                var aiService = factory.CreateAIService();
                 
-                if (aiService == null)
+                // Check if the service supports discovery and call the appropriate method
+                CustomDistribution? distro = null;
+                
+                if (aiService is OpenAIService openAIService)
                 {
-                    Console.WriteLine("❌ AI service not available");
+                    distro = await openAIService.DiscoverDistributionAsync(name);
+                }
+                else if (aiService is AzureOpenAIService azureService)
+                {
+                    distro = await azureService.DiscoverDistributionAsync(name);
+                }
+                else if (aiService is GitHubModelsService githubService)
+                {
+                    distro = await githubService.DiscoverDistributionAsync(name);
+                }
+                else
+                {
+                    Console.WriteLine($"❌ Distribution discovery not supported by {aiService.ProviderName}");
                     return;
                 }
-                
-                var distro = await aiService.DiscoverDistributionAsync(name);
                 
                 if (distro == null)
                 {
