@@ -258,11 +258,21 @@ Be concise, practical, and provide actionable guidance.")
             cleaned = string.Join("\n", jsonLines).Trim();
         }
 
-        // Validate JSON
+        // Validate JSON; prefer source-generated serialization when possible, with AOT-safe fallback
         try
         {
-            var jsonDoc = JsonDocument.Parse(cleaned);
-            return JsonSerializer.Serialize(jsonDoc, BlueprintJsonContext.Default.JsonDocument);
+            using var jsonDoc = JsonDocument.Parse(cleaned);
+
+            try
+            {
+                // Original behavior (pretty/normalized JSON via source-generated context)
+                return JsonSerializer.Serialize(jsonDoc, BlueprintJsonContext.Default.JsonDocument);
+            }
+            catch (Exception)
+            {
+                // AOT-safe fallback: if serialization fails (e.g., RequiresDynamicCode), return raw JSON text
+                return jsonDoc.RootElement.GetRawText();
+            }
         }
         catch (JsonException)
         {
