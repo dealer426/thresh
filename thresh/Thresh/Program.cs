@@ -392,8 +392,15 @@ class Program
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 
+                // Show detailed error for OpenAI/Azure OpenAI initialization issues
+                if (ex is InvalidOperationException && 
+                    (ex.Message.Contains("OpenAI SDK initialization") || ex.Message.Contains("Azure OpenAI SDK initialization")))
+                {
+                    Console.WriteLine($"❌ {ex.Message}");
+                    Console.ResetColor();
+                }
                 // Provide cleaner message for OpenAI SDK AOT incompatibility
-                if (ex is TypeInitializationException || 
+                else if (ex is TypeInitializationException || 
                     ex.Message.Contains("ModelSerializationExtensions") ||
                     ex.InnerException is TypeInitializationException)
                 {
