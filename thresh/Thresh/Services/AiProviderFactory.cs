@@ -32,9 +32,9 @@ public class AiProviderFactory
         {
             "openai" => new OpenAIService(_configService, modelId),
             "azure" or "azure-openai" => new AzureOpenAIService(_configService, modelId),
-            "github" or "copilot" or "github-copilot" => new GitHubCopilotService(_configService, modelId),
+            "copilot" or "github-copilot" => new GitHubCopilotService(_configService, modelId),
             _ => throw new InvalidOperationException(
-                $"Unknown AI provider: {provider}. Supported: openai, azure, github, copilot")
+                $"Unknown AI provider: {provider}. Supported: openai, azure, copilot, github-copilot")
         };
     }
 
@@ -55,8 +55,8 @@ public class AiProviderFactory
         {
             "openai" => CreateOpenAIChatClient(modelId),
             "azure" or "azure-openai" => CreateAzureOpenAIChatClient(modelId),
-            "github" or "github-models" => CreateGitHubModelsChatClient(modelId),
-            _ => throw new InvalidOperationException($"Unknown AI provider: {provider}. Supported: openai, azure, github")
+            "copilot" or "github-copilot" => CreateGitHubModelsChatClient(modelId),
+            _ => throw new InvalidOperationException($"Unknown AI provider: {provider}. Supported: openai, azure, copilot, github-copilot")
         };
     }
 
@@ -81,9 +81,9 @@ public class AiProviderFactory
             throw new InvalidOperationException(
                 "OpenAI SDK is not fully compatible with Native AOT compilation.\n\n" +
                 "Please use GitHub Copilot instead (recommended):\n" +
-                "  thresh config set aiprovider github\n" +
+                "  thresh config set default-provider github-copilot\n" +
                 "  thresh config set github-token <your-token>\n\n" +
-                "GitHub Models are free for public repos and fully AOT-compatible.\n" +
+                "GitHub Copilot models are free for public repos and fully AOT-compatible.\n" +
                 "Get your token at: https://github.com/settings/tokens\n\n" +
                 "Alternatively, use the non-AOT debug build for OpenAI access.",
                 ex);
@@ -114,9 +114,9 @@ public class AiProviderFactory
             throw new InvalidOperationException(
                 "Azure OpenAI SDK is not fully compatible with Native AOT compilation.\n\n" +
                 "Please use GitHub Copilot instead (recommended):\n" +
-                "  thresh config set aiprovider github\n" +
+                "  thresh config set default-provider github-copilot\n" +
                 "  thresh config set github-token <your-token>\n\n" +
-                "GitHub Models are free for public repos and fully AOT-compatible.\n" +
+                "GitHub Copilot models are free for public repos and fully AOT-compatible.\n" +
                 "Get your token at: https://github.com/settings/tokens\n\n" +
                 "Alternatively, use the non-AOT debug build for Azure OpenAI access.",
                 ex);
@@ -132,14 +132,14 @@ public class AiProviderFactory
                 "GitHub token not configured. Set it with:\n" +
                 "  thresh config set github-token <your-token>\n" +
                 "Create a token at: https://github.com/settings/tokens\\n" +
-                "Requires 'models:read' scope for GitHub Models access");
+                "Requires 'models:read' scope for GitHub Copilot access");
         }
 
-        // GitHub Models uses Azure OpenAI endpoint with GitHub token
+        // GitHub Copilot uses Azure OpenAI endpoint with GitHub token
         var endpoint = new Uri("https://models.inference.ai.azure.com");
         var client = new AzureOpenAIClient(endpoint, new ApiKeyCredential(githubToken));
         
-        // For GitHub Models, use their model IDs (e.g., gpt-4o, gpt-4o-mini)
+        // For GitHub Copilot, use their model IDs (e.g., gpt-4o, gpt-4o-mini)
         return client.GetChatClient(modelId);
     }
 
@@ -147,7 +147,7 @@ public class AiProviderFactory
     {
         // Auto-detect based on configured keys
         if (!string.IsNullOrEmpty(_configService.GetValue("github-token")))
-            return "github";
+            return "github-copilot";
         if (!string.IsNullOrEmpty(_configService.GetValue("azure-openai-endpoint")))
             return "azure";
         if (!string.IsNullOrEmpty(_configService.GetValue("openai-api-key")))
@@ -157,7 +157,7 @@ public class AiProviderFactory
             "No AI provider configured. Choose one:\n\n" +
             "1. GitHub Copilot (FREE for public repos):\n" +
             "   thresh config set github-token <token>\n" +
-            "   thresh config set default-provider github\n\n" +
+            "   thresh config set default-provider github-copilot\n\n" +
             "2. Azure OpenAI:\n" +
             "   thresh config set azure-openai-endpoint <endpoint>\n" +
             "   thresh config set azure-openai-key <key>\n" +
