@@ -1,19 +1,22 @@
 using Azure.AI.OpenAI;
-using OpenAI.Chat;
+using Microsoft.Extensions.AI;
 using System.ClientModel;
 using System.Text;
 using System.Text.Json;
 using Thresh.Models;
+using AIChatMessage = Microsoft.Extensions.AI.ChatMessage;
+using OpenAIChatClient = OpenAI.Chat.ChatClient;
 
 namespace Thresh.Services;
 
 /// <summary>
 /// Azure OpenAI AI service implementation
 /// Uses Azure OpenAI endpoint with API key authentication
+/// Now using Microsoft.Extensions.AI.IChatClient for unified interface
 /// </summary>
 public class AzureOpenAIService : IAIService
 {
-    private readonly ChatClient _chatClient;
+    private readonly IChatClient _chatClient;
     private readonly string _modelId;
     private readonly ConfigurationService _configService;
 
@@ -39,8 +42,14 @@ public class AzureOpenAIService : IAIService
 
         try
         {
-            var client = new AzureOpenAIClient(new Uri(endpoint), new ApiKeyCredential(apiKey));
-            _chatClient = client.GetChatClient(_modelId);
+            // Create Azure OpenAI ChatClient and wrap with Microsoft.Extensions.AI
+            var azureClient = new AzureOpenAIClient(new Uri(endpoint), new ApiKeyCredential(apiKey));
+            var chatClient = azureClient.GetChatClient(_modelId);
+            
+            // Wrap with IChatClient using Microsoft.Extensions.AI
+            _chatClient = new ChatClientBuilder(chatClient.AsIChatClient())
+                .UseLogging() // Add structured logging
+                .Build();
         }
         catch (Exception ex)
         {
@@ -106,16 +115,16 @@ Rules:
 4. Use descriptive names and clear descriptions
 5. Include environment variables when relevant";
 
-        var messages = new List<ChatMessage>
+        var messages = new List<AIChatMessage>
         {
-            new SystemChatMessage(systemPrompt),
-            new UserChatMessage($"Create a blueprint for: {prompt}")
+            new(ChatRole.System, systemPrompt),
+            new(ChatRole.User, $"Create a blueprint for: {prompt}")
         };
 
-        var options = new ChatCompletionOptions
+        var options = new ChatOptions
         {
             Temperature = 0.7f,
-            MaxOutputTokenCount = 2000
+            MaxOutputTokens = 2000
         };
 
         var fullResponse = new StringBuilder();
@@ -124,14 +133,13 @@ Rules:
         {
             Console.WriteLine($"🤖 Generating blueprint with {ProviderName} ({_modelId})...\n");
             
-            var updates = _chatClient.CompleteChatStreamingAsync(messages, options);
-            await foreach (var update in updates)
+            // Use IChatClient streaming API
+            await foreach (var update in _chatClient.GetStreamingResponseAsync(messages, options))
             {
-                foreach (var contentPart in update.ContentUpdate)
+                if (update.Text != null)
                 {
-                    var text = contentPart.Text;
-                    Console.Write(text);
-                    fullResponse.Append(text);
+                    Console.Write(update.Text);
+                    fullResponse.Append(update.Text);
                 }
             }
             
@@ -139,9 +147,9 @@ Rules:
         }
         else
         {
-            var response = await _chatClient.CompleteChatAsync(messages, options);
-            var content = response.Value.Content[0].Text;
-            fullResponse.Append(content);
+            // Use IChatClient non-streaming API
+            var response = await _chatClient.GetResponseAsync(messages, options);
+            fullResponse.Append(response.Text);
         }
 
         return fullResponse.ToString();
@@ -163,9 +171,7 @@ Rules:
         Console.WriteLine("🔄 Type 'clear' to reset conversation history");
         Console.WriteLine();
 
-        var conversationHistory = new List<ChatMessage>
-        {
-            new SystemChatMessage(@"You are an expert DevOps assistant helping users with WSL development environments and blueprints.
+        var systemMessage = new AIChatMessage(ChatRole.System, @"You are an expert DevOps assistant helping users with WSL development environments and blueprints.
 
 You help with:
 - Creating and customizing blueprint configurations
@@ -189,13 +195,14 @@ Base distributions:
 - alpine-3.19 (minimal, fast)
 - debian-12 (stable, long-term support)
 
-Be concise, practical, and provide actionable guidance.")
-        };
+Be concise, practical, and provide actionable guidance.");
 
-        var options = new ChatCompletionOptions
+        var conversationHistory = new List<AIChatMessage> { systemMessage };
+
+        var options = new ChatOptions
         {
             Temperature = 0.7f,
-            MaxOutputTokenCount = 1000
+            MaxOutputTokens = 1000
         };
 
         while (true)
@@ -219,13 +226,13 @@ Be concise, practical, and provide actionable guidance.")
             if (userInput.Equals("clear", StringComparison.OrdinalIgnoreCase))
             {
                 conversationHistory.Clear();
-                conversationHistory.Add(conversationHistory[0]); // Keep system message
+                conversationHistory.Add(systemMessage); // Keep system message
                 Console.WriteLine("\n🔄 Conversation history cleared.\n");
                 continue;
             }
 
             // Add user message to history
-            conversationHistory.Add(new UserChatMessage(userInput));
+            conversationHistory.Add(new AIChatMessage(ChatRole.User, userInput));
 
             try
             {
@@ -234,22 +241,21 @@ Be concise, practical, and provide actionable guidance.")
                 Console.ResetColor();
 
                 var responseBuilder = new StringBuilder();
-                var updates = _chatClient.CompleteChatStreamingAsync(conversationHistory, options);
                 
-                await foreach (var update in updates)
+                // Use IChatClient streaming API
+                await foreach (var update in _chatClient.GetStreamingResponseAsync(conversationHistory, options))
                 {
-                    foreach (var contentPart in update.ContentUpdate)
+                    if (update.Text != null)
                     {
-                        var text = contentPart.Text;
-                        Console.Write(text);
-                        responseBuilder.Append(text);
+                        Console.Write(update.Text);
+                        responseBuilder.Append(update.Text);
                     }
                 }
 
                 Console.WriteLine("\n");
 
                 // Add assistant response to history
-                conversationHistory.Add(new AssistantChatMessage(responseBuilder.ToString()));
+                conversationHistory.Add(new AIChatMessage(ChatRole.Assistant, responseBuilder.ToString()));
             }
             catch (Exception ex)
             {
@@ -344,18 +350,18 @@ Requirements:
 
 Return ONLY the JSON, no explanations.";
 
-        var messages = new ChatMessage[]
+        var messages = new AIChatMessage[]
         {
-            new SystemChatMessage(systemPrompt),
-            new UserChatMessage($"Find official rootfs information for: {distroName}")
+            new(ChatRole.System, systemPrompt),
+            new(ChatRole.User, $"Find official rootfs information for: {distroName}")
         };
 
         try
         {
             Console.WriteLine($"🔍 Discovering {distroName} distribution information...");
             
-            var response = await _chatClient.CompleteChatAsync(messages);
-            var content = response.Value.Content[0].Text;
+            var response = await _chatClient.GetResponseAsync(messages);
+            var content = response.Text;
             
             // Clean and parse response
             var cleaned = CleanJsonOutput(content);

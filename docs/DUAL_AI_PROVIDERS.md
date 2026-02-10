@@ -8,6 +8,8 @@ thresh supports **three AI provider options** for blueprint generation and chat 
 2. **Azure OpenAI** - Enterprise OpenAI via Azure with compliance features
 3. **GitHub Copilot SDK** - Integrated with Copilot subscription
 
+**Architecture Enhancement**: As of .NET 10, OpenAI and Azure OpenAI providers use **Microsoft.Extensions.AI** (`IChatClient`) for unified abstraction, middleware support, and industry-standard patterns.
+
 ## Supported Models
 
 ### OpenAI Provider
@@ -77,19 +79,65 @@ public interface IAIService
 
 ### Implementations
 
-1. **OpenAIService** - Azure OpenAI implementation
-   - Uses `Azure.AI.OpenAI` SDK
+1. **OpenAIService** - OpenAI implementation with Microsoft.Extensions.AI
+   - Uses `Microsoft.Extensions.AI.IChatClient` abstraction
+   - Built on `OpenAI` SDK with `.AsIChatClient()` wrapper
+   - Middleware: Structured logging via `.UseLogging()`
    - Supports streaming responses
    - Blueprint generation with JSON validation
    - Interactive chat mode
    - Custom distribution discovery
+   - **AOT Compatibility**: Debug builds only (OpenAI SDK constraints)
 
-2. **GitHubCopilotService** - GitHub Copilot SDK implementation
-   - Uses `GitHub.Copilot.SDK` v0.1.22
+2. **AzureOpenAIService** - Azure OpenAI implementation with Microsoft.Extensions.AI
+   - Uses `Microsoft.Extensions.AI.IChatClient` abstraction
+   - Built on `Azure.AI.OpenAI` SDK with `.AsIChatClient()` wrapper
+   - Middleware: Structured logging via `.UseLogging()`
+   - Enterprise compliance features (SOC 2, HIPAA)
+   - Same functionality as OpenAIService
+   - **AOT Compatibility**: Debug builds only (Azure SDK constraints)
+
+3. **GitHubCopilotService** - GitHub Copilot SDK implementation
+   - Uses `GitHub.Copilot.SDK` v0.1.23
+   - Native SDK API (not Microsoft.Extensions.AI)
    - Requires GitHub Copilot CLI installed
    - Supports streaming via `AssistantMessageDeltaEvent`
    - Session management with `CopilotClient`
    - GitHub token authentication
+   - **AOT Compatibility**: Full support in Release and Debug builds ✅
+
+### Microsoft.Extensions.AI Integration
+
+**Version**: Microsoft.Extensions.AI 10.2.0 (GA), Microsoft.Extensions.AI.OpenAI 10.2.0-preview.1.26063.2
+
+OpenAI and Azure OpenAI providers use the industry-standard `IChatClient` interface from Microsoft.Extensions.AI, providing:
+
+**Benefits**:
+- **Unified API**: Same interface across OpenAI and Azure OpenAI
+- **Middleware Pipeline**: Extensible with logging, caching, telemetry
+- **Industry Standard**: Microsoft-blessed approach for .NET AI applications
+- **Future-Proof**: New AI providers automatically compatible
+
+**Current Middleware**:
+- `.UseLogging()` - Structured logging for all AI requests
+
+**Potential Future Enhancements**:
+- `.UseOpenTelemetry()` - Distributed tracing and metrics
+- `.UseDistributedCache()` - Response caching for cost optimization
+- `.UseFunctionInvocation()` - Tool calling support
+
+**Example from Code**:
+```csharp
+// OpenAIService constructor wraps ChatClient with IChatClient
+var openaiClient = new OpenAIClient(apiKey);
+var chatClient = openaiClient.GetChatClient(modelId);
+
+_chatClient = new ChatClientBuilder(chatClient.AsIChatClient())
+    .UseLogging() // Add structured logging middleware
+    .Build();
+```
+
+This architecture keeps the same `IAIService` interface for backward compatibility while leveraging Microsoft.Extensions.AI internally.
 
 ### Factory Pattern
 
