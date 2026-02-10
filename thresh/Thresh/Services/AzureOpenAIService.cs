@@ -42,17 +42,25 @@ public class AzureOpenAIService : IAIService
             var client = new AzureOpenAIClient(new Uri(endpoint), new ApiKeyCredential(apiKey));
             _chatClient = client.GetChatClient(_modelId);
         }
-        catch (TypeInitializationException ex)
+        catch (Exception ex)
         {
-            throw new InvalidOperationException(
-                "Azure OpenAI SDK is not fully compatible with Native AOT compilation.\n\n" +
-                "Please use GitHub Copilot instead (recommended):\n" +
-                "  gh auth login\n" +
-                "  thresh config set default-provider github-copilot\n\n" +
-                "GitHub Copilot is free for public repos and fully AOT-compatible.\n" +
-                "Install GitHub CLI: https://cli.github.com\n\n" +
-                "Alternatively, use the non-AOT debug build for Azure OpenAI access.",
-                ex);
+            var errorMsg = $"Azure OpenAI SDK initialization failed: {ex.GetType().Name}\n" +
+                          $"Message: {ex.Message}\n";
+            
+            if (ex.InnerException != null)
+            {
+                errorMsg += $"Inner: {ex.InnerException.GetType().Name} - {ex.InnerException.Message}\n";
+            }
+            
+            errorMsg += "\nOptions:\n" +
+                       "1. Use GitHub Copilot (FREE, fully AOT-compatible):\n" +
+                       "   gh auth login\n" +
+                       "   thresh config set default-provider github-copilot\n\n" +
+                       "2. Use Debug build (Azure OpenAI SDK compatible):\n" +
+                       "   cd thresh/Thresh\n" +
+                       "   dotnet run -c Debug -- generate 'your prompt'";
+            
+            throw new InvalidOperationException(errorMsg, ex);
         }
     }
 
