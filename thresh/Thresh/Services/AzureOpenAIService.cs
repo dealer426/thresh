@@ -46,10 +46,10 @@ public class AzureOpenAIService : IAIService
         {
             throw new InvalidOperationException(
                 "Azure OpenAI SDK is not fully compatible with Native AOT compilation.\n\n" +
-                "Please use GitHub Models instead (recommended):\n" +
-                "  thresh config set default-provider github\n" +
+                "Please use GitHub Copilot instead (recommended):\n" +
+                "  thresh config set default-provider github-copilot\n" +
                 "  thresh config set github-token <your-token>\n\n" +
-                "GitHub Models are free for public repos and fully AOT-compatible.\n" +
+                "GitHub Copilot models are free for public repos and fully AOT-compatible.\n" +
                 "Get your token at: https://github.com/settings/tokens\n\n" +
                 "Alternatively, use the non-AOT debug build for Azure OpenAI access.",
                 ex);
