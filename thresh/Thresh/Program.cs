@@ -390,8 +390,29 @@ class Program
             catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"❌ Generation failed: {ex.Message}");
-                Console.ResetColor();
+                
+                // Provide cleaner message for OpenAI SDK AOT incompatibility
+                if (ex is TypeInitializationException || 
+                    ex.Message.Contains("ModelSerializationExtensions") ||
+                    ex.InnerException is TypeInitializationException)
+                {
+                    Console.WriteLine("❌ OpenAI SDK is not compatible with Native AOT compilation.");
+                    Console.ResetColor();
+                    Console.WriteLine();
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("💡 Solution: Switch to GitHub Copilot (recommended):");
+                    Console.WriteLine("   thresh config set aiprovider github");
+                    Console.WriteLine("   thresh config set github-token <your-token>");
+                    Console.WriteLine();
+                    Console.WriteLine("   Get your token at: https://github.com/settings/tokens");
+                    Console.WriteLine("   GitHub Models are free and fully AOT-compatible!");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    Console.WriteLine($"❌ Generation failed: {ex.Message}");
+                    Console.ResetColor();
+                }
             }
         }, promptArg, outputOption, modelOption, providerOption, noStreamOption);
         

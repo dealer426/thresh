@@ -51,8 +51,23 @@ public class AiProviderFactory
                 "Get your key from: https://platform.openai.com/api-keys");
         }
 
-        var client = new OpenAIClient(apiKey);
-        return client.GetChatClient(modelId);
+        try
+        {
+            var client = new OpenAIClient(apiKey);
+            return client.GetChatClient(modelId);
+        }
+        catch (TypeInitializationException ex)
+        {
+            throw new InvalidOperationException(
+                "OpenAI SDK is not fully compatible with Native AOT compilation.\n\n" +
+                "Please use GitHub Copilot instead (recommended):\n" +
+                "  thresh config set aiprovider github\n" +
+                "  thresh config set github-token <your-token>\n\n" +
+                "GitHub Models are free for public repos and fully AOT-compatible.\n" +
+                "Get your token at: https://github.com/settings/tokens\n\n" +
+                "Alternatively, use the non-AOT debug build for OpenAI access.",
+                ex);
+        }
     }
 
     private ChatClient CreateAzureOpenAIChatClient(string modelId)
@@ -69,8 +84,23 @@ public class AiProviderFactory
                 "Get your credentials from Azure Portal: https://portal.azure.com");
         }
 
-        var client = new AzureOpenAIClient(new Uri(endpoint), new ApiKeyCredential(apiKey));
-        return client.GetChatClient(modelId);
+        try
+        {
+            var client = new AzureOpenAIClient(new Uri(endpoint), new ApiKeyCredential(apiKey));
+            return client.GetChatClient(modelId);
+        }
+        catch (TypeInitializationException ex)
+        {
+            throw new InvalidOperationException(
+                "Azure OpenAI SDK is not fully compatible with Native AOT compilation.\n\n" +
+                "Please use GitHub Copilot instead (recommended):\n" +
+                "  thresh config set aiprovider github\n" +
+                "  thresh config set github-token <your-token>\n\n" +
+                "GitHub Models are free for public repos and fully AOT-compatible.\n" +
+                "Get your token at: https://github.com/settings/tokens\n\n" +
+                "Alternatively, use the non-AOT debug build for Azure OpenAI access.",
+                ex);
+        }
     }
 
     private ChatClient CreateGitHubModelsChatClient(string modelId)
