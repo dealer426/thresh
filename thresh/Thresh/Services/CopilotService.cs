@@ -7,7 +7,7 @@ namespace Thresh.Services;
 /// <summary>
 /// Facade service for AI-powered blueprint generation and interactive chat
 /// Delegates to provider-specific IAIService implementations
-/// Supports OpenAI, Azure OpenAI, GitHub Models, and GitHub Copilot SDK
+/// Supports OpenAI, Azure OpenAI, and GitHub Copilot SDK
 /// </summary>
 public class CopilotService
 {
@@ -52,8 +52,6 @@ public class CopilotService
             return openAIService.CleanJsonOutput(rawOutput);
         if (_aiService is AzureOpenAIService azureService)
             return azureService.CleanJsonOutput(rawOutput);
-        if (_aiService is GitHubModelsService githubService)
-            return githubService.CleanJsonOutput(rawOutput);
         if (_aiService is GitHubCopilotService copilotService)
             return copilotService.CleanJsonOutput(rawOutput);
 
@@ -71,8 +69,6 @@ public class CopilotService
             return await openAIService.DiscoverDistributionAsync(distroName);
         if (_aiService is AzureOpenAIService azureService)
             return await azureService.DiscoverDistributionAsync(distroName);
-        if (_aiService is GitHubModelsService githubService)
-            return await githubService.DiscoverDistributionAsync(distroName);
 
         // GitHub Copilot SDK doesn't support distribution discovery
         // Fallback for other services

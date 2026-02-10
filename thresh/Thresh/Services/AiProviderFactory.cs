@@ -8,7 +8,7 @@ namespace Thresh.Services;
 
 /// <summary>
 /// Factory for creating AI service instances
-/// Supports OpenAI, Azure OpenAI, GitHub Models, and GitHub Copilot SDK
+/// Supports OpenAI, Azure OpenAI, and GitHub Copilot SDK
 /// </summary>
 public class AiProviderFactory
 {
@@ -21,7 +21,7 @@ public class AiProviderFactory
 
     /// <summary>
     /// Create an AI service instance based on provider configuration
-    /// Supports OpenAI, Azure OpenAI, GitHub Models, and GitHub Copilot SDK
+    /// Supports OpenAI, Azure OpenAI, and GitHub Copilot SDK
     /// </summary>
     public IAIService CreateAIService(string? modelId = null, string? provider = null)
     {
@@ -32,8 +32,7 @@ public class AiProviderFactory
         {
             "openai" => new OpenAIService(_configService, modelId),
             "azure" or "azure-openai" => new AzureOpenAIService(_configService, modelId),
-            "github" or "github-models" => new GitHubModelsService(_configService, modelId),
-            "copilot" or "github-copilot" => new GitHubCopilotService(_configService, modelId),
+            "github" or "copilot" or "github-copilot" => new GitHubCopilotService(_configService, modelId),
             _ => throw new InvalidOperationException(
                 $"Unknown AI provider: {provider}. Supported: openai, azure, github, copilot")
         };
@@ -156,7 +155,7 @@ public class AiProviderFactory
 
         throw new InvalidOperationException(
             "No AI provider configured. Choose one:\n\n" +
-            "1. GitHub Models (FREE for public repos):\n" +
+            "1. GitHub Copilot (FREE for public repos):\n" +
             "   thresh config set github-token <token>\n" +
             "   thresh config set default-provider github\n\n" +
             "2. Azure OpenAI:\n" +

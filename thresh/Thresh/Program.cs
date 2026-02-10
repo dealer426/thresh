@@ -613,10 +613,6 @@ class Program
                 {
                     distro = await azureService.DiscoverDistributionAsync(name);
                 }
-                else if (aiService is GitHubModelsService githubService)
-                {
-                    distro = await githubService.DiscoverDistributionAsync(name);
-                }
                 else
                 {
                     Console.WriteLine($"❌ Distribution discovery not supported by {aiService.ProviderName}");
