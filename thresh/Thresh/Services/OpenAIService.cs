@@ -261,8 +261,18 @@ Be concise, practical, and provide actionable guidance.")
         // Validate JSON
         try
         {
-            var jsonDoc = JsonDocument.Parse(cleaned);
-            return JsonSerializer.Serialize(jsonDoc, BlueprintJsonContext.Default.JsonDocument);
+            using var jsonDoc = JsonDocument.Parse(cleaned);
+
+            try
+            {
+                // Normalized JSON via source-generated context
+                return JsonSerializer.Serialize(jsonDoc, BlueprintJsonContext.Default.JsonDocument);
+            }
+            catch (Exception)
+            {
+                // AOT-safe fallback: if serialization fails, return raw JSON text
+                return jsonDoc.RootElement.GetRawText();
+            }
         }
         catch (JsonException)
         {
