@@ -23,9 +23,25 @@ public class OpenAIService : IAIService
     public OpenAIService(ConfigurationService configService, string? modelId = null, string? provider = null)
     {
         _configService = configService;
-        var factory = new AiProviderFactory(configService);
-        _chatClient = factory.CreateChatClient(modelId, provider);
         _modelId = modelId ?? configService.GetValue("default-model") ?? "gpt-4o";
+        
+        try
+        {
+            var factory = new AiProviderFactory(configService);
+            _chatClient = factory.CreateChatClient(modelId, provider);
+        }
+        catch (TypeInitializationException ex)
+        {
+            throw new InvalidOperationException(
+                "OpenAI SDK is not fully compatible with Native AOT compilation.\n\n" +
+                "Please use GitHub Copilot instead (recommended):\n" +
+                "  thresh config set aiprovider github\n" +
+                "  thresh config set github-token <your-token>\n\n" +
+                "GitHub Models are free for public repos and fully AOT-compatible.\n" +
+                "Get your token at: https://github.com/settings/tokens\n\n" +
+                "Alternatively, use the non-AOT debug build for OpenAI access.",
+                ex);
+        }
     }
 
     /// <summary>
