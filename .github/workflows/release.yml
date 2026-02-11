@@ -21,10 +21,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup .NET 9
+    - name: Setup .NET 10
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x'
+        dotnet-version: '10.0.x'
         
     - name: Get version
       id: version
@@ -44,6 +44,33 @@ jobs:
     - name: Publish Native AOT
       run: dotnet publish thresh/Thresh/Thresh.csproj -c Release -r win-x64 --self-contained
       
+    - name: Install UPX
+      run: |
+        winget install --id=upx.upx --exact --silent --accept-source-agreements --accept-package-agreements
+        echo "C:\Program Files\UPX" >> $env:GITHUB_PATH
+      shell: pwsh
+      
+    - name: Get uncompressed binary size
+      id: pre_upx_size
+      run: |
+        $BINARY = "thresh/Thresh/bin/Release/net10.0/win-x64/publish/thresh.exe"
+        $size = compressed binary info
+      id: binary_info
+      run: |
+        $BINARY = "thresh/Thresh/bin/Release/net10.0/win-x64/publish/thresh.exe"
+        $size = (Get-Item $BINARY).Length
+        $sizeMB = [math]::Round($size / 1MB, 2)
+        $uncompressed = "${{ steps.pre_upx_size.outputs.SIZE_MB }}"
+        $reduction = [math]::Round((1 - ($size / ($uncompressed * 1MB))) * 100, 2)
+        echo "SIZE_MB=$sizeMB" >> $env:GITHUB_OUTPUT
+        echo "UNCOMPRESSED_MB=$uncompressed" >> $env:GITHUB_OUTPUT
+        echo "REDUCTION=$reduction" >> $env:GITHUB_OUTPUT
+        echo "Compressed binary size: $sizeMB MB (was $uncompressed MB, $reduction% reduction)
+        $BINARY = "thresh/Thresh/bin/Release/net10.0/win-x64/publish/thresh.exe"
+        upx --best --lzma $BINARY
+        echo "UPX compression complete"
+      shell: pwsh
+      
     - name: Install SBOM tool
       run: dotnet tool install --global Microsoft.Sbom.DotNetTool
       
@@ -62,7 +89,7 @@ jobs:
         $sizeMB = [math]::Round($size / 1MB, 2)
         echo "SIZE_MB=$sizeMB" >> $env:GITHUB_OUTPUT
         echo "Binary size: $sizeMB MB"
-      shell: pwsh
+      shell: pwsh10
       
     - name: Create release archive
       run: |
@@ -74,15 +101,11 @@ jobs:
       id: release_notes
       run: |
         $NOTES = @"
-        # thresh ${{ steps.version.outputs.VERSION }}
-        
-        ## 🚀 AI-Powered WSL Environment Manager
-        
-        **Single 14MB Native AOT binary for Windows**
+        # thresh ~4MB UPX-compressed Native AOT binary for Windows**
         
         ### Features
-        - ✅ 12 built-in Linux distributions (Vendor + MS Store)
-        - ✅ Dual AI providers (OpenAI GPT-4o-mini, GitHub Copilot SDK)
+        - ✅ 17 built-in Linux distributions (Vendor + MS Store)
+        - ✅ GitHub Copilot SDK integration for AI blueprint generation
         - ✅ MCP server integration for VS Code, Cursor, and Windsurf
         - ✅ System metrics and monitoring with JSON export
         - ✅ Interactive AI chat for environment creation
@@ -90,7 +113,12 @@ jobs:
         - ✅ Cross-platform container abstraction (WSL2, containerd)
         - ✅ Zero runtime dependencies
         - ✅ Hybrid distribution system
+        - ✅ UPX compressed for minimal size
         
+        ### Quick Start
+        
+        1. Download ``thresh.exe`` or ``thresh-windows-x64.zip``
+        2. Ensure GitHub CLI is authenticated: ``gh auth login
         ### Quick Start
         
         1. Download ``thresh.exe`` or ``thresh-windows-x64.zip``
@@ -100,7 +128,9 @@ jobs:
         See [GETTING_STARTED.md](https://github.com/${{ github.repository }}/blob/main/GETTING_STARTED.md) for full instructions.
         
         ### Binary Info
-        - **Platform**: Windows x64
+        - **Compressed Size**: ${{ steps.binary_info.outputs.SIZE_MB }} MB (UPX --best --lzma)
+        - **Uncompressed Size**: ${{ steps.binary_info.outputs.UNCOMPRESSED_MB }} MB
+        - **Size Reduction**: ${{ steps.binary_info.outputs.REDUCTION }}%
         - **Size**: ${{ steps.binary_info.outputs.SIZE_MB }} MB
         - **Runtime**: Native AOT (no .NET runtime required)
         
@@ -116,7 +146,7 @@ jobs:
         thresh distros              # List all distributions
         thresh config               # Configuration
         ``````
-        
+        GitHub CLI authenticated
         ### Requirements
         - Windows 11 with WSL2
         - OpenAI API key (for AI features)
@@ -135,8 +165,8 @@ jobs:
         tag_name: ${{ steps.version.outputs.VERSION }}
         name: thresh ${{ steps.version.outputs.VERSION }}
         body_path: release_notes.md
-        draft: false
-        prerelease: false
+        draft: false10.0/win-x64/publish/thresh-windows-x64.zip
+          thresh/Thresh/bin/Release/net10
         files: |
           thresh/Thresh/bin/Release/net9.0/win-x64/publish/thresh-windows-x64.zip
           thresh/Thresh/bin/Release/net9.0/win-x64/publish/thresh.exe

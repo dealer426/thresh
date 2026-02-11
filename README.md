@@ -15,7 +15,7 @@
 
 ### Key Features
 
-- 🤖 **Dual AI Providers** - Choose between OpenAI or GitHub Copilot SDK for blueprint generation
+- 🤖 **GitHub Copilot AI** - Built-in GitHub Copilot integration for blueprint generation
 - ⚡ **Instant Provisioning** - WSL2 distributions installed and configured in seconds
 - 📦 **12 Built-in Distros** - Ubuntu, Alpine, Debian, Kali, Oracle Linux, openSUSE + custom support
 - 🎯 **Hybrid Distribution System** - Direct vendor downloads + Microsoft Store wrapper
@@ -52,9 +52,8 @@ thresh.exe (14 MB)
 │   ├── RootfsRegistry           - Distribution catalog
 │   ├── ConfigurationService     - Secure settings storage
 │   ├── IAIService               - AI provider abstraction
-│   ├── OpenAIService            - OpenAI GPT integration
 │   ├── GitHubCopilotService     - GitHub Copilot SDK integration
-│   ├── AIServiceFactory         - Provider selection
+│   ├── AiProviderFactory        - Provider factory (extensible)
 │   ├── MetricsService           - Host and container monitoring
 │   ├── IContainerService        - Container abstraction
 │   ├── ContainerdService        - Linux/macOS container support
@@ -81,10 +80,8 @@ thresh.exe (14 MB)
 **Tech Stack:**
 - Language: C# 13 / .NET 9.0
 - CLI Framework: System.CommandLine
-- AI Providers: 
-  - **OpenAI**: GPT-4o, GPT-4o-mini, GPT-4 Turbo, GPT-4, GPT-3.5 Turbo, o1-preview, o1-mini
-  - **Azure OpenAI**: All OpenAI models via Azure deployments
-  - **GitHub Copilot SDK**: gpt-4o, claude-3.5-sonnet, o1-preview, o1-mini
+- AI Provider: 
+  - **GitHub Copilot SDK**: gpt-4o, claude-3.5-sonnet, o1-preview, o1-mini (requires GitHub CLI)
 - Blueprints: JSON with System.Text.Json source generation
 - Compilation: Native AOT (PublishAot=true)
 - Binary Size: 14 MB
@@ -135,7 +132,7 @@ thresh/
 ### Prerequisites
 
 - **Windows 11** with WSL2 enabled (`wsl --install`)
-- **OpenAI API Key** (for AI features) - Get from [platform.openai.com](https://platform.openai.com)
+- **GitHub CLI** (for AI features) - Install from [cli.github.com](https://cli.github.com)
 
 ### Installation
 
@@ -164,21 +161,8 @@ dotnet publish -c Release -r win-x64 --self-contained
 ### Configuration
 
 ```powershell
-# Configure AI Provider (Choose One)
-
-# Option 1: OpenAI (default)
-thresh config set default-provider openai
-thresh config set openai-api-key sk-proj-...
-thresh config set default-model gpt-4o-mini  # or gpt-4o, gpt-4-turbo, o1-preview, etc.
-
-# Option 2: Azure OpenAI (enterprise)
-thresh config set default-provider azure
-thresh config set azure-openai-endpoint https://your-resource.openai.azure.com
-thresh config set azure-openai-key your-key
-thresh config set default-model your-deployment-name
-
-# Option 3: GitHub Copilot SDK (requires Copilot subscription)
-thresh config set aiprovider copilot
+# Configure GitHub Copilot AI
+gh auth login
 thresh config set default-model gpt-4o  # or claude-3.5-sonnet, o1-preview
 
 # View configuration
@@ -188,18 +172,11 @@ thresh config list
 thresh --version
 ```
 
-**AI Provider Comparison:**
-
-| Feature | OpenAI | Azure OpenAI | GitHub Copilot SDK |
-|---------|--------|--------------|-------------------|
-| **Models** | GPT-4o, GPT-4o-mini, GPT-4 Turbo, GPT-4, GPT-3.5 Turbo, o1-preview, o1-mini | Same as OpenAI (deployment-based) | gpt-4o, claude-3.5-sonnet, o1-preview, o1-mini |
-| **Setup** | API key | Endpoint + API key | Copilot CLI + auth |
-| **Cost** | Pay per token | Pay per token (Azure billing) | Included with Copilot subscription |
-| **Streaming** | ✅ | ✅ | ✅ |
-| **Authentication** | API key | Azure credentials | GitHub auth |
-| **Best For** | Production, all models | Enterprise, compliance | Copilot subscribers |
-
-See [docs/DUAL_AI_PROVIDERS.md](docs/DUAL_AI_PROVIDERS.md) for detailed configuration.
+**Available Models:**
+- **gpt-4o** - Most capable model
+- **claude-3.5-sonnet** - Anthropic's latest  
+- **o1-preview** - Advanced reasoning
+- **o1-mini** - Fast reasoning
 
 ---
 

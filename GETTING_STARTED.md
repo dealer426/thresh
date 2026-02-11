@@ -76,11 +76,17 @@ thresh --version
 
 ## Configuration
 
-### Set OpenAI API Key (Required for AI features)
+### Set up GitHub Copilot AI (Required for AI features)
 
 ```powershell
-# Get your API key from https://platform.openai.com/api-keys
-thresh config set openai-api-key sk-YOUR_API_KEY_HERE
+# Install GitHub CLI if not already installed
+winget install GitHub.cli
+
+# Authenticate with GitHub
+gh auth login
+
+# Optional: Set default model
+thresh config set default-model gpt-4o
 ```
 
 ### Verify Configuration
