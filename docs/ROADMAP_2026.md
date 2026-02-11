@@ -1,10 +1,10 @@
 # thresh Roadmap 2026 - Distributed Development Orchestration
 
 **Created**: February 6, 2026  
-**Updated**: February 9, 2026  
+**Updated**: February 11, 2026  
 **Timeline**: 16 weeks (4 months)  
 **Current Version**: v1.2.0  
-**Status**: Phase 1 Complete ✅ | Documentation Phase In Progress 📝  
+**Status**: Phase 1 Complete ✅ | Optimization Complete ✅ | Documentation Phase Planning 📝  
 **Goal**: Transform thresh from local WSL manager to distributed dev environment orchestrator
 
 ---
@@ -16,9 +16,9 @@
 Single Windows machine → WSL environments → OpenAI/Copilot blueprints
 ```
 
-**v1.2.0 State (Feb 9, 2026 - CURRENT):**
+**v1.2.0 State (Feb 11, 2026 - CURRENT):**
 ```
-Cross-platform (WSL/containerd) → MCP integration → AI-powered blueprints → 14 MB binary
+Cross-platform (WSL/containerd) → MCP integration → GitHub Copilot AI → UPX compressed → 3.8 MB binary
 ```
 
 **Target v2.0 State (Jun 2026):**
@@ -36,13 +36,15 @@ Fleet of machines → Mesh network → Central orchestration → Distributed wor
 |---------|---------|-------------|-------|
 | **WSL Integration** | v1.0.0 | (core) | High |
 | **Blueprint System** | v1.0.0 | (core) | High |
-| **Dual AI Providers** (OpenAI, Azure, Copilot) | v1.0.0 | (core) | High |
+| **GitHub Copilot SDK Integration** | v1.0.0 | (core) | High |
 | **GitHub Actions (Windows)** | v1.0.1 | N/A | Medium |
 | **Cross-Platform (containerd)** | v1.1.0 | +200 KB | 🔥 Huge |
 | **MCP Server & Integration** | v1.1.0 | +100 KB | 🔥 Huge |
 | **Host Metrics Command** | v1.1.0 | +80 KB | High |
 | **Native AOT Optimization** | v1.2.0 | -61 MB | 🚀 Critical |
-| **Current Binary Size** | v1.2.0 | **14 MB** | Excellent |
+| **UPX Compression** | v1.2.0 | -10.2 MB | 🚀 Critical |
+| **Removed Unused Dependencies** | v1.2.0 | -17 KB | Medium |
+| **Current Binary Size** | v1.2.0 | **3.8 MB** | 🔥 Excellent |
 
 ### Proposed Features 🔮
 
@@ -57,8 +59,8 @@ Fleet of machines → Mesh network → Central orchestration → Distributed wor
 | **Linux/macOS Packages** | 1 week | N/A | Medium | **P2** |
 | **API Documentation** | 1 week | N/A (website) | Medium | **P3** |
 
-**Current Binary Size:** 14 MB (v1.2.0)  
-**Target v2.0 Size:** ~14.3 MB (2% growth for distributed features)
+**Current Binary Size:** 3.8 MB (v1.2.0 - UPX compressed, 13.5 MB uncompressed)  
+**Target v2.0 Size:** ~4.0 MB compressed (minimal growth for distributed features)
 
 ---
 
@@ -85,7 +87,7 @@ thresh list
 thresh destroy python-dev
 ```
 
-**Binary:** v1.0.0 (16.6 MB) → v1.1.0 (75 MB with AOT disabled) → v1.2.0 (14 MB with AOT re-enabled)
+**Binary:** v1.0.0 (16.6 MB) → v1.1.0 (75 MB with AOT disabled) → v1.2.0 (13.5 MB with AOT) → v1.2.0 final (3.8 MB with UPX)
 
 #### Week 3-4: MCP Server Completion ✅
 - [x] Complete MCP protocol implementation (607 lines)
@@ -114,11 +116,14 @@ thresh serve --stdio   # For VS Code, Cursor, Windsurf
 
 **Phase 1 Success Metrics:** ✅ ALL ACHIEVED
 - ✅ thresh runs on Windows, Linux, macOS
-- ✅ Single binary works across platforms (14 MB)
+- ✅ Single binary works across platforms (3.8 MB compressed, 13.5 MB uncompressed)
 - ✅ MCP server functional in VS Code/Cursor/Windsurf
 - ✅ AI editors can provision environments
 - ✅ Metrics command working (`thresh metrics`)
 - ✅ Native AOT compilation optimized
+- ✅ UPX compression reduces size by 72%
+- ✅ Simplified to GitHub Copilot SDK only (AOT-compatible)
+- ✅ Removed unused dependencies and obsolete AI providers
 
 ---
 
@@ -135,7 +140,6 @@ thresh serve --stdio   # For VS Code, Cursor, Windsurf
 - [ ] Migrate existing markdown content:
   - [ ] `GETTING_STARTED.md` → `docs/intro.md`
   - [ ] `thresh/README.md` → `docs/cli-reference/`
-  - [ ] `DUAL_AI_PROVIDERS.md` → `docs/ai-providers/`
   - [ ] `MCP_INTEGRATION.md` → `docs/mcp-integration/`
 - [ ] Create installation guides (Windows, Linux, macOS)
 - [ ] Design homepage with features grid

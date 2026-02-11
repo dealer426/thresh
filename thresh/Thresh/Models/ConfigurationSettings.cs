@@ -6,34 +6,9 @@ namespace Thresh.Models;
 public class ConfigurationSettings
 {
     /// <summary>
-    /// OpenAI API key for AI features
+    /// Default AI model to use (for GitHub Copilot)
     /// </summary>
-    public string? OpenAIApiKey { get; set; }
-
-    /// <summary>
-    /// Azure OpenAI endpoint
-    /// </summary>
-    public string? AzureOpenAIEndpoint { get; set; }
-
-    /// <summary>
-    /// Azure OpenAI API key
-    /// </summary>
-    public string? AzureOpenAIApiKey { get; set; }
-
-    /// <summary>
-    /// Default AI model to use
-    /// </summary>
-    public string? DefaultModel { get; set; } = "gpt-4";
-
-    /// <summary>
-    /// AI provider to use: "openai" or "copilot"
-    /// </summary>
-    public string? AIProvider { get; set; } = "openai";
-
-    /// <summary>
-    /// GitHub token for Copilot features
-    /// </summary>
-    public string? GitHubToken { get; set; }
+    public string? DefaultModel { get; set; } = "gpt-4o";
 
     /// <summary>
     /// Enable telemetry

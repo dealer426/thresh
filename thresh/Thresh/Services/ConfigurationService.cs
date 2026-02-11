@@ -67,10 +67,7 @@ public class ConfigurationService
             var json = File.ReadAllText(ConfigFilePath);
             var settings = JsonSerializer.Deserialize(json, ConfigurationJsonContext.Default.ConfigurationSettings) ?? new ConfigurationSettings();
             
-            // Decrypt sensitive values
-            settings.OpenAIApiKey = DecryptValue(settings.OpenAIApiKey);
-            settings.AzureOpenAIApiKey = DecryptValue(settings.AzureOpenAIApiKey);
-            settings.GitHubToken = DecryptValue(settings.GitHubToken);
+            // No sensitive values to decrypt (GitHub Copilot uses CLI auth)
 
             _cachedSettings = settings;
             return settings;
@@ -95,11 +92,7 @@ public class ConfigurationService
             // Clone settings to avoid modifying the original
             var settingsToSave = new ConfigurationSettings
             {
-                OpenAIApiKey = EncryptValue(settings.OpenAIApiKey),
-                AzureOpenAIEndpoint = settings.AzureOpenAIEndpoint,
-                AzureOpenAIApiKey = EncryptValue(settings.AzureOpenAIApiKey),
                 DefaultModel = settings.DefaultModel,
-                GitHubToken = EncryptValue(settings.GitHubToken),
                 EnableTelemetry = settings.EnableTelemetry,
                 DefaultBase = settings.DefaultBase,
                 CustomDistributions = new Dictionary<string, CustomDistribution>(settings.CustomDistributions),
@@ -146,29 +139,9 @@ public class ConfigurationService
 
         switch (normalizedKey)
         {
-            case "openai-api-key":
-            case "openai-key":
-                settings.OpenAIApiKey = value;
-                break;
-
-            case "azure-openai-endpoint":
-            case "azure-endpoint":
-                settings.AzureOpenAIEndpoint = value;
-                break;
-
-            case "azure-openai-api-key":
-            case "azure-key":
-                settings.AzureOpenAIApiKey = value;
-                break;
-
             case "default-model":
             case "model":
                 settings.DefaultModel = value;
-                break;
-
-            case "github-token":
-            case "gh-token":
-                settings.GitHubToken = value;
                 break;
 
             case "enable-telemetry":
@@ -199,11 +172,7 @@ public class ConfigurationService
 
         return normalizedKey switch
         {
-            "openai-api-key" or "openai-key" => MaskSensitiveValue(settings.OpenAIApiKey),
-            "azure-openai-endpoint" or "azure-endpoint" => settings.AzureOpenAIEndpoint,
-            "azure-openai-api-key" or "azure-key" => MaskSensitiveValue(settings.AzureOpenAIApiKey),
             "default-model" or "model" => settings.DefaultModel,
-            "github-token" or "gh-token" => MaskSensitiveValue(settings.GitHubToken),
             "enable-telemetry" or "telemetry" => settings.EnableTelemetry.ToString(),
             "default-base" or "base" => settings.DefaultBase,
             _ => settings.CustomSettings.TryGetValue(key, out var value) ? value : null
@@ -211,20 +180,12 @@ public class ConfigurationService
     }
 
     /// <summary>
-    /// Get the actual unmasked value for a secret/API key (for internal use only)
+    /// Get the actual unmasked value (no secrets stored anymore)
     /// </summary>
     public string? GetSecretValue(string key)
     {
-        var settings = Load();
-        var normalizedKey = key.ToLowerInvariant().Replace("_", "-");
-
-        return normalizedKey switch
-        {
-            "openai-api-key" or "openai-key" => settings.OpenAIApiKey,
-            "azure-openai-api-key" or "azure-key" => settings.AzureOpenAIApiKey,
-            "github-token" or "gh-token" => settings.GitHubToken,
-            _ => null
-        };
+        // No secrets stored - GitHub Copilot uses CLI auth
+        return null;
     }
 
     /// <summary>
@@ -237,26 +198,6 @@ public class ConfigurationService
 
         switch (normalizedKey)
         {
-            case "openai-api-key":
-            case "openai-key":
-                settings.OpenAIApiKey = null;
-                break;
-
-            case "azure-openai-endpoint":
-            case "azure-endpoint":
-                settings.AzureOpenAIEndpoint = null;
-                break;
-
-            case "azure-openai-api-key":
-            case "azure-key":
-                settings.AzureOpenAIApiKey = null;
-                break;
-
-            case "github-token":
-            case "gh-token":
-                settings.GitHubToken = null;
-                break;
-
             default:
                 settings.CustomSettings.Remove(key);
                 break;
@@ -273,11 +214,7 @@ public class ConfigurationService
         var settings = Load();
         var result = new Dictionary<string, string?>
         {
-            ["openai-api-key"] = MaskSensitiveValue(settings.OpenAIApiKey),
-            ["azure-openai-endpoint"] = settings.AzureOpenAIEndpoint,
-            ["azure-openai-api-key"] = MaskSensitiveValue(settings.AzureOpenAIApiKey),
             ["default-model"] = settings.DefaultModel,
-            ["github-token"] = MaskSensitiveValue(settings.GitHubToken),
             ["enable-telemetry"] = settings.EnableTelemetry.ToString(),
             ["default-base"] = settings.DefaultBase
         };
@@ -423,7 +360,7 @@ public class ConfigurationService
     }
 
     /// <summary>
-    /// Get the raw (decrypted) value for internal use
+    /// Get the raw value for internal use
     /// </summary>
     public string? GetRawValue(string key)
     {
@@ -432,11 +369,7 @@ public class ConfigurationService
 
         return normalizedKey switch
         {
-            "openai-api-key" or "openai-key" => settings.OpenAIApiKey,
-            "azure-openai-endpoint" or "azure-endpoint" => settings.AzureOpenAIEndpoint,
-            "azure-openai-api-key" or "azure-key" => settings.AzureOpenAIApiKey,
             "default-model" or "model" => settings.DefaultModel,
-            "github-token" or "gh-token" => settings.GitHubToken,
             "enable-telemetry" or "telemetry" => settings.EnableTelemetry.ToString(),
             "default-base" or "base" => settings.DefaultBase,
             _ => settings.CustomSettings.TryGetValue(key, out var value) ? value : null

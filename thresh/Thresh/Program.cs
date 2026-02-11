@@ -70,8 +70,8 @@ class Program
         Console.WriteLine("  thresh up alpine-minimal");
         Console.WriteLine("  thresh generate 'Python ML environment with Jupyter'");
         Console.WriteLine("  thresh list");
-        Console.WriteLine("  thresh config set openai-api-key <key>");
-        Console.WriteLine("  thresh config set aiprovider openai");  // or 'copilot'
+        Console.WriteLine("  thresh config set default-model gpt-4o");
+        Console.WriteLine("  thresh config set default-base ubuntu-24.04");
     }
     
     private static void AddVersionCommand(RootCommand rootCommand)
@@ -368,9 +368,8 @@ class Program
                 // Clean the output (remove markdown code blocks)
                 var cleanedJson = aiService switch
                 {
-                    OpenAIService openAi => openAi.CleanJsonOutput(jsonContent),
                     GitHubCopilotService copilot => copilot.CleanJsonOutput(jsonContent),
-                    _ => jsonContent
+                    _ => CleanJsonOutput(jsonContent)
                 };
                 
                 // Save to file if requested
@@ -391,36 +390,8 @@ class Program
             catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                
-                // Show detailed error for OpenAI/Azure OpenAI initialization issues
-                if (ex is InvalidOperationException && 
-                    (ex.Message.Contains("OpenAI SDK initialization") || ex.Message.Contains("Azure OpenAI SDK initialization")))
-                {
-                    Console.WriteLine($"❌ {ex.Message}");
-                    Console.ResetColor();
-                }
-                // Provide cleaner message for OpenAI SDK AOT incompatibility
-                else if (ex is TypeInitializationException || 
-                    ex.Message.Contains("ModelSerializationExtensions") ||
-                    ex.InnerException is TypeInitializationException)
-                {
-                    Console.WriteLine("❌ OpenAI SDK is not compatible with Native AOT compilation.");
-                    Console.ResetColor();
-                    Console.WriteLine();
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine("💡 Solution: Switch to GitHub Copilot (recommended):");
-                    Console.WriteLine("   gh auth login");
-                    Console.WriteLine("   thresh config set default-provider github-copilot");
-                    Console.WriteLine();
-                    Console.WriteLine("   Install GitHub CLI: https://cli.github.com");
-                    Console.WriteLine("   GitHub Copilot is free for public repos and fully AOT-compatible!");
-                    Console.ResetColor();
-                }
-                else
-                {
-                    Console.WriteLine($"❌ Generation failed: {ex.Message}");
-                    Console.ResetColor();
-                }
+                Console.WriteLine($"❌ Generation failed: {ex.Message}");
+                Console.ResetColor();
             }
         }, promptArg, outputOption, modelOption, providerOption, noStreamOption);
         
@@ -441,8 +412,9 @@ class Program
             try
             {
                 var configService = new Services.ConfigurationService();
-                var copilot = new Services.CopilotService(configService, model, provider);
-                await copilot.ChatModeAsync();
+                var factory = new Services.AiProviderFactory(configService);
+                var aiService = factory.CreateAIService(model, provider);
+                await aiService.ChatModeAsync();
             }
             catch (Exception ex)
             {
@@ -462,7 +434,7 @@ class Program
         
         // config set
         var setCommand = new Command("set", "Set configuration value");
-        var keyArg = new Argument<string>("key", "Configuration key (e.g., openai-api-key, github-token, default-model)");
+        var keyArg = new Argument<string>("key", "Configuration key (e.g., default-model, default-base, enable-telemetry)");
         var valueArg = new Argument<string>("value", "Configuration value");
         setCommand.AddArgument(keyArg);
         setCommand.AddArgument(valueArg);
@@ -609,37 +581,9 @@ class Program
                 var factory = new Services.AiProviderFactory(configService);
                 var aiService = factory.CreateAIService();
                 
-                // Check if the service supports discovery and call the appropriate method
-                CustomDistribution? distro = null;
-                
-                if (aiService is OpenAIService openAIService)
-                {
-                    distro = await openAIService.DiscoverDistributionAsync(name);
-                }
-                else if (aiService is AzureOpenAIService azureService)
-                {
-                    distro = await azureService.DiscoverDistributionAsync(name);
-                }
-                else
-                {
-                    Console.WriteLine($"❌ Distribution discovery not supported by {aiService.ProviderName}");
-                    return;
-                }
-                
-                if (distro == null)
-                {
-                    Console.WriteLine("❌ Could not discover distribution information");
-                    return;
-                }
-                
-                // Save to config
-                var settings = configService.Load();
-                settings.CustomDistributions[distro.Key] = distro;
-                configService.Save(settings);
-                
-                Console.WriteLine($"✅ Added custom distribution: {distro.Key}");
-                Console.WriteLine($"\nYou can now use it in blueprints:");
-                Console.WriteLine($"  \"base\": \"{distro.Key}\"");
+                // Discovery is not currently implemented
+                Console.WriteLine($"❌ Distribution discovery not yet implemented");
+                return;
             }
             else
             {
@@ -922,5 +866,37 @@ class Program
         });
         
         rootCommand.AddCommand(testCommand);
+    }
+
+    /// <summary>
+    /// Clean JSON output by removing markdown code blocks
+    /// </summary>
+    private static string CleanJsonOutput(string rawOutput)
+    {
+        var cleaned = rawOutput.Trim();
+        
+        // Remove markdown code blocks if present
+        if (!cleaned.Contains("```"))
+            return cleaned;
+
+        var lines = cleaned.Split('\n');
+        var jsonLines = new List<string>();
+        var inCodeBlock = false;
+
+        foreach (var line in lines)
+        {
+            if (line.Trim().StartsWith("```"))
+            {
+                inCodeBlock = !inCodeBlock;
+                continue;
+            }
+
+            if (inCodeBlock)
+            {
+                jsonLines.Add(line);
+            }
+        }
+
+        return string.Join("\n", jsonLines).Trim();
     }
 }

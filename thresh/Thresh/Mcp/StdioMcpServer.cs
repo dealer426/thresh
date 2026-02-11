@@ -15,7 +15,6 @@ public class StdioMcpServer
     private readonly BlueprintService _blueprintService;
     private readonly ConfigurationService _configService;
     private readonly CancellationTokenSource _cts;
-    private bool _initialized;
 
     public StdioMcpServer()
     {
@@ -24,7 +23,6 @@ public class StdioMcpServer
         var rootfsRegistry = new RootfsRegistry(_configService);
         _blueprintService = new BlueprintService(_containerService, rootfsRegistry);
         _cts = new CancellationTokenSource();
-        _initialized = false;
     }
 
     /// <summary>

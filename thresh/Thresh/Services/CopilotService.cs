@@ -48,15 +48,37 @@ public class CopilotService
     public string CleanJsonOutput(string rawOutput)
     {
         // Delegate to underlying service if it has the method
-        if (_aiService is OpenAIService openAIService)
-            return openAIService.CleanJsonOutput(rawOutput);
-        if (_aiService is AzureOpenAIService azureService)
-            return azureService.CleanJsonOutput(rawOutput);
         if (_aiService is GitHubCopilotService copilotService)
             return copilotService.CleanJsonOutput(rawOutput);
 
-        // Fallback for unknown services
-        return rawOutput.Trim();
+        // For all other services (custom HTTP clients), use simple JSON cleaning
+        var cleaned = rawOutput.Trim();
+        
+        // Remove markdown code blocks if present
+        if (cleaned.Contains("```"))
+        {
+            var lines = cleaned.Split('\n');
+            var jsonLines = new List<string>();
+            var inCodeBlock = false;
+
+            foreach (var line in lines)
+            {
+                if (line.Trim().StartsWith("```"))
+                {
+                    inCodeBlock = !inCodeBlock;
+                    continue;
+                }
+
+                if (inCodeBlock)
+                {
+                    jsonLines.Add(line);
+                }
+            }
+
+            cleaned = string.Join("\n", jsonLines).Trim();
+        }
+
+        return cleaned;
     }
 
     /// <summary>
@@ -64,15 +86,9 @@ public class CopilotService
     /// </summary>
     public async Task<CustomDistribution?> DiscoverDistributionAsync(string distroName)
     {
-        // Delegate to underlying service if it has the method
-        if (_aiService is OpenAIService openAIService)
-            return await openAIService.DiscoverDistributionAsync(distroName);
-        if (_aiService is AzureOpenAIService azureService)
-            return await azureService.DiscoverDistributionAsync(distroName);
-
-        // GitHub Copilot SDK doesn't support distribution discovery
-        // Fallback for other services
+        // Discovery is not currently implemented for any provider
         Console.WriteLine($"❌ Discovery not supported by {_aiService.ProviderName}");
+        await Task.CompletedTask;
         return null;
     }
 }
