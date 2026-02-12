@@ -352,8 +352,8 @@ Metrics are sourced from:
 ## Performance Impact
 
 Metrics collection is **lightweight**:
-- <1% CPU overhead
-- <5 MB memory overhead
+- Less than 1% CPU overhead
+- Less than 5 MB memory overhead
 - Non-invasive polling (no ptrace)
 
 Watch mode impact:
