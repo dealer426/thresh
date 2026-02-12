@@ -376,5 +376,4 @@ Each operates independently with no conflicts.
 ## See Also
 
 - [MCP Integration Guide](/docs/mcp-integration) - Full setup walkthrough
-- [`thresh index`](/docs/cli-reference/index) - Initialize MCP configuration
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/) - Protocol details
