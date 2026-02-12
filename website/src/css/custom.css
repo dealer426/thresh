@@ -28,3 +28,29 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/* Reduce blog post title size */
+article header h1 {
+  font-size: 1.5rem !important;
+}
+
+.blog-wrapper article header h1 {
+  font-size: 1.5rem !important;
+}
+
+/* Reduce blog listing page title size */
+.blog-post-item h2 a {
+  font-size: 1.2rem !important;
+}
+
+.blogPostItem h2 {
+  font-size: 1.2rem !important;
+}
+
+.margin-bottom--xl h2 {
+  font-size: 1.2rem !important;
+}
+
+.blog-list-page h2 {
+  font-size: 1.2rem !important;
+}
