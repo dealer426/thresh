@@ -15,7 +15,7 @@
 
 ### Key Features
 
-- 🤖 **GitHub Copilot SDK** - Integrated AI with access to GPT-4o, Claude 3.5 Sonnet, o1-preview, and o1-mini
+- 🤖 **20+ AI Models** - GPT-4o, Claude 3.5 Sonnet, o1-preview/mini, Gemini 1.5, Llama 3.1, Mistral via GitHub Copilot SDK
 - ⚡ **Instant Provisioning** - WSL2 distributions installed and configured in seconds
 - 📦 **17 Built-in Distros** - Ubuntu, Alpine, Debian, Kali, Oracle Linux, openSUSE + custom support
 - 🎯 **Hybrid Distribution System** - Direct vendor downloads + Microsoft Store wrapper
@@ -25,6 +25,7 @@
 - 🔌 **MCP Integration** - Model Context Protocol server for VS Code, Cursor, and Windsurf
 - 📊 **System Metrics** - Real-time host and container monitoring with JSON export
 - 🎯 **Ultra-Compact** - UPX compressed binary (3.8 MB) with 73% size reduction
+- 🔑 **No API Keys** - Uses GitHub CLI authentication for all AI features
 
 ---
 
@@ -79,7 +80,8 @@ thresh.exe (3.8 MB compressed, 13.5 MB uncompressed)
 **Tech Stack:**
 - **Language**: C# 13 / .NET 10.0 LTS
 - **CLI Framework**: System.CommandLine
-- **AI Provider**: GitHub Copilot SDK 0.1.23-preview.1 (gpt-4o, claude-3.5-sonnet, o1-preview, o1-mini)
+- **AI Provider**: GitHub Copilot SDK 0.1.23-preview.1
+- **Available Models**: 20+ models including GPT-4o, Claude 3.5 Sonnet, o1-preview, Gemini, Llama 3.1, Mistral
 - **Authentication**: GitHub CLI (`gh auth login`) - No API keys required!
 - **Blueprints**: JSON with System.Text.Json source generation
 - **Compilation**: Native AOT (PublishAot=true) + UPX --best --lzma
@@ -185,7 +187,7 @@ upx --best --lzma .\bin\Release\net10.0\win-x64\publish\thresh.exe
 gh auth login
 
 # Configure default AI model
-thresh config set DefaultModel gpt-4o  # or claude-3.5-sonnet, o1-preview, o1-mini
+thresh config set DefaultModel gpt-4o  # See full model list below
 
 # View configuration
 thresh config list
@@ -195,12 +197,49 @@ thresh --version
 ```
 
 **Available AI Models** (via GitHub Copilot SDK):
-- **gpt-4o** - Most capable GPT-4 model (default)
-- **claude-3.5-sonnet** - Anthropic's latest model
-- **o1-preview** - Advanced reasoning capabilities
+
+**GPT Models (OpenAI):**
+- **gpt-4o** - GPT-4 Optimized, most capable multimodal model (default)
+- **gpt-4o-mini** - Faster, more affordable GPT-4o variant
+- **gpt-4-turbo** - GPT-4 Turbo with 128K context window
+- **gpt-4** - Standard GPT-4 model
+- **gpt-3.5-turbo** - Fast, cost-effective legacy model
+
+**Reasoning Models (OpenAI):**
+- **o1-preview** - Advanced reasoning, slower but more thoughtful
 - **o1-mini** - Fast reasoning for simpler tasks
 
-**Note**: All AI features require GitHub CLI authentication. No API keys needed!
+**Claude Models (Anthropic):**
+- **claude-3.5-sonnet** - Latest Claude 3.5 (recommended for complex tasks)
+- **claude-3.5-haiku** - Faster Claude 3.5 variant
+- **claude-3-opus** - Most capable Claude 3 model
+- **claude-3-sonnet** - Balanced Claude 3
+- **claude-3-haiku** - Fast Claude 3
+
+**Gemini Models (Google):**
+- **gemini-1.5-pro** - Google's Gemini Pro with 1M token context
+- **gemini-1.5-flash** - Faster Gemini variant
+
+**Open Source Models:**
+- **llama-3.1-405b** - Meta's largest Llama 3.1 (most capable)
+- **llama-3.1-70b** - Meta's Llama 3.1 70B
+- **llama-3.1-8b** - Meta's Llama 3.1 8B (fastest)
+- **mistral-large** - Mistral AI's large model
+- **mistral-nemo** - Smaller Mistral variant
+
+**Usage Examples:**
+```powershell
+# Use specific model for generation
+thresh generate "Python dev env" --model claude-3.5-sonnet
+
+# Use reasoning model for complex blueprints
+thresh generate "Multi-tier app with Redis, PostgreSQL, nginx" --model o1-preview
+
+# Interactive chat with Claude
+thresh chat --model claude-3.5-sonnet
+```
+
+**Note**: All AI features require GitHub CLI authentication (`gh auth login`). No API keys needed!
 
 ---
 
@@ -541,10 +580,35 @@ await foreach (var token in client.CompleteAsync(prompt, model))
 ```
 
 **Available Models**:
-- `gpt-4o` - OpenAI GPT-4 Optimized
-- `claude-3.5-sonnet` - Anthropic Claude 3.5
-- `o1-preview` - OpenAI o1 Preview
-- `o1-mini` - OpenAI o1 Mini
+
+**GPT Models (OpenAI):**
+- `gpt-4o` - GPT-4 Optimized (most capable, multimodal)
+- `gpt-4o-mini` - Faster, more affordable variant
+- `gpt-4-turbo` - GPT-4 Turbo with 128K context
+- `gpt-4` - Standard GPT-4
+- `gpt-3.5-turbo` - Fast legacy model
+
+**Reasoning Models (OpenAI):**
+- `o1-preview` - Advanced reasoning (slower, more thoughtful)
+- `o1-mini` - Fast reasoning for simpler tasks
+
+**Claude Models (Anthropic):**
+- `claude-3.5-sonnet` - Latest Claude 3.5
+- `claude-3.5-haiku` - Faster Claude 3.5
+- `claude-3-opus` - Most capable Claude 3
+- `claude-3-sonnet` - Balanced Claude 3
+- `claude-3-haiku` - Fast Claude 3
+
+**Gemini Models (Google):**
+- `gemini-1.5-pro` - Gemini Pro with 1M context
+- `gemini-1.5-flash` - Faster Gemini variant
+
+**Open Source Models:**
+- `llama-3.1-405b` - Meta's largest Llama (most capable)
+- `llama-3.1-70b` - Meta's Llama 70B
+- `llama-3.1-8b` - Meta's Llama 8B (fastest)
+- `mistral-large` - Mistral AI's large model
+- `mistral-nemo` - Smaller Mistral variant
 
 **System Prompts**:
 - **Generate**: "You are a WSL blueprint expert. Generate JSON configurations with: name, description, base, packages, environment, scripts. Output only valid JSON, no markdown."
