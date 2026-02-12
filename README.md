@@ -1,12 +1,19 @@
 # Project Title
 
-This project is built using .NET 10. All SDK references and dependencies have been updated to ensure compatibility.
+A brief description of your project.
 
-## SDK References
-- .NET 10 SDK is required for building and running this project.
+## Installation
 
-## Binary Sizes
-- The binary sizes have been optimized for .NET 10.
+Instructions on how to install your project.
 
-## Documentation
-Please ensure to follow the .NET 10 guidelines for any configurations or settings required.
+## Usage
+
+Instructions on how to use your project.
+
+## Contributing
+
+Instructions on how to contribute to the project.
+
+## License
+
+Specify the license under which the project is distributed.
