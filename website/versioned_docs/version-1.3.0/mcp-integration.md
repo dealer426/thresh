@@ -495,7 +495,6 @@ Success indicators:
 
 - [MCP Specification](https://modelcontextprotocol.io/)
 - [thresh CLI Reference](./cli-reference/)
-- [thresh Blueprints Guide](./blueprints)
 
 ---
 

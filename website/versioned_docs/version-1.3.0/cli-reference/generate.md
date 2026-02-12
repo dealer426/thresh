@@ -284,5 +284,5 @@ notepad blueprint.json
 
 - [`thresh chat`](./chat) - Interactive AI assistant
 - [`thresh up`](./up) - Provision from blueprint
-- [`thresh blueprints`](./blueprints) - List available blueprints
+- `thresh blueprints` - List available blueprints
 - [`thresh config`](./config) - Configure AI settings

@@ -176,4 +176,4 @@ thresh list | Where-Object { $_ -match "python" }
 
 - [`thresh up`](./up) - Create new environments
 - [`thresh destroy`](./destroy) - Remove environments
-- [`thresh metrics`](./metrics) - Show performance metrics
+- `thresh metrics` - Show performance metrics
