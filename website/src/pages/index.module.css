@@ -67,25 +67,25 @@
 }
 
 .codeBlock {
-  background-color: #0d1117;
+  background-color: var(--ifm-code-background);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
-  border: 1px solid #30363d;
+  border: 1px solid var(--ifm-color-emphasis-300);
 }
 
 .codeHeader {
-  background-color: #161b22;
+  background-color: #1a1a1a !important;
   padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid #30363d;
+  border-bottom: 1px solid #333333;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .codeTitle {
-  color: #e6edf3;
+  color: #ffffff !important;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
   font-size: 0.9rem;
   font-weight: 600;
@@ -94,11 +94,13 @@
 .codeContent {
   padding: 1.5rem;
   margin: 0;
-  color: #e6edf3;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-  font-size: 0.9rem;
-  line-height: 1.7;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.95rem;
+  line-height: 1.8;
   overflow-x: auto;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  white-space: pre;
 }
 
 /* Use Cases Section */
