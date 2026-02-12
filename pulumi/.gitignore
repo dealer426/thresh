@@ -1,0 +1,18 @@
+# Environment variables with credentials
+.env
+
+# Pulumi state (when using local backend)
+.pulumi/
+
+# .NET build outputs
+bin/
+obj/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
