@@ -85,8 +85,8 @@ jobs:
         $BINARY = "thresh/Thresh/bin/Release/net10.0/win-x64/publish/thresh.exe"
         $size = (Get-Item $BINARY).Length
         $sizeMB = [math]::Round($size / 1MB, 2)
-        $uncompressed = "${{ steps.pre_upx_size.outputs.SIZE_MB }}"
-        $reduction = [math]::Round((1 - ($size / ($uncompressed * 1MB))) * 100, 2)
+        $uncompressed = [double]"${{ steps.pre_upx_size.outputs.SIZE_MB }}"
+        $reduction = [math]::Round((1 - ($sizeMB / $uncompressed)) * 100, 2)
         echo "SIZE_MB=$sizeMB" >> $env:GITHUB_OUTPUT
         echo "UNCOMPRESSED_MB=$uncompressed" >> $env:GITHUB_OUTPUT
         echo "REDUCTION=$reduction" >> $env:GITHUB_OUTPUT
