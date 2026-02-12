@@ -24,7 +24,10 @@ class Program
         var resourcePoolName = Environment.GetEnvironmentVariable("VSPHERE_RESOURCE_POOL") 
             ?? "Resources";
         var ubuntuTemplate = Environment.GetEnvironmentVariable("UBUNTU_TEMPLATE") 
-            ?? "ubuntu-22.04-template";
+            ?? "ubuntu-22.04-cloud-init";
+        var createTemplate = Environment.GetEnvironmentVariable("CREATE_TEMPLATE")?.ToLower() == "true";
+        var ubuntuOvaPath = Environment.GetEnvironmentVariable("UBUNTU_OVA_PATH") 
+            ?? "[datastore1] ISO/ubuntu-22.04-server-cloudimg-amd64.ova";
         var sshPublicKeyPath = Environment.GetEnvironmentVariable("SSH_PUBLIC_KEY_PATH") 
             ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh", "id_rsa.pub");
 
@@ -62,17 +65,139 @@ class Program
             DatacenterId = dc.Id
         }));
 
-        // Get VM template
-        var template = datacenter.Apply(dc => GetVirtualMachine.Invoke(new GetVirtualMachineInvokeArgs
-        {
-            Name = ubuntuTemplate,
-            DatacenterId = dc.Id
-        }));
-
         // Read SSH public key
         var sshPublicKey = File.Exists(sshPublicKeyPath) 
             ? File.ReadAllText(sshPublicKeyPath).Trim()
             : throw new Exception($"SSH public key not found at {sshPublicKeyPath}");
+
+        // === TEMPLATE CREATION SECTION ===
+        // If CREATE_TEMPLATE=true, create Ubuntu Cloud-Init template VM
+        VirtualMachine? templateVM = null;
+        
+        if (createTemplate)
+        {
+            Pulumi.Log.Info("Creating Ubuntu Cloud-Init template from scratch...");
+            
+            // Create a minimal Ubuntu VM that will become the template
+            templateVM = new VirtualMachine("ubuntu-cloud-init-template", new VirtualMachineArgs
+            {
+                Name = ubuntuTemplate,
+                ResourcePoolId = resourcePool.Apply(rp => rp.Id),
+                DatastoreId = datastore.Apply(ds => ds.Id),
+                
+                NumCpus = 2,
+                Memory = 2048,
+                
+                GuestId = "ubuntu64Guest",
+                Firmware = "efi",
+                
+                NetworkInterfaces = new VirtualMachineNetworkInterfaceArgs
+                {
+                    NetworkId = network.Apply(n => n.Id)
+                },
+                
+                Disks = new VirtualMachineDiskArgs
+                {
+                    Label = "disk0",
+                    Size = 20,
+                    ThinProvisioned = true
+                },
+                
+                // This VM will be converted to template manually or via vCenter automation
+                // For OVA import, you'd use vCenter UI or govc CLI
+                ExtraConfig = {
+                    { "disk.EnableUUID", "TRUE" }
+                }
+            });
+            
+            Pulumi.Log.Warn($@"
+================================================================================
+TEMPLATE CREATION INSTRUCTIONS:
+================================================================================
+
+A placeholder VM '{ubuntuTemplate}' has been created.
+
+To complete template setup, you have TWO options:
+
+OPTION 1 - Use Ubuntu Cloud Image (RECOMMENDED):
+------------------------------------------------
+1. Download Ubuntu Cloud Image OVA:
+   wget https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.ova
+
+2. Upload to vCenter datastore via vSphere Client
+
+3. Deploy OVF Template in vCenter:
+   - Right-click datacenter → Deploy OVF Template
+   - Select the downloaded OVA file
+   - Name it: {ubuntuTemplate}
+   - Select datastore: {datastoreName}
+   - Select network: {networkName}
+
+4. After deployment, convert to template:
+   - Right-click VM → Template → Convert to Template
+
+5. Delete the placeholder VM created by Pulumi (optional)
+
+6. Re-run: pulumi up (will now use the real template)
+
+OPTION 2 - Use govc CLI (AUTOMATED):
+-------------------------------------
+1. Install govc: https://github.com/vmware/govmomi/releases
+
+2. Set environment:
+   export GOVC_URL=https://{vSphereServer}/sdk
+   export GOVC_USERNAME=$VSPHERE_USER
+   export GOVC_PASSWORD=$VSPHERE_PASSWORD
+   export GOVC_INSECURE=true
+
+3. Import OVA:
+   govc import.ova -name={ubuntuTemplate} \\
+     -ds={datastoreName} \\
+     -pool={resourcePoolName} \\
+     ubuntu-22.04-server-cloudimg-amd64.ova
+
+4. Mark as template:
+   govc vm.markastemplate {ubuntuTemplate}
+
+5. Re-run: pulumi up
+
+================================================================================
+After template is ready, set CREATE_TEMPLATE=false in .env
+================================================================================
+");
+        }
+
+        // Get VM template (will fail if template doesn't exist and CREATE_TEMPLATE=false)
+        Output<GetVirtualMachineResult>? template = null;
+        
+        try
+        {
+            template = datacenter.Apply(dc => GetVirtualMachine.Invoke(new GetVirtualMachineInvokeArgs
+            {
+                Name = ubuntuTemplate,
+                DatacenterId = dc.Id
+            }));
+        }
+        catch
+        {
+            if (!createTemplate)
+            {
+                Pulumi.Log.Error($@"
+Template '{ubuntuTemplate}' not found in vCenter!
+
+SOLUTION:
+1. Set CREATE_TEMPLATE=true in .env
+2. Run: pulumi up
+3. Follow the instructions to import Ubuntu Cloud Image
+4. Set CREATE_TEMPLATE=false
+5. Run: pulumi up again
+
+OR manually import Ubuntu Cloud Image OVA to vCenter and name it '{ubuntuTemplate}'
+");
+                throw new Exception($"Template '{ubuntuTemplate}' not found. Set CREATE_TEMPLATE=true in .env and follow instructions.");
+            }
+            throw;
+        }
 
         // Cloud-init configuration for Ubuntu
         var cloudInitMetadata = @"

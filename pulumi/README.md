@@ -47,11 +47,80 @@ VSPHERE_DATASTORE=YourDatastore
 VSPHERE_NETWORK=VM Network
 VSPHERE_RESOURCE_POOL=Resources
 
-UBUNTU_TEMPLATE=ubuntu-22.04-template
+UBUNTU_TEMPLATE=ubuntu-22.04-cloud-init
+CREATE_TEMPLATE=false
 SSH_PUBLIC_KEY_PATH=C:\Users\YourUser\.ssh\id_rsa.pub
 ```
 
-### 4. Login to Pulumi
+### 4. Setup Ubuntu Cloud-Init Template
+
+You need an Ubuntu 22.04 cloud-init enabled template in vCenter. **Two options:**
+
+#### Option A: Download and Import Ubuntu Cloud Image (Recommended)
+
+```bash
+# 1. Download Ubuntu Cloud Image OVA
+wget https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.ova
+
+# 2. Import to vCenter via vSphere Client:
+#    - Right-click Datacenter → Deploy OVF Template
+#    - Select the downloaded OVA
+#    - Name it: ubuntu-22.04-cloud-init
+#    - Select your datastore and network
+#    - Finish deployment
+
+# 3. Convert to Template:
+#    - Right-click the deployed VM → Template → Convert to Template
+
+# Done! Template is ready for Pulumi
+```
+
+#### Option B: Use Pulumi to Guide Template Creation
+
+```bash
+# 1. Set CREATE_TEMPLATE=true in .env
+echo "CREATE_TEMPLATE=true" >> .env
+
+# 2. Run Pulumi
+pulumi up
+
+# 3. Follow the detailed instructions printed by Pulumi
+
+# 4. After template is ready, set back to false
+sed -i 's/CREATE_TEMPLATE=true/CREATE_TEMPLATE=false/' .env
+
+# 5. Run Pulumi again with real template
+pulumi up
+```
+
+#### Option C: Use govc CLI (Automated)
+
+```bash
+# 1. Install govc
+# Download from: https://github.com/vmware/govmomi/releases
+
+# 2. Download Ubuntu Cloud Image
+wget https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.ova
+
+# 3. Set govc environment
+export GOVC_URL=https://your-vcenter.example.com/sdk
+export GOVC_USERNAME=administrator@vsphere.local
+export GOVC_PASSWORD=your-password
+export GOVC_INSECURE=true
+
+# 4. Import OVA and mark as template
+govc import.ova \
+  -name=ubuntu-22.04-cloud-init \
+  -ds=YourDatastore \
+  -pool=YourCluster/Resources \
+  ubuntu-22.04-server-cloudimg-amd64.ova
+
+govc vm.markastemplate ubuntu-22.04-cloud-init
+
+# Done! Ready for Pulumi
+```
+
+### 5. Login to Pulumi
 
 ```bash
 # Login to Pulumi (can use local backend or Pulumi Cloud)
@@ -61,7 +130,7 @@ pulumi login --local  # For local state storage
 pulumi login
 ```
 
-### 5. Initialize Pulumi Stack
+### 6. Initialize Pulumi Stack
 
 ```bash
 # Restore .NET dependencies
@@ -75,6 +144,14 @@ pulumi stack init dev
 ```
 
 ## Usage
+
+### Check Template Availability
+
+```bash
+# Verify your template exists before deploying
+# This should be set in .env and match your vCenter template name
+echo $UBUNTU_TEMPLATE
+```
 
 ### Preview Changes
 
