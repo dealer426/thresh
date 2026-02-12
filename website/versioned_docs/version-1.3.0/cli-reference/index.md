@@ -17,13 +17,14 @@ thresh provides a comprehensive set of commands for managing WSL development env
 | [`destroy`](/docs/cli-reference/destroy) | Remove an environment |
 | [`generate`](/docs/cli-reference/generate) | Generate a custom blueprint using AI |
 | [`chat`](/docs/cli-reference/chat) | Interactive AI chat for environment planning |
-| `blueprints` | List available blueprints |
-| `distros` | List available distributions |
-| `distro` | Manage custom distributions |
+| [`blueprints`](/docs/cli-reference/blueprints) | List available blueprints |
+| [`distros`](/docs/cli-reference/distros) | List available distributions |
+| [`distro`](/docs/cli-reference/distro) | Manage custom distributions |
 | [`config`](/docs/cli-reference/config) | Manage configuration settings |
-| `serve` | Start MCP server |
-| `metrics` | Show performance metrics |
-| `version` | Show version information |
+| [`index`](/docs/cli-reference/index) | Initialize MCP configuration |
+| [`serve`](/docs/cli-reference/serve) | Start MCP server |
+| [`metrics`](/docs/cli-reference/metrics) | Show performance metrics |
+| [`version`](/docs/cli-reference/version) | Show version information |
 
 ## Command Categories
 
@@ -38,16 +39,17 @@ thresh provides a comprehensive set of commands for managing WSL development env
 
 ### Configuration
 - **[config](/docs/cli-reference/config)** - Manage settings
-- **distro** - Custom distributions
-- **blueprints** - View blueprints
-- **distros** - View distributions
+- **[distro](/docs/cli-reference/distro)** - Custom distributions
+- **[blueprints](/docs/cli-reference/blueprints)** - View blueprints
+- **[distros](/docs/cli-reference/distros)** - View distributions
 
 ### Integration
-- **serve** - MCP server for AI editors
+- **[index](/docs/cli-reference/index)** - Initialize MCP configuration
+- **[serve](/docs/cli-reference/serve)** - MCP server for AI editors
 
 ### Information
-- **metrics** - Performance monitoring
-- **version** - Version info
+- **[metrics](/docs/cli-reference/metrics)** - Performance monitoring
+- **[version](/docs/cli-reference/version)** - Version info
 
 ## Global Options
 
