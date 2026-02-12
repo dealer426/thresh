@@ -352,8 +352,8 @@ thresh containers run **rootless** by default - no host system access beyond map
 ### Resource Usage
 
 - **Memory:** ~10 MB idle
-- **CPU:** <1% idle, spikes during tool calls
-- **Startup:** <100ms
+- **CPU:** Less than 1% idle, spikes during tool calls
+- **Startup:** Less than 100ms
 
 ### Concurrent Clients
 

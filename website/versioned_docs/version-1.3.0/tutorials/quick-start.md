@@ -351,7 +351,7 @@ The first time you use a distribution, thresh downloads the base image. Subseque
 A minimal Alpine-based environment uses:
 - **Disk:** ~150 MB
 - **Memory:** ~50 MB idle
-- **Startup:** <5 seconds
+- **Startup:** Less than 5 seconds
 
 ## Real-World Example
 
@@ -404,7 +404,7 @@ curl http://localhost:5000
 
 | Feature | thresh | Traditional VMs | Docker Desktop |
 |---------|--------|-----------------|----------------|
-| **Startup** | <5 seconds | 30-60 seconds | 10-20 seconds |
+| **Startup** | Less than 5 seconds | 30-60 seconds | 10-20 seconds |
 | **Memory** | ~50 MB idle | 2-4 GB | 1-2 GB |
 | **Disk** | 150 MB | 10-20 GB | 2-5 GB |
 | **AI Integration** | Built-in (MCP) | Manual | Manual |

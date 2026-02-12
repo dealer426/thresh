@@ -446,11 +446,11 @@ If this fails, check:
 
 ### Slow Responses
 
-**Symptom:** Copilot takes >10 seconds to respond
+**Symptom:** Copilot takes more than 10 seconds to respond
 
 **Causes:**
 - First request downloads distribution images
-- Large number of environments (>10)
+- Large number of environments (more than 10)
 - Container runtime initialization
 
 **Fix:**
