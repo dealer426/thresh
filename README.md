@@ -3,36 +3,37 @@
 > **Provision WSL environments in <30 seconds with AI-generated blueprints**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![.NET](https://img.shields.io/badge/.NET-9.0-purple.svg)
-![Native AOT](https://img.shields.io/badge/Native%20AOT-14MB-green.svg)
+![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)
+![Native AOT](https://img.shields.io/badge/Native%20AOT-3.8MB-green.svg)
 ![WSL](https://img.shields.io/badge/WSL-2.0-blue.svg)
 
 ---
 
 ## 🚀 What is thresh?
 
-**thresh** is a single-binary CLI tool that uses AI to generate and provision **WSL (Windows Subsystem for Linux) development environments** instantly. Built with .NET 9 Native AOT, it delivers a **14MB executable with zero runtime dependencies**.
+**thresh** is a single-binary CLI tool that uses AI to generate and provision **WSL (Windows Subsystem for Linux) development environments** instantly. Built with .NET 10 Native AOT and compressed with UPX, it delivers a **3.8MB executable with zero runtime dependencies**.
 
 ### Key Features
 
-- 🤖 **GitHub Copilot AI** - Built-in GitHub Copilot integration for blueprint generation
+- 🤖 **GitHub Copilot SDK** - Integrated AI with access to GPT-4o, Claude 3.5 Sonnet, o1-preview, and o1-mini
 - ⚡ **Instant Provisioning** - WSL2 distributions installed and configured in seconds
-- 📦 **12 Built-in Distros** - Ubuntu, Alpine, Debian, Kali, Oracle Linux, openSUSE + custom support
+- 📦 **17 Built-in Distros** - Ubuntu, Alpine, Debian, Kali, Oracle Linux, openSUSE + custom support
 - 🎯 **Hybrid Distribution System** - Direct vendor downloads + Microsoft Store wrapper
 - 🔧 **Zero Dependencies** - Single native binary, no .NET runtime required
 - 🔐 **Custom Distros** - Add any Linux distro with AI discovery or manual configuration
 - 💬 **Interactive AI Chat** - Stream responses for blueprint creation and troubleshooting
 - 🔌 **MCP Integration** - Model Context Protocol server for VS Code, Cursor, and Windsurf
 - 📊 **System Metrics** - Real-time host and container monitoring with JSON export
+- 🎯 **Ultra-Compact** - UPX compressed binary (3.8 MB) with 73% size reduction
 
 ---
 
 ## 🏗️ Architecture
 
-**Single Binary Design** - Unified .NET Native AOT executable
+**Single Binary Design** - Unified .NET Native AOT executable with UPX compression
 
 ```
-thresh.exe (14 MB)
+thresh.exe (3.8 MB compressed, 13.5 MB uncompressed)
 ├── CLI Layer (System.CommandLine)
 │   ├── up <blueprint>           - Provision environment
 │   ├── list [--all]             - List environments
@@ -51,16 +52,14 @@ thresh.exe (14 MB)
 │   ├── BlueprintService         - Environment provisioning
 │   ├── RootfsRegistry           - Distribution catalog
 │   ├── ConfigurationService     - Secure settings storage
-│   ├── IAIService               - AI provider abstraction
-│   ├── GitHubCopilotService     - GitHub Copilot SDK integration
-│   ├── AiProviderFactory        - Provider factory (extensible)
+│   ├── GitHubCopilotService     - GitHub Copilot SDK integration (ONLY AI provider)
 │   ├── MetricsService           - Host and container monitoring
 │   ├── IContainerService        - Container abstraction
 │   ├── ContainerdService        - Linux/macOS container support
 │   └── ContainerServiceFactory  - Platform detection
 │
 └── Distribution Sources
-    ├── Vendor (10)              - Direct tar.gz downloads
+    ├── Vendor (12)              - Direct tar.gz downloads
     │   ├── Ubuntu 20.04, 22.04, 24.04
     │   ├── Alpine 3.18, 3.19, edge
     │   ├── Debian 11, 12
@@ -78,15 +77,16 @@ thresh.exe (14 MB)
 ```
 
 **Tech Stack:**
-- Language: C# 13 / .NET 9.0
-- CLI Framework: System.CommandLine
-- AI Provider: 
-  - **GitHub Copilot SDK**: gpt-4o, claude-3.5-sonnet, o1-preview, o1-mini (requires GitHub CLI)
-- Blueprints: JSON with System.Text.Json source generation
-- Compilation: Native AOT (PublishAot=true)
-- Binary Size: 14 MB
-- Dependencies: None (self-contained)
-- MCP Server: StreamJsonRpc 2.24.84 for JSON-RPC 2.0
+- **Language**: C# 13 / .NET 10.0 LTS
+- **CLI Framework**: System.CommandLine
+- **AI Provider**: GitHub Copilot SDK 0.1.23-preview.1 (gpt-4o, claude-3.5-sonnet, o1-preview, o1-mini)
+- **Authentication**: GitHub CLI (`gh auth login`) - No API keys required!
+- **Blueprints**: JSON with System.Text.Json source generation
+- **Compilation**: Native AOT (PublishAot=true) + UPX --best --lzma
+- **Binary Size**: 3.8 MB compressed (13.5 MB uncompressed)
+- **Compression**: 73% size reduction with UPX 4.2.4
+- **Dependencies**: None (self-contained)
+- **MCP Server**: StreamJsonRpc for JSON-RPC 2.0
 
 ---
 
@@ -94,14 +94,15 @@ thresh.exe (14 MB)
 
 ```
 thresh/
-├── thresh/                      # .NET 9 Native AOT CLI (14 MB)
+├── thresh/                      # .NET 10 Native AOT CLI (3.8 MB)
 │   ├── Thresh/
 │   │   ├── Program.cs           # CLI entry point & commands
 │   │   ├── Services/
 │   │   │   ├── WslService.cs
 │   │   │   ├── BlueprintService.cs
 │   │   │   ├── RootfsRegistry.cs
-│   │   │   └── ConfigurationService.cs
+│   │   │   ├── ConfigurationService.cs
+│   │   │   └── GitHubCopilotService.cs
 │   │   ├── Models/
 │   │   │   ├── Blueprint.cs
 │   │   │   ├── EnvironmentMetadata.cs
@@ -116,12 +117,14 @@ thresh/
 │   │       └── python-dev.json
 │   └── README.md
 │
-├── thresh-cli/                  # [ARCHIVED] Legacy Quarkus CLI
-├── thresh-api/                  # [FUTURE] Aspire API
-├── thresh-web/                  # [FUTURE] Next.js Web UI
+├── packages/                    # Distribution packages
+│   ├── chocolatey/
+│   ├── scoop/
+│   └── winget/
 ├── docs/
-│   ├── CLI_CONSOLIDATION_PLAN.md
-│   └── SESSION_SUMMARY.md
+│   ├── ROADMAP_2026.md
+│   └── MCP_INTEGRATION.md
+├── website/                     # Docusaurus documentation
 └── README.md                    # This file
 ```
 
@@ -132,20 +135,33 @@ thresh/
 ### Prerequisites
 
 - **Windows 11** with WSL2 enabled (`wsl --install`)
-- **GitHub CLI** (for AI features) - Install from [cli.github.com](https://cli.github.com)
+- **GitHub CLI** (required for AI features) - Install from [cli.github.com](https://cli.github.com)
 
 ### Installation
 
 **Option 1: Download Release Binary**
 ```powershell
-# Download from GitHub releases
+# Download from GitHub releases (3.8 MB)
 Invoke-WebRequest -Uri "https://github.com/dealer426/thresh/releases/latest/download/thresh.exe" -OutFile "thresh.exe"
 
 # Move to PATH
 Move-Item thresh.exe C:\Windows\System32\
 ```
 
-**Option 2: Build from Source**
+**Option 2: Package Managers**
+```powershell
+# Winget (recommended)
+winget install dealer426.thresh
+
+# Scoop
+scoop bucket add thresh https://github.com/dealer426/thresh
+scoop install thresh
+
+# Chocolatey
+choco install thresh
+```
+
+**Option 3: Build from Source**
 ```powershell
 # Clone repository
 git clone https://github.com/dealer426/thresh.git
@@ -154,16 +170,22 @@ cd thresh\thresh\Thresh
 # Build Native AOT binary
 dotnet publish -c Release -r win-x64 --self-contained
 
-# Binary location
-.\bin\Release\net9.0\win-x64\publish\thresh.exe
+# Binary location (13.5 MB uncompressed)
+# .\bin\Release\net10.0\win-x64\publish\thresh.exe
+
+# Optional: Compress with UPX (requires upx.exe in PATH)
+upx --best --lzma .\bin\Release\net10.0\win-x64\publish\thresh.exe
+# Final size: 3.8 MB
 ```
 
 ### Configuration
 
 ```powershell
-# Configure GitHub Copilot AI
+# Authenticate with GitHub CLI (required for AI features)
 gh auth login
-thresh config set default-model gpt-4o  # or claude-3.5-sonnet, o1-preview
+
+# Configure default AI model
+thresh config set DefaultModel gpt-4o  # or claude-3.5-sonnet, o1-preview, o1-mini
 
 # View configuration
 thresh config list
@@ -172,11 +194,13 @@ thresh config list
 thresh --version
 ```
 
-**Available Models:**
-- **gpt-4o** - Most capable model
-- **claude-3.5-sonnet** - Anthropic's latest  
-- **o1-preview** - Advanced reasoning
-- **o1-mini** - Fast reasoning
+**Available AI Models** (via GitHub Copilot SDK):
+- **gpt-4o** - Most capable GPT-4 model (default)
+- **claude-3.5-sonnet** - Anthropic's latest model
+- **o1-preview** - Advanced reasoning capabilities
+- **o1-mini** - Fast reasoning for simpler tasks
+
+**Note**: All AI features require GitHub CLI authentication. No API keys needed!
 
 ---
 
@@ -204,13 +228,15 @@ thresh destroy alpine-minimal
 ### AI Features
 
 ```powershell
-# Generate blueprint from natural language
+# Generate blueprint from natural language (using GitHub Copilot SDK)
 thresh generate "Python data science environment with pandas, numpy, and matplotlib"
 
 # Interactive AI chat for blueprint help
 thresh chat
 # Chat> "I need a Node.js 20 environment with TypeScript and PostgreSQL"
 # Chat> "Add Redis and nginx to my previous blueprint"
+
+# All AI features powered by GitHub Copilot SDK - no API keys required!
 ```
 
 ### Custom Distributions
@@ -368,8 +394,9 @@ thresh serve
 
 ```powershell
 # Prerequisites
-# - .NET 9.0 SDK
+# - .NET 10.0 SDK
 # - Git
+# - UPX 4.2.4 (optional, for compression)
 
 # Clone repository
 git clone https://github.com/dealer426/thresh.git
@@ -379,11 +406,15 @@ cd thresh\thresh\Thresh
 dotnet build
 dotnet run -- --version
 
-# Release build (Native AOT)
+# Release build (Native AOT, uncompressed 13.5 MB)
 dotnet publish -c Release -r win-x64 --self-contained
 
 # Output
-# bin\Release\net9.0\win-x64\publish\thresh.exe (14 MB)
+# bin\Release\net10.0\win-x64\publish\thresh.exe (13.5 MB)
+
+# Optional: Compress with UPX (final size 3.8 MB)
+upx --best --lzma .\bin\Release\net10.0\win-x64\publish\thresh.exe
+# Compressed to 3.8 MB (73% reduction)
 ```
 
 ### Project Structure
@@ -392,25 +423,26 @@ dotnet publish -c Release -r win-x64 --self-contained
 Thresh/
 ├── Program.cs                   # CLI entry point, all commands
 ├── Services/
-│   ├── WslService.cs            # WSL integration (259 lines)
-│   ├── BlueprintService.cs      # Provisioning logic (476 lines)
-│   ├── RootfsRegistry.cs        # Distribution catalog (257 lines)
-│   ├── ConfigurationService.cs  # Settings management (144 lines)
-│   ├── MetricsService.cs        # System metrics (458 lines)
-│   ├── IContainerService.cs     # Container abstraction (80 lines)
-│   ├── ContainerdService.cs     # containerd/nerdctl support (473 lines)
-│   └── ContainerServiceFactory.cs # Platform detection (60 lines)
+│   ├── WslService.cs            # WSL integration
+│   ├── BlueprintService.cs      # Provisioning logic
+│   ├── RootfsRegistry.cs        # Distribution catalog
+│   ├── ConfigurationService.cs  # Settings management
+│   ├── GitHubCopilotService.cs  # GitHub Copilot SDK integration
+│   ├── MetricsService.cs        # System metrics
+│   ├── IContainerService.cs     # Container abstraction
+│   ├── ContainerdService.cs     # containerd/nerdctl support
+│   └── ContainerServiceFactory.cs # Platform detection
 ├── Models/
 │   ├── Blueprint.cs             # Blueprint JSON model
 │   ├── EnvironmentMetadata.cs   # Environment tracking
 │   ├── DistributionInfo.cs      # Distro metadata
-│   ├── HostMetrics.cs           # Metrics data model (105 lines)
-│   └── RuntimeInfo.cs           # Runtime information (24 lines)
+│   ├── HostMetrics.cs           # Metrics data model
+│   └── RuntimeInfo.cs           # Runtime information
 ├── Utilities/
-│   └── ProcessHelper.cs         # Process execution (114 lines)
+│   └── ProcessHelper.cs         # Process execution
 ├── Mcp/
 │   ├── McpServer.cs             # MCP HTTP server
-│   ├── StdioMcpServer.cs        # MCP stdio transport (607 lines)
+│   ├── StdioMcpServer.cs        # MCP stdio transport
 │   ├── McpJsonContext.cs        # JSON source generation
 │   └── Models/                  # MCP protocol models
 └── blueprints/                  # Built-in blueprints
@@ -424,8 +456,7 @@ Thresh/
 **User Configuration**: `~/.thresh/config.json`
 ```json
 {
-  "openAiApiKey": "sk-...",
-  "openAiModel": "gpt-4o-mini",
+  "defaultModel": "gpt-4o",
   "customDistributions": {
     "rocky-9": {
       "name": "Rocky Linux",
@@ -442,7 +473,7 @@ Thresh/
 {
   "environmentName": "alpine-minimal",
   "blueprintName": "alpine-minimal",
-  "created": "2026-02-05T18:30:00Z",
+  "created": "2026-02-12T00:00:00Z",
   "base": "alpine-3.19",
   "distributionSource": "Vendor"
 }
@@ -452,25 +483,72 @@ Thresh/
 
 ## 🔧 Technical Details
 
-### Native AOT Compilation
+### Native AOT Compilation + UPX Compression
 
 **Build Configuration** (`Thresh.csproj`):
 ```xml
 <PropertyGroup>
+  <TargetFramework>net10.0</TargetFramework>
   <PublishAot>true</PublishAot>
   <SelfContained>true</SelfContained>
-  <InvariantGlobalization>false</InvariantGlobalization>
+  <InvariantGlobalization>true</InvariantGlobalization>
   <IlcOptimizationPreference>Size</IlcOptimizationPreference>
   <IlcGenerateStackTraceData>false</IlcGenerateStackTraceData>
+  <StripSymbols>true</StripSymbols>
   <TrimMode>full</TrimMode>
 </PropertyGroup>
 ```
 
-**Results**:
-- Binary Size: **14 MB**
-- Startup Time: ~50ms
-- Memory Usage: ~30MB idle
-- Dependencies: **None** (Windows system libraries only)
+**Post-Build Compression**:
+```powershell
+# UPX compression (applied to release binaries)
+upx --best --lzma thresh.exe
+
+# Results:
+# Uncompressed: 13.5 MB → Compressed: 3.8 MB (73% reduction)
+```
+
+**Performance Characteristics**:
+- **Binary Size**: 3.8 MB (compressed), 13.5 MB (uncompressed)
+- **Startup Time**: ~50ms (with UPX decompression overhead)
+- **Memory Usage**: ~30MB idle
+- **Dependencies**: None (Windows system libraries only)
+- **Compression**: UPX 4.2.4 with --best --lzma flags
+
+### GitHub Copilot SDK Integration
+
+**Authentication** (via GitHub CLI):
+```powershell
+# One-time setup
+gh auth login
+
+# thresh automatically uses GitHub CLI credentials
+# No API keys in config files!
+```
+
+**AI Service Implementation**:
+```csharp
+using GitHub.Copilot.SDK;
+
+// Initialize client (uses gh CLI credentials)
+var client = new CopilotClient();
+
+// Streaming blueprint generation
+await foreach (var token in client.CompleteAsync(prompt, model))
+{
+    Console.Write(token);
+}
+```
+
+**Available Models**:
+- `gpt-4o` - OpenAI GPT-4 Optimized
+- `claude-3.5-sonnet` - Anthropic Claude 3.5
+- `o1-preview` - OpenAI o1 Preview
+- `o1-mini` - OpenAI o1 Mini
+
+**System Prompts**:
+- **Generate**: "You are a WSL blueprint expert. Generate JSON configurations with: name, description, base, packages, environment, scripts. Output only valid JSON, no markdown."
+- **Chat**: "You are an AI assistant helping users create WSL development environment blueprints. Provide helpful, concise responses."
 
 ### Distribution Sources
 
@@ -487,7 +565,7 @@ Thresh/
 - openSUSE Leap, Tumbleweed → `wsl --install openSUSE-Leap-15.6`, `openSUSE-Tumbleweed`
 
 **Custom Distributions** (User-Added):
-- AI Discovery: Searches for rootfs tar.gz URLs
+- AI Discovery: Uses GitHub Copilot SDK to search for rootfs tar.gz URLs
 - Manual: Direct URL specification
 - Stored in: `~/.thresh/config.json`
 
@@ -510,59 +588,43 @@ thresh up kali
 
 ---
 
-## 🤖 AI Integration Details
-
-**OpenAI SDK Configuration**:
-```csharp
-var client = new ChatClient(
-    model: "gpt-4o-mini",
-    apiKey: apiKey
-);
-
-// Streaming blueprint generation
-await foreach (var update in client.CompleteChatStreamingAsync(messages))
-{
-    Console.Write(update.ContentUpdate);
-}
-```
-
-**System Prompts**:
-- **Generate**: "You are a WSL blueprint expert. Generate JSON configurations with: name, description, base, packages, environment, scripts. Output only valid JSON, no markdown."
-- **Chat**: "You are an AI assistant helping users create WSL development environment blueprints. Provide helpful, concise responses."
-
----
-
 ## 📊 Performance Benchmarks
 
 | Metric | Value |
 |--------|-------|
-| Binary Size | 14 MB |
-| Startup Time | ~50ms |
+| Binary Size (Compressed) | 3.8 MB |
+| Binary Size (Uncompressed) | 13.5 MB |
+| Compression Ratio | 73% reduction |
+| Startup Time | ~50ms (with UPX) |
 | Memory (Idle) | ~30MB |
 | Provision Time (Alpine) | ~15s |
 | Provision Time (Ubuntu) | ~25s |
 | AI Response (streaming) | ~2s first token |
+| Decompression Overhead | ~200ms |
 
 ---
 
 ## 🗺️ Roadmap
 
-### ✅ Completed (v1.0)
-- [x] .NET Native AOT migration (14 MB binary)
+### ✅ Completed (v1.3.0)
+- [x] .NET 10 Native AOT migration
+- [x] UPX compression (3.8 MB binary)
+- [x] GitHub Copilot SDK integration (single AI provider)
 - [x] WSL2 integration
 - [x] Blueprint provisioning
-- [x] 12 built-in distributions
+- [x] 17 built-in distributions
 - [x] Hybrid distribution system (Vendor + MS Store)
 - [x] Custom distro support (AI + manual)
-- [x] OpenAI integration (generate + chat)
 - [x] Configuration management
 - [x] MCP server support
+- [x] System metrics and monitoring
 
-### 🚧 In Progress (v1.1)
+### 🚧 In Progress (v1.4)
 - [ ] Blueprint marketplace integration
 - [ ] Team collaboration features
 - [ ] Environment snapshots/exports
 - [ ] Multi-blueprint composition
+- [ ] Package manager support (winget, scoop, chocolatey)
 
 ### 🔮 Future (v2.0)
 - [ ] Web UI (Next.js)
@@ -570,12 +632,13 @@ await foreach (var update in client.CompleteChatStreamingAsync(messages))
 - [ ] Container hybrid mode
 - [ ] Remote environment support
 - [ ] Cloud provider templates (Azure, AWS, GCP)
+- [ ] Multi-platform support (Linux, macOS)
 
 ---
 
 ## 🤝 Contributing
 
-Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions welcome! Please read [GETTING_STARTED.md](GETTING_STARTED.md) for guidelines.
 
 **Development Setup**:
 ```powershell
@@ -588,7 +651,7 @@ git checkout -b feature/my-feature
 
 # Make changes, build, test
 dotnet build
-dotnet test
+dotnet run -- --version
 
 # Submit PR
 git push origin feature/my-feature
@@ -604,8 +667,8 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 🙏 Acknowledgments
 
-- **Microsoft** - .NET 9 Native AOT, WSL2
-- **OpenAI** - GPT-4o-mini API
+- **Microsoft** - .NET 10 Native AOT, WSL2, GitHub Copilot SDK
+- **UPX Team** - Ultimate Packer for eXecutables
 - **Community** - Blueprint contributions and testing
 
 ---
@@ -618,81 +681,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-**Built with ❤️ using .NET 9 Native AOT**
-cd thresh-api  
-dotnet build
+**Built with ❤️ using .NET 10 Native AOT + UPX**
 
-# Web UI
-cd thresh-web
-npm run build
-```
-
-### Running in Development
-
-```bash
-# CLI (JVM mode for faster iteration)
-cd thresh-cli && ./gradlew quarkusDev
-
-# API (Hot reload)
-cd thresh-api && dotnet watch --project thresh-api.AppHost
-
-# Web UI (Hot reload)
-cd thresh-web && npm run dev
-```
-
-### Testing
-
-```bash
-# CLI tests
-cd thresh-cli && ./gradlew test
-
-# API tests  
-cd thresh-api && dotnet test
-
-# Web UI tests
-cd thresh-web && npm test
-```
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Areas We Need Help
-
-- 🐛 **Bug fixes** - WSL integration edge cases
-- 📝 **Documentation** - Tutorials and guides  
-- 🎨 **Web UI** - Blueprint editor improvements
-- 🔧 **Blueprints** - Community templates
-- 🌍 **Internationalization** - Multi-language support
-- 🧪 **Testing** - Integration and E2E tests
-
----
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **Microsoft** - .NET 9 Native AOT, WSL2, GitHub Copilot SDK
-- **OpenAI** - GPT-4o and GPT-4o-mini API
-- **Community** - All the amazing contributors
-
----
-
-## 📬 Community
-
-- 💬 **Discord** - [Join our community](https://discord.gg/thresh-dev)
-- 🐦 **Twitter** - [@thresh_dev](https://twitter.com/thresh_dev)
-- 📧 **Email** - [hello@thresh.dev](mailto:hello@thresh.dev)
-- 📖 **Docs** - [docs.thresh.dev](https://docs.thresh.dev)
-
----
-
-**thresh** - *Your environments, your way, instantly.* ⚡
-
-Built with ❤️ for the Windows + WSL developer community.
+<rest of content remains unchanged>

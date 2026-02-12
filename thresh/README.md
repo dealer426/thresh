@@ -2,7 +2,7 @@
 
 **Single-binary CLI for provisioning WSL development environments with AI**
 
-![.NET 9](https://img.shields.io/badge/.NET-9.0-purple.svg)
+![.NET 10](https://img.shields.io/badge/.NET-10.0-purple.svg)
 ![Native AOT](https://img.shields.io/badge/Native%20AOT-14MB-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
@@ -10,7 +10,7 @@
 
 ## Overview
 
-`thresh` is a **.NET 9 Native AOT** command-line tool that provisions WSL2 environments using AI-generated blueprints. It replaces the legacy Quarkus-based `thresh-cli` with a unified, dependency-free solution.
+`thresh` is a **.NET 10 Native AOT** command-line tool that provisions WSL2 environments using AI-generated blueprints. It replaces the legacy Quarkus-based `thresh-cli` with a unified, dependency-free solution.
 
 **Key Features**:
 - 🚀 **14 MB native binary** - No .NET runtime required
@@ -33,10 +33,10 @@ cd Thresh
 dotnet publish -c Release -r win-x64 --self-contained
 
 # Binary location
-.\bin\Release\net9.0\win-x64\publish\thresh.exe
+.\bin\Release\net10.0\win-x64\publish\thresh.exe
 
 # Copy to PATH (optional)
-copy .\bin\Release\net9.0\win-x64\publish\thresh.exe C:\Windows\System32\
+copy .\bin\Release\net10.0\win-x64\publish\thresh.exe C:\Windows\System32\
 ```
 
 ### Configuration
@@ -348,7 +348,7 @@ Thresh/
 
 ### Prerequisites
 
-- .NET 9.0 SDK
+- .NET 10.0 SDK
 - Windows 11 with WSL2
 
 ### Development Build (JIT)
@@ -369,7 +369,7 @@ dotnet run -- up alpine-minimal
 dotnet publish -c Release -r win-x64 --self-contained
 
 # Output
-bin\Release\net9.0\win-x64\publish\thresh.exe  # 14 MB
+bin\Release\net10.0\win-x64\publish\thresh.exe  # 14 MB
 
 # Verify no .NET runtime dependency
 # Binary runs on systems without .NET installed
@@ -539,4 +539,4 @@ MIT License - see [LICENSE](../LICENSE)
 
 ---
 
-**Built with .NET 9 Native AOT** | **14 MB Binary** | **Zero Dependencies**
+**Built with .NET 10 Native AOT** | **14 MB Binary** | **Zero Dependencies**
