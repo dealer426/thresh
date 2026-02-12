@@ -3,8 +3,8 @@
 **Created**: February 6, 2026  
 **Updated**: February 12, 2026  
 **Timeline**: 16 weeks (4 months)  
-**Current Version**: v1.3.0  
-**Status**: Phase 1 Complete ✅ | Optimization Complete ✅ | Documentation Phase Week 1 Complete ✅  
+**Current Version**: v1.3.0 (Windows/WSL Only)  
+**Status**: Phase 1 Complete ✅ | Optimization Complete ✅ | Documentation Phase Week 2 In Progress 🔄  
 **Goal**: Transform thresh from local WSL manager to distributed dev environment orchestrator
 
 ---
@@ -16,9 +16,14 @@
 Single Windows machine → WSL environments → OpenAI/Copilot blueprints
 ```
 
-**v1.2.0 State (Feb 11, 2026 - CURRENT):**
+**v1.3.0 State (Feb 12, 2026 - CURRENT):**
 ```
-Cross-platform (WSL/containerd) → MCP integration → GitHub Copilot AI → UPX compressed → 3.8 MB binary
+Windows/WSL only → MCP integration → GitHub Copilot AI → UPX compressed → 3.8 MB binary → Professional docs
+```
+
+**Target v1.4.0 State (Mar 2026):**
+```
+Cross-platform (Windows/Linux/macOS) → Multi-platform builds → 3 package distributions
 ```
 
 **Target v2.0 State (Jun 2026):**
@@ -38,13 +43,17 @@ Fleet of machines → Mesh network → Central orchestration → Distributed wor
 | **Blueprint System** | v1.0.0 | (core) | High |
 | **GitHub Copilot SDK Integration** | v1.0.0 | (core) | High |
 | **GitHub Actions (Windows)** | v1.0.1 | N/A | Medium |
-| **Cross-Platform (containerd)** | v1.1.0 | +200 KB | 🔥 Huge |
+| **Cross-Platform Code (containerd)** | v1.1.0 | +200 KB | 🔥 Huge |
 | **MCP Server & Integration** | v1.1.0 | +100 KB | 🔥 Huge |
 | **Host Metrics Command** | v1.1.0 | +80 KB | High |
 | **Native AOT Optimization** | v1.2.0 | -61 MB | 🚀 Critical |
 | **UPX Compression** | v1.2.0 | -10.2 MB | 🚀 Critical |
 | **Removed Unused Dependencies** | v1.2.0 | -17 KB | Medium |
-| **Current Binary Size** | v1.2.0 | **3.8 MB** | 🔥 Excellent |
+| **Documentation Website** | v1.3.0 | N/A (website) | 🔥 Huge |
+| **Mermaid Diagrams** | v1.3.0 | N/A | High |
+| **Current Binary Size** | v1.3.0 | **3.8 MB** | 🔥 Excellent |
+
+**Note:** v1.3.0 is Windows/WSL only. Cross-platform builds (Linux/macOS) are planned for v1.4.0.
 
 ### Proposed Features 🔮
 
@@ -241,22 +250,79 @@ website/
 - 🌍 Foundation for future internationalization
 
 **Next Steps (Week 2 remaining):**
-1. Complete CLI reference (8 remaining commands)
-2. Write tutorial articles (5 planned)
-3. Add Mermaid diagrams for architecture
-4. Apply for Algolia DocSearch
-5. Create download page
-6. Add more blog content (MCP guide, cross-platform)
+1. ✅ Complete CLI reference (6 commands documented)
+2. ✅ All 5 tutorials created
+3. ✅ Mermaid diagrams added
+4. ✅ 2 blog posts published
+5. ✅ Download page created
+6. [ ] Apply for Algolia DocSearch
+7. [ ] Add screenshots/demos to homepage
 
 **See:** `docs/DOCUSAURUS_PLAN.md` for full implementation details
 
 ---
 
-### **Phase 2: Metrics & Networking (Weeks 7-10) - Distributed Foundation**
+### **Phase 2.5: Cross-Platform Testing & Builds (Weeks 7-8) - Multi-Platform Support** 🆕
+
+**Goal:** Test and build thresh for Linux and macOS platforms
+
+#### Week 7: Cross-Platform Testing
+- [ ] Set up Linux test environment (Ubuntu 22.04)
+- [ ] Set up macOS test environment (macOS 14+)
+- [ ] Test containerd integration on Linux
+- [ ] Test containerd integration on macOS
+- [ ] Fix platform-specific issues
+- [ ] Verify all commands work on all platforms
+- [ ] Update IContainerService implementations
+
+**Deliverables:**
+```bash
+# Test on all platforms
+thresh up python-dev    # Works on Windows (WSL)
+thresh up python-dev    # Works on Linux (Docker/containerd)
+thresh up python-dev    # Works on macOS (containerd)
+```
+
+#### Week 8: Multi-Platform CI/CD Pipeline
+- [ ] Add Linux x64 build to GitHub Actions
+- [ ] Add macOS x64 build (Intel)
+- [ ] Add macOS ARM64 build (Apple Silicon)
+- [ ] Update release workflow for 3 platforms
+- [ ] Add platform-specific tests to CI
+- [ ] Add build badges to README
+- [ ] Create platform-specific installation docs
+
+**Deliverables:**
+```
+Artifacts:
+- thresh-win-x64.zip         (Windows, 3.8 MB compressed)
+- thresh-linux-x64.tar.gz    (Linux, ~4.0 MB compressed)
+- thresh-macos-x64.tar.gz    (macOS Intel, ~4.2 MB compressed)
+- thresh-macos-arm64.tar.gz  (macOS Apple Silicon, ~4.0 MB compressed)
+```
+
+**Phase 2.5 Success Metrics:**
+- ✅ thresh builds successfully on Windows, Linux, macOS
+- ✅ All core commands work on all platforms
+- ✅ GitHub Actions produces 4 platform artifacts
+- ✅ Installation tested on all 3 platforms
+- ✅ Platform-specific documentation updated
+
+**Impact:**
+- 🌍 True cross-platform support (not just code, but tested builds)
+- 📦 3 platform distributions available
+- 🚀 Automated multi-platform releases
+- 🧪 Continuous testing on all platforms
+
+**See:** Phase 4 for package manager distribution (Chocolatey, Homebrew, APT, etc.)
+
+---
+
+### **Phase 2 (Original): Metrics & Networking (Weeks 9-12) - Distributed Foundation**
 
 **Goal:** Enable multi-machine awareness and connectivity
 
-#### Week 5: Host Metrics Collection
+#### Week 9: Host Metrics Collection
 - [ ] Create `HostMetrics` model
 - [ ] Implement cross-platform metrics (CPU, RAM, storage)
 - [ ] Add `thresh metrics` command
@@ -281,7 +347,7 @@ thresh metrics --json
 
 **Binary:** 16.9 MB → 17.0 MB (+80 KB)
 
-#### Week 6: Agent Mode
+#### Week 10: Agent Mode
 - [ ] Implement daemon/background mode
 - [ ] Periodic metrics collection
 - [ ] HTTP reporting client
@@ -298,7 +364,7 @@ thresh agent stop
 
 **Binary:** 17.0 MB → 17.06 MB (+60 KB)
 
-#### Week 7-8: Dual Mesh Network Support
+#### Week 11-12: Dual Mesh Network Support
 - [ ] Create `IMeshNetworkService` interface
 - [ ] Implement `TailscaleService`
 - [ ] Implement `NetmakerService`
@@ -329,11 +395,11 @@ thresh network peers
 
 ---
 
-### **Phase 3: Orchestration (Weeks 9-12) - Fleet Management**
+### **Phase 3: Orchestration (Weeks 13-16) - Hub & Automation**
 
 **Goal:** Central hub with workload scheduling
 
-#### Week 9-10: Central Hub (Separate Project)
+#### Week 13-14: Central Hub (Separate Project)
 - [ ] Create `thresh-hub` ASP.NET Core project
 - [ ] Metrics ingestion API (`POST /api/v1/agents/{id}/metrics`)
 - [ ] Agent registry and status
@@ -351,7 +417,7 @@ thresh agent start --hub http://10.10.1.1:8080
 
 **Hub Binary:** ~8-10 MB (separate from thresh)
 
-#### Week 11-12: Workload Orchestration
+#### Week 15-16: Workload Orchestration
 - [ ] Workload placement algorithm
 - [ ] Remote provisioning API
 - [ ] Hub → Agent RPC communication
@@ -379,11 +445,11 @@ thresh up python-dev --remote --cpu-min 4 --memory-min 8gb
 
 ---
 
-### **Phase 4: Polish & Distribution (Weeks 13-16) - Production Ready**
+### **Phase 4: Polish & Distribution (Weeks 17-20) - Production Ready**
 
 **Goal:** Production-grade quality and distribution
 
-#### Week 13: Multi-Platform CI/CD
+#### Week 17: Multi-Platform CI/CD
 - [ ] Add Linux x64 build to GitHub Actions
 - [ ] Add macOS ARM64 build
 - [ ] Update release workflow for 3 platforms
@@ -394,7 +460,7 @@ thresh up python-dev --remote --cpu-min 4 --memory-min 8gb
 - macOS binary (14-16 MB)
 - Windows binary (17.3 MB)
 
-#### Week 14: Package Managers
+#### Week 18: Package Managers
 - [ ] Update Chocolatey (Windows)
 - [ ] Update Scoop (Windows)
 - [ ] Update Winget (Windows)
@@ -416,14 +482,14 @@ apt install thresh       # Debian/Ubuntu
 yum install thresh       # RHEL/Fedora
 ```
 
-#### Week 15: Documentation & Examples
+#### Week 19: Documentation & Examples
 - [ ] Complete getting started guide
 - [ ] Architecture documentation
 - [ ] MCP integration examples
 - [ ] Fleet deployment guide
 - [ ] Video demos
 
-#### Week 16: Testing & Hardening
+#### Week 20: Testing & Hardening
 - [ ] End-to-end testing (all platforms)
 - [ ] Security audit
 - [ ] Performance optimization
@@ -594,16 +660,17 @@ graph TD
 
 **Legend:**
 - 🟢 Green: Complete
-- 🟡 Yellow: Phase 1 (Weeks 1-4)
-- 🔵 Blue: Phase 2 (Weeks 5-8)
-- 🟠 Orange: Phase 3 (Weeks 9-12)
+- 🟡 Yellow: Phase 1 (Weeks 1-4) - Foundation
+- 🔵 Blue: Phase 2.5 (Weeks 7-8) - Cross-Platform Testing
+- 🟣 Purple: Phase 2 (Weeks 9-12) - Metrics & Networking
+- 🟠 Orange: Phase 3 (Weeks 13-16) - Hub & Orchestration
 
 ---
 
 ## 💰 Cost-Benefit Analysis
 
 ### Development Investment
-- **Time:** 16 weeks (1 developer)
+- **Time:** 20 weeks (1 developer)
 - **Complexity:** Medium (leverages existing patterns)
 - **Risk:** Low (incremental, tested at each phase)
 
@@ -628,7 +695,7 @@ graph TD
 **ROI Estimate:**
 - 10 developers × 30 min/day saved = 25 hours/week
 - At $100/hour = **$2,500/week saved**
-- 16 weeks development = **Pays for itself in 2 months**
+- 20 weeks development = **Pays for itself in 2.5 months**
 
 ---
 
@@ -697,4 +764,4 @@ graph TD
 
 ---
 
-**Decision Point:** Proceed with 16-week plan to v2.0?
+**Decision Point:** Proceed with 20-week plan to v2.0?
