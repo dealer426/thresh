@@ -21,7 +21,6 @@ thresh provides a comprehensive set of commands for managing WSL development env
 | [`distros`](/docs/cli-reference/distros) | List available distributions |
 | [`distro`](/docs/cli-reference/distro) | Manage custom distributions |
 | [`config`](/docs/cli-reference/config) | Manage configuration settings |
-| [`index`](/docs/cli-reference/index) | Initialize MCP configuration |
 | [`serve`](/docs/cli-reference/serve) | Start MCP server |
 | [`metrics`](/docs/cli-reference/metrics) | Show performance metrics |
 | [`version`](/docs/cli-reference/version) | Show version information |
@@ -44,7 +43,6 @@ thresh provides a comprehensive set of commands for managing WSL development env
 - **[distros](/docs/cli-reference/distros)** - View distributions
 
 ### Integration
-- **[index](/docs/cli-reference/index)** - Initialize MCP configuration
 - **[serve](/docs/cli-reference/serve)** - MCP server for AI editors
 
 ### Information

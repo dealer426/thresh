@@ -361,7 +361,7 @@ Based on benchmarks with 10+ environments:
 
 | Operation | Time | Notes |
 |-----------|------|-------|
-| List environments | <100ms | Instant |
+| List environments | Less than 100ms | Instant |
 | Create first environment | 30-60s | Downloads distribution |
 | Create subsequent (cached) | 5-10s | Uses cached image |
 | Destroy environment | 2-3s | Quick cleanup |
