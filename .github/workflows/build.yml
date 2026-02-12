@@ -15,10 +15,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup .NET 9
+    - name: Setup .NET 10
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x'
+        dotnet-version: '10.0.x'
         
     - name: Restore dependencies
       run: dotnet restore thresh/Thresh/Thresh.csproj
@@ -41,17 +41,17 @@ jobs:
       
     - name: Check binary size
       run: |
-        $size = (Get-Item thresh/Thresh/bin/Release/net9.0/win-x64/publish/thresh.exe).Length
+        $size = (Get-Item thresh/Thresh/bin/Release/net10.0/win-x64/publish/thresh.exe).Length
         $sizeMB = [math]::Round($size / 1MB, 2)
-        Write-Host "Binary size: $sizeMB MB"
-        if ($sizeMB -gt 18) {
-          Write-Warning "Binary size ($sizeMB MB) exceeds expected size (18 MB)"
+        Write-Host "Binary size: $sizeMB MB (uncompressed)"
+        if ($sizeMB -gt 16) {
+          Write-Warning "Binary size ($sizeMB MB) exceeds expected size (16 MB)"
         }
       shell: pwsh
       
     - name: Test binary execution
       run: |
-        cd thresh/Thresh/bin/Release/net9.0/win-x64/publish
+        cd thresh/Thresh/bin/Release/net10.0/win-x64/publish
         ./thresh.exe --version
       shell: pwsh
       
@@ -60,6 +60,6 @@ jobs:
       with:
         name: thresh-windows-x64
         path: |
-          thresh/Thresh/bin/Release/net9.0/win-x64/publish/thresh.exe
+          thresh/Thresh/bin/Release/net10.0/win-x64/publish/thresh.exe
           sbom.json
         retention-days: 30
