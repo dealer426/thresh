@@ -262,39 +262,113 @@ website/
 
 ---
 
-### **Phase 2.5: Cross-Platform Testing & Builds (Weeks 7-8) - Multi-Platform Support** 🆕
+### **Phase 2.5: Cross-Platform Testing & Builds (Weeks 7-8) - Multi-Platform Support** 🆕 **HYBRID APPROACH**
 
-**Goal:** Test and build thresh for Linux and macOS platforms
+**Goal:** Test and build thresh for Linux and macOS platforms using Pulumi + vCenter for deep testing and GitHub Actions for CI/CD
 
-#### Week 7: Cross-Platform Testing
-- [ ] Set up Linux test environment (Ubuntu 22.04)
-- [ ] Set up macOS test environment (macOS 14+)
-- [ ] Test containerd integration on Linux
-- [ ] Test containerd integration on macOS
-- [ ] Fix platform-specific issues
-- [ ] Verify all commands work on all platforms
-- [ ] Update IContainerService implementations
+**Strategy:** Use real vCenter infrastructure for thorough testing (Week 7), then implement automated CI/CD (Week 8)
+
+#### Week 7: Pulumi + vCenter Deep Testing
+- [ ] Create Pulumi infrastructure project (`pulumi/`)
+- [ ] Write Pulumi code for vCenter VM provisioning
+  - [ ] Ubuntu 22.04 LTS VM (2 CPU, 4GB RAM)
+  - [ ] AlmaLinux/Rocky VM (RHEL-like testing)
+  - [ ] Network configuration and SSH access
+- [ ] Provision test VMs via `pulumi up`
+- [ ] SSH into Ubuntu VM and set up environment:
+  - [ ] Install containerd/Docker
+  - [ ] Install .NET 10 SDK
+  - [ ] Clone thresh repository
+  - [ ] Build thresh natively on Linux
+- [ ] Manual testing on Linux:
+  - [ ] Test `thresh up python-dev`
+  - [ ] Test `thresh list`
+  - [ ] Test `thresh destroy`
+  - [ ] Test `thresh serve --stdio` (MCP server)
+  - [ ] Test all CLI commands
+- [ ] Debug and fix platform-specific issues:
+  - [ ] File path separators (`\` vs `/`)
+  - [ ] Line endings (CRLF vs LF)
+  - [ ] Containerd socket locations
+  - [ ] Permissions and executable bits
+  - [ ] Shell differences (bash vs PowerShell)
+- [ ] Iterate quickly with SSH access
+- [ ] Document Linux-specific setup requirements
+- [ ] Update IContainerService implementations if needed
 
 **Deliverables:**
 ```bash
-# Test on all platforms
-thresh up python-dev    # Works on Windows (WSL)
-thresh up python-dev    # Works on Linux (Docker/containerd)
-thresh up python-dev    # Works on macOS (containerd)
+# Pulumi infrastructure
+cd pulumi
+pulumi up  # Provisions Ubuntu VM in vCenter
+
+# SSH into test VM
+ssh ubuntu-vm
+cd thresh
+dotnet build  # Compiles successfully on Linux
+dotnet run -- up python-dev  # Works!
+
+# Verify all commands
+thresh list
+thresh metrics
+thresh serve --stdio
 ```
 
-#### Week 8: Multi-Platform CI/CD Pipeline
-- [ ] Add Linux x64 build to GitHub Actions
-- [ ] Add macOS x64 build (Intel)
-- [ ] Add macOS ARM64 build (Apple Silicon)
-- [ ] Update release workflow for 3 platforms
-- [ ] Add platform-specific tests to CI
-- [ ] Add build badges to README
-- [ ] Create platform-specific installation docs
+**vCenter Test Environment:**
+```
+Windows Dev Machine
+    ↓
+Pulumi → vCenter
+    ↓
+├─ Ubuntu 22.04 VM (containerd testing)
+└─ AlmaLinux VM (RHEL-like testing)
+```
+
+#### Week 8: GitHub Actions Multi-Platform CI/CD
+- [ ] Take learnings from vCenter testing
+- [ ] Add Linux x64 build job to GitHub Actions
+  - [ ] Use `ubuntu-latest` runner
+  - [ ] Install .NET 10 SDK
+  - [ ] Build with Native AOT
+  - [ ] Test binary execution
+  - [ ] Generate SBOM
+- [ ] Add macOS x64 build job (Intel)
+  - [ ] Use `macos-13` runner (Intel)
+  - [ ] Native AOT compilation
+  - [ ] Test on macOS
+- [ ] Add macOS ARM64 build job (Apple Silicon)
+  - [ ] Use `macos-14` runner (M1/M2)
+  - [ ] ARM64 Native AOT
+  - [ ] Test on Apple Silicon
+- [ ] Implement build matrix strategy
+- [ ] Add UPX compression for all platforms
+- [ ] Platform-specific SBOM generation
+- [ ] Update release workflow for 4 artifacts
+- [ ] Add build status badges to README
+- [ ] Create platform-specific installation documentation
+- [ ] Keep vCenter VMs as ongoing dev test environment
 
 **Deliverables:**
+```yaml
+# GitHub Actions matrix build
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-13, macos-14]
+        include:
+          - os: windows-latest
+            rid: win-x64
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: macos-13
+            rid: osx-x64
+          - os: macos-14
+            rid: osx-arm64
 ```
-Artifacts:
+
+**Release Artifacts:**
+```
 - thresh-win-x64.zip         (Windows, 3.8 MB compressed)
 - thresh-linux-x64.tar.gz    (Linux, ~4.0 MB compressed)
 - thresh-macos-x64.tar.gz    (macOS Intel, ~4.2 MB compressed)
@@ -302,17 +376,29 @@ Artifacts:
 ```
 
 **Phase 2.5 Success Metrics:**
-- ✅ thresh builds successfully on Windows, Linux, macOS
-- ✅ All core commands work on all platforms
-- ✅ GitHub Actions produces 4 platform artifacts
-- ✅ Installation tested on all 3 platforms
+- ✅ Pulumi infrastructure provisions vCenter VMs successfully
+- ✅ thresh builds natively on Ubuntu 22.04 (vCenter VM)
+- ✅ All core commands work on Linux via SSH testing
+- ✅ Platform-specific bugs identified and fixed
+- ✅ GitHub Actions matrix builds 4 platform artifacts
+- ✅ Installation tested on Windows, Linux, macOS
 - ✅ Platform-specific documentation updated
+- ✅ vCenter VMs remain available for ongoing development
 
 **Impact:**
 - 🌍 True cross-platform support (not just code, but tested builds)
-- 📦 3 platform distributions available
-- 🚀 Automated multi-platform releases
+- 🏗️ Real infrastructure testing (not just GitHub runners)
+- 📦 3 platform distributions available (Windows, Linux, macOS)
+- 🚀 Automated multi-platform releases via CI/CD
 - 🧪 Continuous testing on all platforms
+- 🔧 Persistent dev environment for iterative testing
+- 💰 Cost effective (use existing vCenter infrastructure)
+- 🐛 Deep debugging capability via SSH access
+
+**Hybrid Approach Benefits:**
+- **Week 7 (vCenter):** Real VMs, SSH access, deep debugging, iterative development
+- **Week 8 (GitHub Actions):** Automated builds, public CI/CD, release artifacts
+- **Ongoing:** vCenter VMs become permanent test infrastructure for future development
 
 **See:** Phase 4 for package manager distribution (Chocolatey, Homebrew, APT, etc.)
 
