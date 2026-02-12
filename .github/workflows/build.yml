@@ -3,6 +3,11 @@ name: Build thresh
 on:
   push:
     branches: [ main, dev ]
+    paths-ignore:
+      - 'website/**'
+      - 'docs/**'
+      - '*.md'
+      - 'packages/**'
   pull_request:
     branches: [ main ]
   workflow_dispatch:
