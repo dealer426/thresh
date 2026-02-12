@@ -63,6 +63,140 @@ function HomepageHeader() {
   );
 }
 
+function QuickDemo() {
+  return (
+    <section className={styles.quickDemo}>
+      <div className="container">
+        <Heading as="h2" className="text--center margin-bottom--lg">
+          See thresh in Action
+        </Heading>
+        <div className="row">
+          <div className="col col--6">
+            <div className={styles.codeBlock}>
+              <div className={styles.codeHeader}>
+                <span className={styles.codeTitle}>Install & Run Python Environment</span>
+              </div>
+              <pre className={styles.codeContent}>
+{`# Install (Windows)
+> winget install dealer426.thresh
+
+# Provision Python dev environment
+> thresh up python-dev
+
+Creating WSL distribution: thresh-python-dev
+Distribution: Alpine Linux 3.19
+Installing: python3 pip git vim curl
+
+✓ Environment ready in 28s
+
+# List environments
+> thresh list
+
+NAME             STATUS    DISTRO        CPU    MEM
+thresh-python-dev  Running   Alpine 3.19   0.5%   64MB
+
+# Enter environment
+> wsl -d thresh-python-dev
+(thresh-python-dev)$ python3 --version
+Python 3.12.1
+
+(thresh-python-dev)$ pip install flask
+Successfully installed flask-3.0.0`}
+              </pre>
+            </div>
+          </div>
+          <div className="col col--6">
+            <div className={styles.codeBlock}>
+              <div className={styles.codeHeader}>
+                <span className={styles.codeTitle}>AI-Powered Custom Blueprint</span>
+              </div>
+              <pre className={styles.codeContent}>
+{`# Ask GitHub Copilot to generate a blueprint
+> "Create a Node.js 20 + PostgreSQL development 
+   environment with TypeScript and testing tools"
+
+# Copilot generates blueprint:
+{
+  "name": "fullstack-js",
+  "distribution": "alpine:3.19",
+  "packages": [
+    "nodejs", "npm", "postgresql-client", "git"
+  ],
+  "postInstall": [
+    "npm install -g typescript tsx jest",
+    "npm install -g @types/node @types/jest"
+  ],
+  "environment": {
+    "NODE_ENV": "development"
+  },
+  "ports": [
+    {"container": 3000, "host": 3000}
+  ]
+}
+
+# Provision it
+> thresh up fullstack-js
+
+✓ Environment ready in 32s
+
+# Access from host browser
+http://localhost:3000`}
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function UseCases() {
+  return (
+    <section className={styles.useCases}>
+      <div className="container">
+        <Heading as="h2" className="text--center margin-bottom--lg">
+          What You Can Build
+        </Heading>
+        <div className="row">
+          <div className="col col--4">
+            <div className={styles.useCase}>
+              <div className={styles.useCaseIcon}>🐍</div>
+              <Heading as="h3">Python Development</Heading>
+              <p>
+                Flask, Django, FastAPI apps with PostgreSQL. Isolated dependencies
+                per project. No virtualenv conflicts.
+              </p>
+              <code className={styles.useCaseCommand}>thresh up python-dev</code>
+            </div>
+          </div>
+          <div className="col col--4">
+            <div className={styles.useCase}>
+              <div className={styles.useCaseIcon}>⚡</div>
+              <Heading as="h3">Full-Stack JavaScript</Heading>
+              <p>
+                Next.js, React, Vue with Node.js backends. Multiple Node versions
+                side-by-side without nvm.
+              </p>
+              <code className={styles.useCaseCommand}>thresh up node-dev</code>
+            </div>
+          </div>
+          <div className="col col--4">
+            <div className={styles.useCase}>
+              <div className={styles.useCaseIcon}>☁️</div>
+              <Heading as="h3">Cloud CLI Testing</Heading>
+              <p>
+                Azure CLI, AWS CLI, kubectl in isolated environments. Test
+                scripts without polluting host system.
+              </p>
+              <code className={styles.useCaseCommand}>thresh up azure-cli</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Home(): ReactNode {
   const {siteConfig} = useDocusaurusContext();
   return (
@@ -72,6 +206,8 @@ export default function Home(): ReactNode {
       <HomepageHeader />
       <main>
         <HomepageFeatures />
+        <QuickDemo />
+        <UseCases />
       </main>
     </Layout>
   );

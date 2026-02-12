@@ -59,3 +59,90 @@
 .copyButton:active {
   transform: scale(0.95);
 }
+
+/* Quick Demo Section */
+.quickDemo {
+  padding: 4rem 0;
+  background: linear-gradient(180deg, var(--ifm-background-color) 0%, var(--ifm-color-emphasis-100) 100%);
+}
+
+.codeBlock {
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 2rem;
+}
+
+.codeHeader {
+  background-color: #2d2d2d;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid #3e3e3e;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.codeTitle {
+  color: #cccccc;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.codeContent {
+  padding: 1.5rem;
+  margin: 0;
+  color: #d4d4d4;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+/* Use Cases Section */
+.useCases {
+  padding: 4rem 0;
+  background-color: var(--ifm-background-color);
+}
+
+.useCase {
+  padding: 2rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  text-align: center;
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+.useCase:hover {
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+}
+
+.useCaseIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.useCase h3 {
+  margin-bottom: 1rem;
+  color: var(--ifm-color-primary);
+}
+
+.useCase p {
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.useCaseCommand {
+  display: inline-block;
+  background-color: var(--ifm-color-emphasis-100);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+  font-size: 0.9rem;
+  color: var(--ifm-color-primary);
+  font-weight: 600;
+}
