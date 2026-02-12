@@ -8,6 +8,38 @@ description: Quick start guide to provision your first WSL environment in under 
 
 **Quick start guide to provision your first WSL environment in under 5 minutes**
 
+## Architecture Overview
+
+thresh provides isolated development environments using lightweight containers:
+
+```mermaid
+graph TB
+    subgraph Host["Host System (Windows)"]
+        CLI[thresh CLI]
+        Blueprints[Blueprints]
+        Config[Configuration]
+    end
+    
+    subgraph Runtime["Container Runtime"]
+        WSL[WSL 2]
+    end
+    
+    subgraph Envs["Isolated Environments"]
+        E1[python-dev]
+        E2[node-dev]
+        E3[custom-env]
+    end
+    
+    CLI --> Runtime
+    Blueprints --> CLI
+    Config --> CLI
+    Runtime --> Envs
+    
+    style CLI fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style Runtime fill:#2196F3,stroke:#1565C0,color:#fff
+    style Envs fill:#FF9800,stroke:#E65100,color:#fff
+```
+
 ## Prerequisites
 
 ### Check if WSL is installed
@@ -155,7 +187,7 @@ thresh blueprints
 ```
 Available blueprints:
 
-alpine-minimal    - Minimal Alpine Linux environment
+alpine-minimal    - Minimal Alpine environment
 ubuntu-dev        - Ubuntu development environment with common tools
 python-dev        - Python development environment
 node-dev          - Node.js development environment
@@ -268,7 +300,7 @@ thresh distro add arch --ai
 
 **Manual configuration:**
 ```powershell
-thresh distro add arch --url https://mirror.rackspace.com/archlinux/iso/latest/archlinux-bootstrap-x86_64.tar.gz --version latest --package-manager pacman
+thresh distro add arch --url https://mirror.rackspace.com/archlinux/iso/latest/archbootstrap-x86_64.tar.gz --version latest --package-manager pacman
 ```
 
 ### List Custom Distributions

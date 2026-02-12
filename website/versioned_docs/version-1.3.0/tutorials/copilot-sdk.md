@@ -81,7 +81,7 @@ This creates `.vscode/mcp.json`:
 
 For the MCP configuration to take effect:
 
-1. **Command Palette:** Press `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (macOS)
+1. **Command Palette:** Press `Ctrl+Shift+P`
 2. **Reload Window:** Type "Reload Window" and press Enter
 
 Alternatively:
@@ -90,7 +90,7 @@ Alternatively:
 ## Step 3: Verify Connection
 
 Open GitHub Copilot Chat:
-- **Shortcut:** `Ctrl+Alt+I` (Windows/Linux) or `Cmd+Alt+I` (macOS)
+- **Shortcut:** `Ctrl+Alt+I`
 - **Or:** Click the chat icon in the sidebar
 
 Test the connection:
@@ -104,11 +104,11 @@ Can you list my thresh environments?
 I can see 2 thresh environments:
 
 1. python-dev (running)
-   - Alpine Linux 3.19
+   - Alpine 3.19
    - Uptime: 2h 15m
 
 2. node-dev (stopped)
-   - Alpine Linux 3.19
+   - Alpine 3.19
    - Last active: 1 day ago
 
 Would you like me to start the node-dev environment?
@@ -442,7 +442,7 @@ thresh serve
 
 If this fails, check:
 - thresh installation: `thresh --version`
-- Container runtime: `wsl --status` (Windows) or `docker ps` (Linux)
+- Container runtime: `wsl --status`
 
 ### Slow Responses
 
@@ -469,13 +469,6 @@ wsl --status
 # Restart WSL if needed
 wsl --shutdown
 wsl
-```
-
-**Linux:**
-```bash
-# Add user to docker group
-sudo usermod -aG docker $USER
-# Log out and back in
 ```
 
 ## Examples Library

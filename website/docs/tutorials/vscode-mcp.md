@@ -42,8 +42,6 @@ graph LR
     
     subgraph Backend["Container Runtime"]
         WSL[WSL 2]
-        Docker[Docker]
-        CTRD[containerd]
     end
     
     Client <-->|JSON-RPC 2.0<br/>stdio| Server
@@ -141,36 +139,6 @@ If configured correctly, Copilot will respond with environment list.
   "mcpServers": {
     "thresh": {
       "command": "C:\\Program Files\\thresh\\thresh.exe",
-      "args": ["serve"]
-    }
-  }
-}
-```
-
-### macOS
-
-**File:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "thresh": {
-      "command": "/opt/homebrew/bin/thresh",
-      "args": ["serve"]
-    }
-  }
-}
-```
-
-### Linux
-
-**File:** `~/.config/Claude/claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "thresh": {
-      "command": "/usr/local/bin/thresh",
       "args": ["serve"]
     }
   }
@@ -363,7 +331,7 @@ Show me the built-in blueprints
 
 ### thresh_distros
 
-List available Linux distributions.
+List available WSL distributions.
 
 **Input:** None
 
@@ -384,7 +352,7 @@ List available Linux distributions.
 **Example prompt:**
 ```
 What distributions can I use?
-List available Linux distros
+List available distros
 Show me the base images
 ```
 
@@ -630,11 +598,7 @@ Run:
 ### View Logs in Real-Time
 
 ```powershell
-# Windows
 Get-Content debug.log -Wait
-
-# Linux/macOS
-tail -f debug.log
 ```
 
 ### Common Issues
@@ -651,8 +615,7 @@ thresh serve
 
 # If fails, check:
 thresh --version
-wsl --status  # Windows
-docker ps     # Linux
+wsl --status
 ```
 
 #### Tool Not Found

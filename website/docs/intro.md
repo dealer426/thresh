@@ -14,16 +14,14 @@ thresh provides isolated development environments using lightweight containers:
 
 ```mermaid
 graph TB
-    subgraph Host["Host System (Windows/Linux/macOS)"]
+    subgraph Host["Host System (Windows)"]
         CLI[thresh CLI]
         Blueprints[Blueprints]
         Config[Configuration]
     end
     
     subgraph Runtime["Container Runtime"]
-        WSL[WSL 2<br/>Windows]
-        Docker[Docker<br/>Linux]
-        Containerd[containerd<br/>macOS]
+        WSL[WSL 2]
     end
     
     subgraph Envs["Isolated Environments"]
@@ -189,7 +187,7 @@ thresh blueprints
 ```
 Available blueprints:
 
-alpine-minimal    - Minimal Alpine Linux environment
+alpine-minimal    - Minimal Alpine environment
 ubuntu-dev        - Ubuntu development environment with common tools
 python-dev        - Python development environment
 node-dev          - Node.js development environment
@@ -302,7 +300,7 @@ thresh distro add arch --ai
 
 **Manual configuration:**
 ```powershell
-thresh distro add arch --url https://mirror.rackspace.com/archlinux/iso/latest/archlinux-bootstrap-x86_64.tar.gz --version latest --package-manager pacman
+thresh distro add arch --url https://mirror.rackspace.com/archlinux/iso/latest/archbootstrap-x86_64.tar.gz --version latest --package-manager pacman
 ```
 
 ### List Custom Distributions
