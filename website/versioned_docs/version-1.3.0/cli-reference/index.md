@@ -12,15 +12,15 @@ thresh provides a comprehensive set of commands for managing WSL development env
 
 | Command | Description |
 |---------|-------------|
-| [`up`](./up) | Provision a new environment from a blueprint |
-| [`list`](./list) | List all thresh-managed environments |
-| [`destroy`](./destroy) | Remove an environment |
-| [`generate`](./generate) | Generate a custom blueprint using AI |
-| [`chat`](./chat) | Interactive AI chat for environment planning |
+| [`up`](up) | Provision a new environment from a blueprint |
+| [`list`](list) | List all thresh-managed environments |
+| [`destroy`](destroy) | Remove an environment |
+| [`generate`](generate) | Generate a custom blueprint using AI |
+| [`chat`](chat) | Interactive AI chat for environment planning |
 | `blueprints` | List available blueprints |
 | `distros` | List available distributions |
 | `distro` | Manage custom distributions |
-| [`config`](./config) | Manage configuration settings |
+| [`config`](config) | Manage configuration settings |
 | `serve` | Start MCP server |
 | `metrics` | Show performance metrics |
 | `version` | Show version information |
@@ -28,16 +28,16 @@ thresh provides a comprehensive set of commands for managing WSL development env
 ## Command Categories
 
 ### Environment Management
-- **[up](./up)** - Create new environments
-- **[list](./list)** - View all environments
-- **[destroy](./destroy)** - Remove environments
+- **[up](up)** - Create new environments
+- **[list](list)** - View all environments
+- **[destroy](destroy)** - Remove environments
 
 ### AI Features
-- **[generate](./generate)** - Generate custom blueprints
-- **[chat](./chat)** - Interactive AI assistant
+- **[generate](generate)** - Generate custom blueprints
+- **[chat](chat)** - Interactive AI assistant
 
 ### Configuration
-- **[config](./config)** - Manage settings
+- **[config](config)** - Manage settings
 - **distro** - Custom distributions
 - **blueprints** - View blueprints
 - **distros** - View distributions
