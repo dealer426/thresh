@@ -63,7 +63,7 @@ ReleaseNotes: |-
   - End-to-end CLI testing (all 15 commands validated)
   
   Technical:
-  - .NET 9 Native AOT architecture
+  - .NET 10 Native AOT architecture
   - 75 MB self-contained binary
   - Zero dependencies
   - Windows 11 + WSL2 platform

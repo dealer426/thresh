@@ -223,7 +223,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Technical documentation in thresh/README.md
 
 ### Technical Details
-- **Architecture**: .NET 9 Native AOT
+- **Architecture**: .NET 10 Native AOT
 - **Binary Size**: 16.6 MB (Windows x64)
 - **Startup Time**: ~50ms
 - **Memory Usage**: ~30MB idle

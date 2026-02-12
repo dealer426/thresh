@@ -76,7 +76,7 @@ Then create a PR on GitHub **targeting the `dev` branch**.
 
 ## Code Style
 
-- Follow C# conventions (.NET 9)
+- Follow C# conventions (.NET 10)
 - Use meaningful variable names
 - Add XML documentation for public APIs
 - Keep functions focused and single-purpose
