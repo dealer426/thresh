@@ -13,6 +13,26 @@ description: Model Context Protocol integration for AI-powered environment manag
 
 MCP (Model Context Protocol) is a standard protocol that allows AI assistants like GitHub Copilot, Claude Desktop, Cursor, and Windsurf to interact with external tools and services. thresh implements MCP to let AI assistants create and manage development environments on your behalf.
 
+### MCP Communication Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant AI as AI Client<br/>(VS Code/Claude)
+    participant MCP as thresh MCP Server
+    participant Runtime as Container Runtime
+    
+    User->>AI: "Create a Python environment"
+    AI->>MCP: tools/call: thresh_up
+    MCP->>Runtime: Provision container
+    Runtime->>MCP: Environment created
+    MCP->>AI: Success response
+    AI->>User: "Python environment ready!"
+    
+    Note over AI,MCP: JSON-RPC 2.0 over stdio
+    Note over MCP,Runtime: Native container API
+```
+
 :::info Use Cases
 - "Create a Python data science environment for me"
 - "What development environments do I have?"

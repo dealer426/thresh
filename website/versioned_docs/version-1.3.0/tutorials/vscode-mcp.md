@@ -27,17 +27,31 @@ Deep dive into thresh's Model Context Protocol (MCP) integration, enabling seaml
 
 The Model Context Protocol is an open standard for connecting AI assistants with external tools and data sources.
 
-```
-┌──────────────┐      MCP       ┌───────────────┐
-│  AI Client   │ ◄─────────────► │  MCP Server   │
-│ (VS Code)    │   JSON-RPC 2.0  │   (thresh)    │
-└──────────────┘      stdio      └───────────────┘
-                                         │
-                                         ▼
-                                  ┌─────────────┐
-                                  │  Container  │
-                                  │   Runtime   │
-                                  └─────────────┘
+```mermaid
+graph LR
+    subgraph Client["AI Client"]
+        VSCode[VS Code<br/>Copilot]
+        Claude[Claude<br/>Desktop]
+        Cline[Cline<br/>Extension]
+    end
+    
+    subgraph Server["thresh MCP Server"]
+        Tools[MCP Tools]
+        Logic[Business Logic]
+    end
+    
+    subgraph Backend["Container Runtime"]
+        WSL[WSL 2]
+        Docker[Docker]
+        CTRD[containerd]
+    end
+    
+    Client <-->|JSON-RPC 2.0<br/>stdio| Server
+    Server <-->|Native API| Backend
+    
+    style Client fill:#2196F3,stroke:#1565C0,color:#fff
+    style Server fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style Backend fill:#FF9800,stroke:#E65100,color:#fff
 ```
 
 ### Why MCP?

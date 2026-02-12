@@ -26,6 +26,43 @@ Master cross-platform development with thresh. Learn platform-specific configura
 | **Linux** | Docker/Podman | Native | Easy |
 | **macOS** | containerd | Good | Medium |
 
+### Cross-Platform Architecture
+
+```mermaid
+graph TB
+    subgraph Windows
+        W_CLI[thresh CLI]
+        W_WSL[WSL 2]
+        W_ENV[Environments]
+        W_CLI --> W_WSL --> W_ENV
+    end
+    
+    subgraph Linux
+        L_CLI[thresh CLI]
+        L_Docker[Docker/Podman]
+        L_ENV[Environments]
+        L_CLI --> L_Docker --> L_ENV
+    end
+    
+    subgraph macOS
+        M_CLI[thresh CLI]
+        M_CTRD[containerd]
+        M_ENV[Environments]
+        M_CLI --> M_CTRD --> M_ENV
+    end
+    
+    Blueprint[Universal Blueprint<br/>alpine:3.19 + packages]
+    
+    Blueprint -.->|works on| W_CLI
+    Blueprint -.->|works on| L_CLI
+    Blueprint -.->|works on| M_CLI
+    
+    style Windows fill:#0078D4,stroke:#005A9E,color:#fff
+    style Linux fill:#FCC624,stroke:#E5A000,color:#000
+    style macOS fill:#000,stroke:#555,color:#fff
+    style Blueprint fill:#4CAF50,stroke:#2E7D32,color:#fff
+```
+
 ## Windows-Specific Configuration
 
 ### WSL 2 Backend

@@ -8,6 +8,40 @@ description: Quick start guide to provision your first WSL environment in under 
 
 **Quick start guide to provision your first WSL environment in under 5 minutes**
 
+## Architecture Overview
+
+thresh provides isolated development environments using lightweight containers:
+
+```mermaid
+graph TB
+    subgraph Host["Host System (Windows/Linux/macOS)"]
+        CLI[thresh CLI]
+        Blueprints[Blueprints]
+        Config[Configuration]
+    end
+    
+    subgraph Runtime["Container Runtime"]
+        WSL[WSL 2<br/>Windows]
+        Docker[Docker<br/>Linux]
+        Containerd[containerd<br/>macOS]
+    end
+    
+    subgraph Envs["Isolated Environments"]
+        E1[python-dev]
+        E2[node-dev]
+        E3[custom-env]
+    end
+    
+    CLI --> Runtime
+    Blueprints --> CLI
+    Config --> CLI
+    Runtime --> Envs
+    
+    style CLI fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style Runtime fill:#2196F3,stroke:#1565C0,color:#fff
+    style Envs fill:#FF9800,stroke:#E65100,color:#fff
+```
+
 ## Prerequisites
 
 ### Check if WSL is installed

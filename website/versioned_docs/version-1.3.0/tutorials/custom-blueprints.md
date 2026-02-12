@@ -120,6 +120,29 @@ go version
 
 Choose the right base distribution:
 
+```mermaid
+graph LR
+    subgraph Choices[\"Distribution Choices\"]
+        Alpine[Alpine Linux<br/>15 MB<br/>apk]
+        Ubuntu[Ubuntu<br/>78 MB<br/>apt]
+        Debian[Debian<br/>116 MB<br/>apt]
+    end
+    
+    subgraph Uses[\"Best For\"]
+        Light[Lightweight<br/>CI/CD]
+        General[General Dev<br/>Learning]
+        Stable[Production<br/>Stability]
+    end
+    
+    Alpine --> Light
+    Ubuntu --> General
+    Debian --> Stable
+    
+    style Alpine fill:#0D597F,stroke:#0A4461,color:#fff
+    style Ubuntu fill:#E95420,stroke:#C9401F,color:#fff
+    style Debian fill:#D70A53,stroke:#B20843,color:#fff
+```
+
 ### Alpine Linux (Minimal)
 
 **Best for:** Small footprint, fast downloads, production containers

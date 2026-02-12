@@ -200,6 +200,24 @@ In 5 minutes, you:
 - ✅ Verified Python, pip, and git work
 - ✅ Learned basic environment management
 
+### Your Workflow Visualized
+
+```mermaid
+flowchart LR
+    A[Install thresh] --> B[Choose Blueprint]
+    B --> C[thresh up python-dev]
+    C --> D[Download Alpine]
+    D --> E[Install Packages]
+    E --> F[Configure Environment]
+    F --> G[Environment Ready]
+    G --> H[wsl -d thresh-python-dev]
+    
+    style A fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style C fill:#2196F3,stroke:#1565C0,color:#fff
+    style G fill:#FF9800,stroke:#E65100,color:#fff
+    style H fill:#9C27B0,stroke:#6A1B9A,color:#fff
+```
+
 ## Next Steps
 
 ### Try Other Environments
