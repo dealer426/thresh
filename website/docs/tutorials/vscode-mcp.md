@@ -667,7 +667,7 @@ docker ps     # Linux
 
 #### Slow Responses
 
-**Symptom:** >10 second delays
+**Symptom:** More than 10 second delays
 
 **Causes:**
 - First-time distribution download
@@ -735,7 +735,7 @@ Remove-Item $env:APPDATA\Claude\claude_desktop_config.json
 ### Resource Usage
 
 **Idle:**
-- CPU: <1%
+- CPU: Less than 1%
 - Memory: ~10 MB
 
 **Active (tool call):**

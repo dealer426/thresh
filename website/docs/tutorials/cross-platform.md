@@ -581,7 +581,7 @@ thresh auto-detects and uses:
 - Configure `.wslconfig` (memory, CPU limits)
 
 **Slower:**
-- Accessing `/mnt/c/` (Windows <-> Linux filesystem bridge)
+- Accessing `/mnt/c/` (Windows ↔ Linux filesystem bridge)
 - Large file operations across boundaries
 
 ### Linux (Docker)
