@@ -202,7 +202,7 @@ Blueprints are JSON files with this structure:
 
 ## See Also
 
-- [`thresh list`](./list) - List provisioned environments
-- [`thresh destroy`](./destroy) - Remove environments
-- [`thresh generate`](./generate) - Generate custom blueprints
-- [`thresh blueprints`](./blueprints) - List available blueprints
+- [`thresh list`](/docs/cli-reference/list) - List provisioned environments
+- [`thresh destroy`](/docs/cli-reference/destroy) - Remove environments
+- [`thresh generate`](/docs/cli-reference/generate) - Generate custom blueprints
+- `thresh blueprints` - List available blueprints
