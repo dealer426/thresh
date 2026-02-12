@@ -3,7 +3,7 @@
 > **Provision WSL environments in <30 seconds with AI-generated blueprints**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![.NET](https://img.shields.io/badge/.NET-9.0-purple.svg)
+![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)
 ![Native AOT](https://img.shields.io/badge/Native%20AOT-3.8MB-green.svg)
 ![WSL](https://img.shields.io/badge/WSL-2.0-blue.svg)
 
@@ -11,7 +11,7 @@
 
 ## 🚀 What is thresh?
 
-**thresh** is a single-binary CLI tool that uses AI to generate and provision **WSL (Windows Subsystem for Linux) development environments** instantly. Built with .NET 9 Native AOT, it delivers a **3.8MB executable with zero runtime dependencies**.
+**thresh** is a single-binary CLI tool that uses AI to generate and provision **WSL (Windows Subsystem for Linux) development environments** instantly. Built with .NET 10 Native AOT, it delivers a **3.8MB executable with zero runtime dependencies**.
 
 ### Key Features
 

@@ -58,7 +58,7 @@ dotnet publish -c Release -r win-x64 --self-contained
 
 # Copy binary to installation directory
 New-Item -ItemType Directory -Force -Path C:\thresh
-Copy-Item bin\Release\net9.0\win-x64\publish\thresh.exe C:\thresh\
+Copy-Item bin\Release\net10.0\win-x64\publish\thresh.exe C:\thresh\
 
 # Add to PATH
 $env:Path += ";C:\thresh"

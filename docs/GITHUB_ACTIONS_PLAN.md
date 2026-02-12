@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - Checkout code
-      - Setup .NET 9
+      - Setup .NET 10
       - Restore packages
       - Publish Native AOT (linux-x64)
       - Upload artifact
@@ -40,7 +40,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - Checkout code
-      - Setup .NET 9
+      - Setup .NET 10
       - Restore packages
       - Publish Native AOT (win-x64)
       - Upload artifact
@@ -49,7 +49,7 @@ jobs:
     runs-on: macos-14 (M1)
     steps:
       - Checkout code
-      - Setup .NET 9
+      - Setup .NET 10
       - Restore packages
       - Publish Native AOT (osx-arm64)
       - Upload artifact
@@ -99,7 +99,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '9.0.x'
+  DOTNET_VERSION: '10.0.x'
 
 jobs:
   build-linux-x64:
@@ -126,7 +126,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: thresh-linux-x64
-        path: thresh/bin/Release/net9.0/linux-x64/publish/thresh
+        path: thresh/bin/Release/net10.0/linux-x64/publish/thresh
         retention-days: 7
 
   build-windows-x64:
@@ -150,7 +150,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: thresh-windows-x64
-        path: thresh/bin/Release/net9.0/win-x64/publish/thresh.exe
+        path: thresh/bin/Release/net10.0/win-x64/publish/thresh.exe
         retention-days: 7
 
   build-macos-arm64:
@@ -174,7 +174,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: thresh-macos-arm64
-        path: thresh/bin/Release/net9.0/osx-arm64/publish/thresh
+        path: thresh/bin/Release/net10.0/osx-arm64/publish/thresh
         retention-days: 7
 ```
 
@@ -189,7 +189,7 @@ on:
       - 'v*'
 
 env:
-  DOTNET_VERSION: '9.0.x'
+  DOTNET_VERSION: '10.0.x'
 
 jobs:
   create-release:
@@ -248,14 +248,14 @@ jobs:
     - name: Create Archive (Linux/macOS)
       if: runner.os != 'Windows'
       run: |
-        cd thresh/bin/Release/net9.0/${{ matrix.runtime }}/publish
+        cd thresh/bin/Release/net10.0/${{ matrix.runtime }}/publish
         tar -czf ${{ matrix.archive }} ${{ matrix.artifact }}
         mv ${{ matrix.archive }} ${{ github.workspace }}/
     
     - name: Create Archive (Windows)
       if: runner.os == 'Windows'
       run: |
-        cd thresh/bin/Release/net9.0/${{ matrix.runtime }}/publish
+        cd thresh/bin/Release/net10.0/${{ matrix.runtime }}/publish
         Compress-Archive -Path ${{ matrix.artifact }} -DestinationPath ${{ github.workspace }}/${{ matrix.archive }}
     
     - name: Upload Release Asset
@@ -290,7 +290,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x'
+        dotnet-version: '10.0.x'
     
     - name: Restore
       run: dotnet restore
