@@ -46,8 +46,10 @@ jobs:
       
     - name: Install UPX
       run: |
-        winget install --id=upx.upx --exact --silent --accept-source-agreements --accept-package-agreements
-        echo "C:\Program Files\UPX" >> $env:GITHUB_PATH
+        Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-win64.zip" -OutFile upx.zip
+        Expand-Archive upx.zip -DestinationPath .
+        Move-Item upx-4.2.4-win64/upx.exe $env:GITHUB_WORKSPACE
+        echo "$env:GITHUB_WORKSPACE" >> $env:GITHUB_PATH
       shell: pwsh
       
     - name: Get uncompressed binary size
