@@ -73,7 +73,7 @@ thresh version
 Expected output:
 ```
 thresh v1.2.0
-Runtime: .NET 9.0
+Runtime: .NET 10.0
 Platform: Windows (WSL)
 Binary: 14 MB (Native AOT)
 ```
