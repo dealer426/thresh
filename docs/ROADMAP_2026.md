@@ -1,10 +1,10 @@
 # thresh Roadmap 2026 - Distributed Development Orchestration
 
 **Created**: February 6, 2026  
-**Updated**: February 11, 2026  
+**Updated**: February 12, 2026  
 **Timeline**: 16 weeks (4 months)  
-**Current Version**: v1.2.0  
-**Status**: Phase 1 Complete ✅ | Optimization Complete ✅ | Documentation Phase Planning 📝  
+**Current Version**: v1.3.0  
+**Status**: Phase 1 Complete ✅ | Optimization Complete ✅ | Documentation Phase Week 1 Complete ✅  
 **Goal**: Transform thresh from local WSL manager to distributed dev environment orchestrator
 
 ---
@@ -127,85 +127,126 @@ thresh serve --stdio   # For VS Code, Cursor, Windsurf
 
 ---
 
-### **Documentation Phase: Professional Docs (Weeks 5-6) - Docusaurus** 📝 IN PROGRESS
+### **Documentation Phase: Professional Docs (Weeks 5-6) - Docusaurus** ✅🔄 Week 1 Complete | Week 2 In Progress
 
 **Goal:** Create professional documentation website with Docusaurus + GitHub Pages  
-**Status:** 🔄 Planning (Feb 9, 2026)  
+**Status:** 🔄 Active (Feb 9-12, 2026)  
 **Priority:** P0 (Critical for user adoption and community growth)
 
-#### Week 1: Docusaurus Setup & Migration
-- [ ] Initialize Docusaurus project in `website/` directory
-- [ ] Configure GitHub Pages deployment
-- [ ] Set up automated deployment via GitHub Actions
-- [ ] Migrate existing markdown content:
-  - [ ] `GETTING_STARTED.md` → `docs/intro.md`
-  - [ ] `thresh/README.md` → `docs/cli-reference/`
-  - [ ] `MCP_INTEGRATION.md` → `docs/mcp-integration/`
-- [ ] Create installation guides (Windows, Linux, macOS)
-- [ ] Design homepage with features grid
-- [ ] Add thresh logo and branding
+#### Week 1: Docusaurus Setup & Migration ✅ COMPLETE (Feb 9-12, 2026)
+- [x] Initialize Docusaurus project in `website/` directory
+- [x] Configure GitHub Pages deployment (thresh.sh with custom domain!)
+- [x] Set up automated deployment via GitHub Actions
+- [x] Configure SSL certificate (Let's Encrypt)
+- [x] Migrate existing markdown content:
+  - [x] `GETTING_STARTED.md` → `docs/intro.md`
+  - [x] Created `docs/cli-reference/` (7 commands documented)
+  - [x] `docs/MCP_INTEGRATION.md` → `docs/mcp-integration.md`
+- [x] Create installation guide (`docs/installation.md` - Windows, Linux, macOS)
+- [x] Design homepage with features grid
+- [x] Add copy-to-clipboard for install command
+- [x] Fix WSL-only messaging (removed cross-platform claims)
+- [x] Optimize CI/CD (skip C# build for docs-only changes)
 
-**Deliverables:**
+**Deliverables:** ✅ SHIPPED
 ```bash
 # Documentation site runs locally
 cd website
 npm start  # http://localhost:3000
 
-# Deployed to GitHub Pages
-https://dealer426.github.io/thresh/
+# Deployed to GitHub Pages with custom domain
+https://thresh.sh ✅
 ```
 
-#### Week 2: Enhanced Content & Features
-- [ ] Create comprehensive CLI reference (all 15 commands)
+**Extra Achievements:**
+- 🌐 Custom domain configured (thresh.sh)
+- 🔒 HTTPS enforced with Let's Encrypt certificate
+- 🚀 Automatic deployment on main branch push
+- 📋 Copy-to-clipboard UI for install commands
+- ⚡ CI/CD optimized (docs-only changes don't trigger C# build)
+
+#### Week 2: Enhanced Content & Features 🔄 IN PROGRESS
+- [x] CLI reference created for 7 commands:
+  - [x] `up.md` - Provision environments
+  - [x] `list.md` - List environments
+  - [x] `destroy.md` - Remove environments
+  - [x] `generate.md` - AI blueprint generation
+  - [x] `chat.md` - Interactive AI chat
+  - [x] `config.md` - Configuration management
+  - [x] `index.md` - CLI overview
+- [ ] Complete CLI reference for remaining 8 commands:
+  - [ ] `blueprints` - List available blueprints
+  - [ ] `distros` - List distributions
+  - [ ] `distro` - Manage custom distributions
+  - [ ] `serve` - Start MCP server
+  - [ ] `metrics` - Performance metrics
+  - [ ] `version` - Version information
+  - [ ] `network` (future) - Mesh network commands
+  - [ ] `agent` (future) - Agent mode commands
 - [ ] Write 5 tutorial articles:
   - [ ] "Quick Start: 5-Minute Setup"
   - [ ] "Creating Custom Blueprints"
-  - [ ] "Setting Up AI Providers"
+  - [ ] "Setting Up GitHub Copilot SDK"
   - [ ] "VS Code MCP Integration"
   - [ ] "Cross-Platform Development"
 - [ ] Add Mermaid diagrams (architecture, workflows)
-- [ ] Add code syntax highlighting (Bash, PowerShell, C#, JSON)
-- [ ] Configure version dropdown (v1.0, v1.1, v1.2)
+- [x] Add code syntax highlighting (Bash, PowerShell, C#, JSON)
+- [x] Configure version dropdown (v1.3.0, v1.2.0)
 - [ ] Set up search (Algolia DocSearch application)
-- [ ] Create blog posts for releases (v1.0.0, v1.1.0, v1.2.0)
+- [x] Create blog posts:
+  - [x] "thresh 1.3.0 Release" (UPX compression, performance)
+  - [x] "SBOM and Supply Chain Security"
+  - [ ] "MCP Integration Guide"
+  - [ ] "Cross-Platform Development with thresh"
 - [ ] Add download page with package manager instructions
+- [ ] Add screenshots/demos to homepage
 
-**Site Structure:**
+**Site Structure:** ✅ Established
 ```
 website/
 ├── docs/
-│   ├── intro.md
-│   ├── installation/       (Windows, Linux, macOS)
-│   ├── cli-reference/      (15 commands)
-│   ├── blueprints/         (Built-in, custom, schema)
-│   ├── ai-providers/       (OpenAI, Azure, Copilot)
-│   ├── mcp-integration/    (VS Code, Cursor, Windsurf)
-│   ├── advanced/           (Troubleshooting, security)
-│   └── contributing/       (Guidelines, building, testing)
-├── blog/                   (Release announcements)
-└── src/pages/
-    ├── index.tsx           (Homepage)
-    └── download.tsx        (Download page)
+│   ├── intro.md ✅
+│   ├── installation.md ✅
+│   ├── cli-reference/ ✅ (7 commands)
+│   ├── mcp-integration.md ✅
+│   ├── blueprints/ ⏳ (planned)
+│   ├── advanced/ ⏳ (planned)
+│   └── contributing/ ⏳ (planned)
+├── blog/ ✅ (2 posts)
+├── versioned_docs/ ✅ (v1.3.0, v1.2.0)
+└── src/
+    ├── pages/index.tsx ✅ (with copy button)
+    └── components/HomepageFeatures/ ✅
 ```
 
 **Documentation Phase Success Metrics:**
-- [ ] Site deployed at `https://dealer426.github.io/thresh/`
-- [ ] Automatic deployment on `main` branch push
-- [ ] All 15 CLI commands documented with examples
-- [ ] 5+ tutorial articles published
+- [x] Site deployed at `https://thresh.sh` (custom domain!)
+- [x] Automatic deployment on `main` branch push
+- [x] 7 CLI commands documented with examples (8 more to go)
+- [x] 2 blog posts published (3+ more planned)
 - [ ] Search functionality (Algolia) working
-- [ ] Mobile responsive design
-- [ ] Dark mode enabled
-- [ ] Version dropdown (v1.0, v1.1, v1.2)
-- [ ] Blog posts for all releases
-- [ ] <2 second page load time
+- [x] Mobile responsive design (Docusaurus default)
+- [x] Dark mode enabled (Docusaurus default)
+- [x] Version dropdown (v1.3.0, v1.2.0)
+- [x] SSL/HTTPS enforced
+- [x] Copy-to-clipboard functionality
+- [x] <2 second page load time (GitHub Pages CDN)
 
-**Impact:**
-- 🚀 Professional documentation improves user onboarding
-- 📈 Better SEO for discoverability
-- 🤝 Easier community contributions
+**Impact:** ✅ Achieved
+- 🚀 Professional documentation live at thresh.sh
+- 📈 SEO-friendly with custom domain
+- 🤝 Foundation for community contributions
 - 📚 Centralized knowledge base
+- 🔒 Secure HTTPS access
 - 🌍 Foundation for future internationalization
+
+**Next Steps (Week 2 remaining):**
+1. Complete CLI reference (8 remaining commands)
+2. Write tutorial articles (5 planned)
+3. Add Mermaid diagrams for architecture
+4. Apply for Algolia DocSearch
+5. Create download page
+6. Add more blog content (MCP guide, cross-platform)
 
 **See:** `docs/DOCUSAURUS_PLAN.md` for full implementation details
 
