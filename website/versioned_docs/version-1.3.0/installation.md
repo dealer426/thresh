@@ -1,12 +1,12 @@
 ---
 sidebar_position: 4
 title: Installation
-description: Complete installation guide for Windows, Linux, and macOS
+description: Complete installation guide for Windows with WSL 2
 ---
 
 # Installation Guide
 
-This guide covers all installation methods for thresh across Windows, Linux, and macOS.
+This guide covers all installation methods for thresh on Windows with WSL 2.
 
 ## Prerequisites
 
@@ -32,37 +32,6 @@ wsl --install
 ```
 Then restart your computer.
 :::
-
-### Linux
-
-**Container Runtime Required**
-
-One of the following:
-- Docker Engine
-- containerd
-- Podman
-
-```bash
-# Check Docker
-docker --version
-
-# Or check containerd
-containerd --version
-```
-
-### macOS
-
-**Container Runtime Required**
-
-One of the following:
-- Docker Desktop for Mac
-- Podman
-- Colima with containerd
-
-```bash
-# Check Docker
-docker --version
-```
 
 ---
 

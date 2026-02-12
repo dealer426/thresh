@@ -14,24 +14,11 @@ Get up and running with thresh in just a few minutes. This guide will take you f
 - Windows 10/11 with WSL 2 enabled
 - 4 GB free disk space
 
-**Linux:**
-- Docker or Podman installed
-- 4 GB free disk space
-
-**macOS:**
-- containerd installed
-- 4 GB free disk space
-
 :::tip
-If you don't have WSL 2 (Windows) or Docker (Linux/macOS) installed, see our [Installation Guide](/docs/installation) for detailed setup instructions.
+If you don't have WSL 2 installed, see our [Installation Guide](/docs/installation) for detailed setup instructions.
 :::
 
 ## Step 1: Install thresh (2 minutes)
-
-Choose your platform:
-
-<tabs groupId="operating-systems">
-<tabItem value="windows" label="Windows">
 
 ```powershell
 # Using Winget (recommended)
@@ -40,31 +27,6 @@ winget install dealer426.thresh
 # Verify installation
 thresh --version
 ```
-
-</tabItem>
-<tabItem value="macos" label="macOS">
-
-```bash
-# Using Homebrew
-brew install thresh
-
-# Verify installation
-thresh --version
-```
-
-</tabItem>
-<tabItem value="linux" label="Linux">
-
-```bash
-# Download and install
-curl -fsSL https://thresh.sh/install.sh | bash
-
-# Verify installation
-thresh --version
-```
-
-</tabItem>
-</tabs>
 
 **Expected output:**
 ```
@@ -86,7 +48,7 @@ Available Blueprints:
 General Development:
   ubuntu-dev      - Ubuntu 22.04 with common dev tools
   debian-stable   - Debian 12 minimal setup
-  alpine-minimal  - Lightweight Alpine Linux
+  alpine-minimal  - Lightweight Alpine
 
 Language-Specific:
   python-dev      - Python 3.11 + pip + venv
@@ -98,7 +60,7 @@ Cloud/DevOps:
 ```
 
 :::info What's a Blueprint?
-A blueprint is a pre-configured environment template. It specifies the Linux distribution, packages, and setup scripts. Think of it as a recipe for creating consistent development environments.
+A blueprint is a pre-configured environment template. It specifies the distribution, packages, and setup scripts. Think of it as a recipe for creating consistent development environments.
 :::
 
 ## Step 3: Provision Your Environment (2 minutes)
@@ -110,8 +72,8 @@ thresh up python-dev
 ```
 
 **What happens:**
-1. Downloads Alpine Linux image (~15 MB)
-2. Creates WSL/container instance
+1. Downloads Alpine image (~15 MB)
+2. Creates WSL instance
 3. Installs Python 3.11, pip, and development tools
 4. Configures environment
 
@@ -145,7 +107,7 @@ wsl -d thresh-python-dev
 thresh shell python-dev
 ```
 
-You're now inside an isolated Alpine Linux environment!
+You're now inside an isolated Alpine environment!
 
 ## Step 5: Verify Everything Works (30 seconds)
 
@@ -317,12 +279,6 @@ thresh destroy python-dev
 # Or add to PATH manually
 ```
 
-**Linux/macOS:**
-```bash
-# Reload shell
-source ~/.bashrc  # or ~/.zshrc
-```
-
 ### "WSL 2 not found" (Windows)
 
 Install WSL 2:
@@ -334,9 +290,8 @@ wsl --install
 ### Environment won't start
 
 ```powershell
-# Check container runtime
-wsl --status  # Windows
-docker ps     # Linux/macOS
+# Check WSL status
+wsl --status
 
 # View logs
 thresh list --verbose
@@ -415,7 +370,7 @@ curl http://localhost:5000
 **Tutorials:**
 - [Creating Custom Blueprints](/docs/tutorials/custom-blueprints) - Build your own templates
 - [VS Code MCP Integration](/docs/tutorials/vscode-mcp) - AI-powered environment management
-- [Cross-Platform Development](/docs/tutorials/cross-platform) - Windows, Linux, macOS tips
+- [GitHub Copilot SDK Integration](/docs/tutorials/copilot-sdk) - Use AI to manage environments
 
 **CLI Reference:**
 - [`thresh up`](/docs/cli-reference/up) - Provision environments

@@ -60,11 +60,7 @@ Let's create a Go development environment.
 ### Step 1: Create Blueprint Directory
 
 ```powershell
-# Windows
 mkdir $env:USERPROFILE\.thresh\blueprints
-
-# Linux/macOS
-mkdir -p ~/.thresh/blueprints
 ```
 
 ### Step 2: Create Blueprint File
@@ -72,11 +68,7 @@ mkdir -p ~/.thresh/blueprints
 Create `go-dev.json`:
 
 ```powershell
-# Windows
 notepad $env:USERPROFILE\.thresh\blueprints\go-dev.json
-
-# Linux/macOS
-nano ~/.thresh/blueprints/go-dev.json
 ```
 
 ### Step 3: Define Blueprint
@@ -123,7 +115,7 @@ Choose the right base distribution:
 ```mermaid
 graph LR
     subgraph Choices[\"Distribution Choices\"]
-        Alpine[Alpine Linux<br/>15 MB<br/>apk]
+        Alpine[Alpine<br/>15 MB<br/>apk]
         Ubuntu[Ubuntu<br/>78 MB<br/>apt]
         Debian[Debian<br/>116 MB<br/>apt]
     end
@@ -143,7 +135,7 @@ graph LR
     style Debian fill:#D70A53,stroke:#B20843,color:#fff
 ```
 
-### Alpine Linux (Minimal)
+### Alpine (Minimal)
 
 **Best for:** Small footprint, fast downloads, production containers
 
@@ -706,7 +698,7 @@ source ~/.bashrc
 ## Next Steps
 
 - **[VS Code MCP Integration](/docs/tutorials/vscode-mcp)** - AI-powered blueprint generation
-- **[Cross-Platform Development](/docs/tutorials/cross-platform)** - Tips for Windows, Linux, macOS
+- **[GitHub Copilot SDK](/docs/tutorials/copilot-sdk)** - Use AI to help create blueprints
 - **[CLI Reference: blueprints](/docs/cli-reference/blueprints)** - Blueprint command details
 
 ---

@@ -99,36 +99,6 @@ Claude Desktop provides even more powerful AI capabilities.
 }
 ```
 
-### macOS Configuration
-
-**File:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "thresh": {
-      "command": "/opt/homebrew/bin/thresh",
-      "args": ["serve"]
-    }
-  }
-}
-```
-
-### Linux Configuration
-
-**File:** `~/.config/Claude/claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "thresh": {
-      "command": "/usr/local/bin/thresh",
-      "args": ["serve"]
-    }
-  }
-}
-```
-
 After editing, restart Claude Desktop completely.
 
 ## Available MCP Tools
@@ -142,7 +112,7 @@ thresh exposes these tools through MCP:
 | `thresh_destroy` | Remove environment | "Delete the test-env" |
 | `thresh_generate` | AI blueprint generation | "Generate a Django blueprint" |
 | `thresh_blueprints` | List blueprints | "What blueprints are available?" |
-| `thresh_distros` | List distributions | "Show available Linux distros" |
+| `thresh_distros` | List distributions | "Show available distros" |
 
 ## Real-World Examples
 

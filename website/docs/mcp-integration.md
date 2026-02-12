@@ -81,7 +81,7 @@ Add to your `settings.json`:
     "thresh": {
       "command": "thresh",
       "args": ["serve", "--stdio"],
-      "description": "Cross-platform development environment manager"
+      "description": "Windows WSL development environment manager"
     }
   }
 }
@@ -371,10 +371,10 @@ thresh serve --stdio
 ┌──────────────────▼──────────────────────┐
 │     IContainerService (Platform)        │
 │                                         │
-│   ┌──────────┐   ┌──────────────────┐  │
-│   │ WSL      │   │ containerd/docker│  │
-│   │(Windows) │   │ (Linux/macOS)    │  │
-│   └──────────┘   └──────────────────┘  │
+│   ┌──────────┐  │
+│   │ WSL 2    │  │
+│   │(Windows) │  │
+│   └──────────┘  │
 └─────────────────────────────────────────┘
 ```
 
@@ -468,7 +468,7 @@ thresh serve --stdio
 :::tip Solution
 1. Verify MCP config in editor settings
 2. Restart your editor
-3. Check thresh is executable: `which thresh` (Linux/macOS) or `where thresh` (Windows)
+3. Check thresh is executable: `where thresh`
 4. Test stdio mode manually (see Testing section)
 :::
 
@@ -520,4 +520,4 @@ Success indicators:
 
 **🎉 MCP Integration Complete!**
 
-thresh is now fully integrated with the Model Context Protocol, enabling AI-powered environment management across Windows (WSL), Linux, and macOS.
+thresh is now fully integrated with the Model Context Protocol, enabling AI-powered environment management on Windows with WSL 2.
