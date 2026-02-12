@@ -17,13 +17,13 @@ thresh provides a comprehensive set of commands for managing WSL development env
 | [`destroy`](./destroy) | Remove an environment |
 | [`generate`](./generate) | Generate a custom blueprint using AI |
 | [`chat`](./chat) | Interactive AI chat for environment planning |
-| [`blueprints`](./blueprints) | List available blueprints |
-| [`distros`](./distros) | List available distributions |
-| [`distro`](./distro) | Manage custom distributions |
+| `blueprints` | List available blueprints |
+| `distros` | List available distributions |
+| `distro` | Manage custom distributions |
 | [`config`](./config) | Manage configuration settings |
-| [`serve`](./serve) | Start MCP server |
-| [`metrics`](./metrics) | Show performance metrics |
-| [`version`](./version) | Show version information |
+| `serve` | Start MCP server |
+| `metrics` | Show performance metrics |
+| `version` | Show version information |
 
 ## Command Categories
 
@@ -38,16 +38,16 @@ thresh provides a comprehensive set of commands for managing WSL development env
 
 ### Configuration
 - **[config](./config)** - Manage settings
-- **[distro](./distro)** - Custom distributions
-- **[blueprints](./blueprints)** - View blueprints
-- **[distros](./distros)** - View distributions
+- **distro** - Custom distributions
+- **blueprints** - View blueprints
+- **distros** - View distributions
 
 ### Integration
-- **[serve](./serve)** - MCP server for AI editors
+- **serve** - MCP server for AI editors
 
 ### Information
-- **[metrics](./metrics)** - Performance monitoring
-- **[version](./version)** - Version info
+- **metrics** - Performance monitoring
+- **version** - Version info
 
 ## Global Options
 

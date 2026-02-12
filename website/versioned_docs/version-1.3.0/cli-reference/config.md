@@ -299,4 +299,4 @@ New-Item -ItemType Directory -Force -Path ~/.thresh
 
 - [`thresh generate`](./generate) - Use configured AI model
 - [`thresh chat`](./chat) - Use configured AI model
-- [`thresh serve`](./serve) - MCP server settings
+- `thresh serve` - MCP server settings

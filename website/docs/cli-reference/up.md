@@ -91,7 +91,7 @@ thresh up rust-dev
 
 ## Built-in Blueprints
 
-See [`thresh blueprints`](./blueprints) for the full list of available blueprints:
+See `thresh blueprints` for the full list of available blueprints:
 
 - `alpine-minimal` - Lightweight Alpine Linux base (fastest)
 - `ubuntu-dev` - General purpose Ubuntu development
