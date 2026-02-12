@@ -67,24 +67,25 @@
 }
 
 .codeBlock {
-  background-color: #1e1e1e;
+  background-color: #0d1117;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   margin-bottom: 2rem;
+  border: 1px solid #30363d;
 }
 
 .codeHeader {
-  background-color: #2d2d2d;
+  background-color: #161b22;
   padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid #3e3e3e;
+  border-bottom: 1px solid #30363d;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .codeTitle {
-  color: #cccccc;
+  color: #e6edf3;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
   font-size: 0.9rem;
   font-weight: 600;
@@ -93,10 +94,10 @@
 .codeContent {
   padding: 1.5rem;
   margin: 0;
-  color: #d4d4d4;
+  color: #e6edf3;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-  font-size: 0.85rem;
-  line-height: 1.6;
+  font-size: 0.9rem;
+  line-height: 1.7;
   overflow-x: auto;
 }
 
