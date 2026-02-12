@@ -53,21 +53,21 @@ My documentation is open source (check): ✅
 When asked to provide more context about your project:
 
 ```
-thresh is a lightweight CLI tool for orchestrating cross-platform development 
-environments. It provisions isolated environments using WSL2 (Windows), Docker 
-(Linux), and containerd (macOS). The documentation covers installation, CLI 
-commands, tutorials, and AI integration via Model Context Protocol (MCP).
+thresh is a lightweight CLI tool for orchestrating WSL development environments 
+on Windows. It provisions isolated environments using WSL 2 with AI-powered 
+blueprint generation. The documentation covers installation, CLI commands, 
+tutorials, and AI integration via Model Context Protocol (MCP).
 
 Key features of the documentation:
 - Comprehensive CLI reference (11 commands)
 - 5 in-depth tutorials
-- Cross-platform guides (Windows/Linux/macOS)
+- Windows/WSL-specific guides
 - AI integration examples (GitHub Copilot, Claude)
 - Architecture diagrams (Mermaid)
 - Blog posts with examples
 
 Target audience: Developers, DevOps engineers, and students who need isolated,
-reproducible development environments.
+reproducible development environments on Windows.
 ```
 
 ## What Happens Next?

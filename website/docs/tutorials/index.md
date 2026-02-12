@@ -6,7 +6,7 @@ description: Step-by-step guides for thresh development workflows
 
 # Tutorials
 
-Comprehensive guides to get the most out of thresh. From quick starts to advanced cross-platform development.
+Comprehensive guides to get the most out of thresh, from quick starts to advanced AI integration.
 
 ## Getting Started
 
@@ -15,7 +15,7 @@ Comprehensive guides to get the most out of thresh. From quick starts to advance
 Get your first thresh environment running in just 5 minutes.
 
 **You'll learn:**
-- Install thresh on Windows, Linux, or macOS
+- Install thresh on Windows
 - Choose and provision a blueprint
 - Enter and use your environment
 - Basic environment management
@@ -74,25 +74,6 @@ Deep dive into Model Context Protocol integration for advanced AI workflows.
 
 ---
 
-## Cross-Platform Development
-
-### [Cross-Platform Development](/docs/tutorials/cross-platform)
-
-Master developing across Windows, Linux, and macOS with thresh.
-
-**You'll learn:**
-- Platform-specific configurations
-- File system compatibility
-- Networking and port forwarding
-- Performance optimization per platform
-- Create universal blueprints
-- Common pitfalls and solutions
-
-**Time:** 25 minutes  
-**Difficulty:** Intermediate
-
----
-
 ## Tutorial Path
 
 ### Beginner Track
@@ -105,19 +86,18 @@ Master developing across Windows, Linux, and macOS with thresh.
 
 ### Advanced Track
 
-1.[Creating Custom Blueprints](/docs/tutorials/custom-blueprints) - Blueprint development (20 min)
+1. [Creating Custom Blueprints](/docs/tutorials/custom-blueprints) - Blueprint development (20 min)
 2. [VS Code MCP Integration](/docs/tutorials/vscode-mcp) - Advanced AI (30 min)
-3. [Cross-Platform Development](/docs/tutorials/cross-platform) - Multi-platform (25 min)
 
-**Total: 75 minutes**
+**Total: 50 minutes**
 
 ### Team Onboarding
 
 1. [Quick Start](/docs/tutorials/quick-start) - Everyone (5 min)
 2. [Creating Custom Blueprints](/docs/tutorials/custom-blueprints) - Team leads (20 min)
-3. [Cross-Platform Development](/docs/tutorials/cross-platform) - All platforms (25 min)
+3. [GitHub Copilot SDK](/docs/tutorials/copilot-sdk) - AI integration (10 min)
 
-**Total: 50 minutes**
+**Total: 35 minutes**
 
 ---
 
