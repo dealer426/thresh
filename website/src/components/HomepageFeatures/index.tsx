@@ -11,12 +11,12 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: '14 MB Single Binary',
+    title: '3.8 MB Single Binary',
     Emoji: '🚀',
     description: (
       <>
-        Native AOT compilation produces a tiny 14 MB binary with no runtime dependencies.
-        Download and run immediately - no installation required.
+        Native AOT compilation + UPX compression produces a tiny 3.8 MB binary.
+        73% smaller with no runtime dependencies. Download and run immediately.
       </>
     ),
   },
@@ -25,18 +25,18 @@ const FeatureList: FeatureItem[] = [
     Emoji: '🤖',
     description: (
       <>
-        Generate custom development environments with natural language. 
-        Supports OpenAI, Azure OpenAI, and GitHub Copilot SDK.
+        Generate custom development environments with natural language using GitHub Copilot SDK.
+        Access 20+ models: GPT-4o, Claude 3.5, Gemini, o1, Llama, and more.
       </>
     ),
   },
   {
-    title: 'Cross-Platform',
-    Emoji: '🌍',
+    title: 'Windows WSL Optimized',
+    Emoji: '🪟',
     description: (
       <>
-        Works on Windows (WSL), Linux, and macOS. Supports both WSL and
-        container-based environments (containerd/Docker).
+        Built specifically for Windows WSL environments. Provision Alpine, Ubuntu,
+        Debian, and custom distributions in under 30 seconds.
       </>
     ),
   },

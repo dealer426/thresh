@@ -6,7 +6,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'thresh',
-  tagline: 'Lightweight development environment orchestration for Windows, Linux, and macOS',
+  tagline: 'AI-Powered WSL Development Environments - Provision in <30 seconds with AI-generated blueprints',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -24,6 +24,8 @@ const config: Config = {
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'dealer426', // Usually your GitHub org/user name.
   projectName: 'thresh', // Usually your repo name.
+  deploymentBranch: 'gh-pages', // Branch that GitHub Pages deploys from
+  trailingSlash: false,
 
   onBrokenLinks: 'throw',
 
@@ -88,6 +90,11 @@ const config: Config = {
           label: 'Docs',
         },
         {to: '/blog', label: 'Blog', position: 'left'},
+        {
+          type: 'docsVersionDropdown',
+          position: 'right',
+          dropdownActiveClassDisabled: true,
+        },
         {
           href: 'https://github.com/dealer426/thresh',
           label: 'GitHub',

@@ -1,3 +1,28 @@
+release:
+  label: Release
+  permalink: /release
+  description: thresh release announcements
+
+performance:
+  label: Performance
+  permalink: /performance
+  description: Performance improvements and optimizations
+
+features:
+  label: Features
+  permalink: /features
+  description: New features and capabilities
+
+security:
+  label: Security
+  permalink: /security
+  description: Security features and best practices
+
+sbom:
+  label: SBOM
+  permalink: /sbom
+  description: Software Bill of Materials and supply chain security
+
 facebook:
   label: Facebook
   permalink: /facebook
