@@ -2,86 +2,244 @@
 <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
     <channel>
         <title>thresh Blog</title>
-        <link>https://dealer426.github.io/thresh/blog</link>
+        <link>https://thresh.sh/blog</link>
         <description>thresh Blog</description>
-        <lastBuildDate>Thu, 26 Aug 2021 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Thu, 12 Feb 2026 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
         <item>
-            <title><![CDATA[Welcome]]></title>
-            <link>https://dealer426.github.io/thresh/blog/welcome</link>
-            <guid>https://dealer426.github.io/thresh/blog/welcome</guid>
-            <pubDate>Thu, 26 Aug 2021 00:00:00 GMT</pubDate>
-            <description><![CDATA[Docusaurus blogging features are powered by the blog plugin.]]></description>
-            <content:encoded><![CDATA[<p><a href="https://docusaurus.io/docs/blog" target="_blank" rel="noopener noreferrer" class="">Docusaurus blogging features</a> are powered by the <a href="https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-blog" target="_blank" rel="noopener noreferrer" class="">blog plugin</a>.</p>
-<p>Here are a few tips you might find useful.</p>
-<p>Simply add Markdown files (or folders) to the <code>blog</code> directory.</p>
-<p>Regular blog authors can be added to <code>authors.yml</code>.</p>
-<p>The blog post date can be extracted from filenames, such as:</p>
+            <title><![CDATA[thresh 1.3.0 Released - 73% Smaller Binary with UPX Compression]]></title>
+            <link>https://thresh.sh/blog/thresh-1.3.0-release</link>
+            <guid>https://thresh.sh/blog/thresh-1.3.0-release</guid>
+            <pubDate>Thu, 12 Feb 2026 00:00:00 GMT</pubDate>
+            <description><![CDATA[We're excited to announce thresh 1.3.0, featuring dramatic performance improvements through UPX compression and continued refinement of our AI-powered WSL environment management.]]></description>
+            <content:encoded><![CDATA[<p>We're excited to announce <strong>thresh 1.3.0</strong>, featuring dramatic performance improvements through UPX compression and continued refinement of our AI-powered WSL environment management.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-whats-new">🚀 What's New<a href="https://thresh.sh/blog/thresh-1.3.0-release#-whats-new" class="hash-link" aria-label="Direct link to 🚀 What's New" title="Direct link to 🚀 What's New" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="upx-compression---73-size-reduction">UPX Compression - 73% Size Reduction<a href="https://thresh.sh/blog/thresh-1.3.0-release#upx-compression---73-size-reduction" class="hash-link" aria-label="Direct link to UPX Compression - 73% Size Reduction" title="Direct link to UPX Compression - 73% Size Reduction" translate="no">​</a></h3>
+<p>The headline feature of 1.3.0 is the integration of <strong>UPX (Ultimate Packer for eXecutables)</strong> compression:</p>
 <ul>
-<li class=""><code>2019-05-30-welcome.md</code></li>
-<li class=""><code>2019-05-30-welcome/index.md</code></li>
+<li class=""><strong>Binary size reduced from 13.5 MB → 3.8 MB</strong> (73% smaller!)</li>
+<li class="">Faster downloads and distribution</li>
+<li class="">Same startup performance (~50ms)</li>
+<li class="">Same functionality, smaller footprint</li>
 </ul>
-<p>A blog post folder can be convenient to co-locate blog post images:</p>
-<p><img decoding="async" loading="lazy" alt="Docusaurus Plushie" src="https://dealer426.github.io/thresh/assets/images/docusaurus-plushie-banner-a60f7593abca1e3eef26a9afa244e4fb.jpeg" width="1500" height="500" class="img_ev3q"></p>
-<p>The blog supports tags as well!</p>
-<p><strong>And if you don't want a blog</strong>: just delete this directory, and use <code>blog: false</code> in your Docusaurus config.</p>]]></content:encoded>
-            <category>Facebook</category>
-            <category>Hello</category>
-            <category>Docusaurus</category>
+<p>This makes thresh one of the most compact development environment orchestration tools available, perfect for quick installations and CI/CD pipelines.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="github-copilot-sdk-integration">GitHub Copilot SDK Integration<a href="https://thresh.sh/blog/thresh-1.3.0-release#github-copilot-sdk-integration" class="hash-link" aria-label="Direct link to GitHub Copilot SDK Integration" title="Direct link to GitHub Copilot SDK Integration" translate="no">​</a></h3>
+<p>thresh now exclusively uses the <strong>GitHub Copilot SDK</strong> for AI features, providing:</p>
+<ul>
+<li class=""><strong>20+ AI models</strong> including GPT-4o, Claude 3.5 Sonnet, Gemini 1.5, o1, Llama 3.1, and Mistral</li>
+<li class=""><strong>No API keys required</strong> - just authenticate with GitHub CLI (<code>gh auth login</code>)</li>
+<li class="">Seamless integration with your existing GitHub workflow</li>
+<li class="">Access to the latest and most advanced AI models</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="simplified-configuration">Simplified Configuration<a href="https://thresh.sh/blog/thresh-1.3.0-release#simplified-configuration" class="hash-link" aria-label="Direct link to Simplified Configuration" title="Direct link to Simplified Configuration" translate="no">​</a></h3>
+<p>We've streamlined configuration management:</p>
+<ul>
+<li class="">Removed OpenAI and Azure OpenAI provider settings</li>
+<li class="">Reduced configuration properties from 8 to 5</li>
+<li class="">Single authentication method (GitHub CLI)</li>
+<li class="">Cleaner, more intuitive setup</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-installation">📦 Installation<a href="https://thresh.sh/blog/thresh-1.3.0-release#-installation" class="hash-link" aria-label="Direct link to 📦 Installation" title="Direct link to 📦 Installation" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="download-binary-recommended">Download Binary (Recommended)<a href="https://thresh.sh/blog/thresh-1.3.0-release#download-binary-recommended" class="hash-link" aria-label="Direct link to Download Binary (Recommended)" title="Direct link to Download Binary (Recommended)" translate="no">​</a></h3>
+<div class="language-powershell codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-powershell codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token comment" style="color:#999988;font-style:italic"># Download latest release</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token function" style="color:#d73a49">Invoke-WebRequest</span><span class="token plain"> </span><span class="token operator" style="color:#393A34">-</span><span class="token plain">Uri </span><span class="token string" style="color:#e3116c">"https://github.com/dealer426/thresh/releases/latest/download/thresh.exe"</span><span class="token plain"> </span><span class="token operator" style="color:#393A34">-</span><span class="token plain">OutFile </span><span class="token string" style="color:#e3116c">"thresh.exe"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token comment" style="color:#999988;font-style:italic"># Verify size - should be ~3.8 MB!</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">(</span><span class="token function" style="color:#d73a49">Get-Item</span><span class="token plain"> thresh</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">exe</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">Length </span><span class="token operator" style="color:#393A34">/</span><span class="token plain"> 1MB</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="package-managers-coming-soon">Package Managers (Coming Soon)<a href="https://thresh.sh/blog/thresh-1.3.0-release#package-managers-coming-soon" class="hash-link" aria-label="Direct link to Package Managers (Coming Soon)" title="Direct link to Package Managers (Coming Soon)" translate="no">​</a></h3>
+<p>We're working on distribution through winget, Chocolatey, and Scoop for even easier installation.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-technical-details">🔧 Technical Details<a href="https://thresh.sh/blog/thresh-1.3.0-release#-technical-details" class="hash-link" aria-label="Direct link to 🔧 Technical Details" title="Direct link to 🔧 Technical Details" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="native-aot--upx">Native AOT + UPX<a href="https://thresh.sh/blog/thresh-1.3.0-release#native-aot--upx" class="hash-link" aria-label="Direct link to Native AOT + UPX" title="Direct link to Native AOT + UPX" translate="no">​</a></h3>
+<p>thresh combines two powerful technologies:</p>
+<ol>
+<li class=""><strong>.NET 10 Native AOT compilation</strong> - Produces optimized native code with no runtime dependencies</li>
+<li class=""><strong>UPX compression</strong> - Reduces binary size while maintaining decompression speed</li>
+</ol>
+<p>The result: <strong>3.8 MB self-contained binary</strong> that starts in ~50ms.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="dependency-reduction">Dependency Reduction<a href="https://thresh.sh/blog/thresh-1.3.0-release#dependency-reduction" class="hash-link" aria-label="Direct link to Dependency Reduction" title="Direct link to Dependency Reduction" translate="no">​</a></h3>
+<p>We've optimized our dependencies:</p>
+<ul>
+<li class=""><strong>6 → 3 NuGet packages</strong></li>
+<li class="">Removed: Microsoft.Extensions.Configuration, DependencyInjection, and AI provider libraries</li>
+<li class="">Core dependencies: GitHub.Copilot.SDK, System.CommandLine, System.Security.Cryptography.ProtectedData</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="build-pipeline">Build Pipeline<a href="https://thresh.sh/blog/thresh-1.3.0-release#build-pipeline" class="hash-link" aria-label="Direct link to Build Pipeline" title="Direct link to Build Pipeline" translate="no">​</a></h3>
+<p>Our GitHub Actions release workflow now:</p>
+<ul>
+<li class="">Downloads UPX 4.2.4 directly from GitHub releases</li>
+<li class="">Compresses the Native AOT binary with <code>--best --lzma</code> flags</li>
+<li class="">Calculates and reports compression statistics</li>
+<li class="">Publishes compressed binary as release asset</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-use-cases">🎯 Use Cases<a href="https://thresh.sh/blog/thresh-1.3.0-release#-use-cases" class="hash-link" aria-label="Direct link to 🎯 Use Cases" title="Direct link to 🎯 Use Cases" translate="no">​</a></h2>
+<p>thresh 1.3.0 excels at:</p>
+<ul>
+<li class=""><strong>Quick provisioning</strong> - Alpine environments in under 30 seconds</li>
+<li class=""><strong>AI-assisted development</strong> - Generate custom blueprints with natural language</li>
+<li class=""><strong>MCP integration</strong> - Control environments from Claude Desktop, VS Code, or Cursor</li>
+<li class=""><strong>CI/CD pipelines</strong> - Small binary size perfect for automated workflows</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-performance-benchmarks">📊 Performance Benchmarks<a href="https://thresh.sh/blog/thresh-1.3.0-release#-performance-benchmarks" class="hash-link" aria-label="Direct link to 📊 Performance Benchmarks" title="Direct link to 📊 Performance Benchmarks" translate="no">​</a></h2>
+<table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody><tr><td>Binary Size (uncompressed)</td><td>13.5 MB</td></tr><tr><td>Binary Size (compressed)</td><td>3.8 MB</td></tr><tr><td>Compression Ratio</td><td>73%</td></tr><tr><td>Startup Time</td><td>~50ms</td></tr><tr><td>Alpine Provision Time</td><td>~25 seconds</td></tr><tr><td>Ubuntu Provision Time</td><td>~60 seconds</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-whats-next">🔮 What's Next<a href="https://thresh.sh/blog/thresh-1.3.0-release#-whats-next" class="hash-link" aria-label="Direct link to 🔮 What's Next" title="Direct link to 🔮 What's Next" translate="no">​</a></h2>
+<p>Looking ahead to future releases:</p>
+<ul>
+<li class=""><strong>Cross-platform support</strong> - Linux and macOS (Phase 2)</li>
+<li class=""><strong>Package manager distribution</strong> - winget, Chocolatey, Scoop</li>
+<li class=""><strong>Enhanced MCP tools</strong> - More AI editor integration</li>
+<li class=""><strong>Blueprint marketplace</strong> - Share and discover community blueprints</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-resources">📚 Resources<a href="https://thresh.sh/blog/thresh-1.3.0-release#-resources" class="hash-link" aria-label="Direct link to 📚 Resources" title="Direct link to 📚 Resources" translate="no">​</a></h2>
+<ul>
+<li class=""><a href="https://github.com/dealer426/thresh/releases/tag/v1.3.0" target="_blank" rel="noopener noreferrer" class="">Download v1.3.0</a></li>
+<li class=""><a href="https://dealer426.github.io/thresh/" target="_blank" rel="noopener noreferrer" class="">Documentation</a></li>
+<li class=""><a href="https://github.com/dealer426/thresh" target="_blank" rel="noopener noreferrer" class="">GitHub Repository</a></li>
+<li class=""><a href="https://dealer426.github.io/thresh/docs/intro" target="_blank" rel="noopener noreferrer" class="">Getting Started Guide</a></li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-acknowledgments">🙏 Acknowledgments<a href="https://thresh.sh/blog/thresh-1.3.0-release#-acknowledgments" class="hash-link" aria-label="Direct link to 🙏 Acknowledgments" title="Direct link to 🙏 Acknowledgments" translate="no">​</a></h2>
+<p>Thanks to the UPX project for their excellent compression tool, and to the .NET team for Native AOT capabilities that make thresh's performance possible.</p>
+<hr>
+<p><strong>Try thresh 1.3.0 today and experience lightning-fast WSL environment provisioning with AI-powered blueprints!</strong></p>]]></content:encoded>
+            <category>Release</category>
+            <category>Performance</category>
         </item>
         <item>
-            <title><![CDATA[MDX Blog Post]]></title>
-            <link>https://dealer426.github.io/thresh/blog/mdx-blog-post</link>
-            <guid>https://dealer426.github.io/thresh/blog/mdx-blog-post</guid>
-            <pubDate>Sun, 01 Aug 2021 00:00:00 GMT</pubDate>
-            <description><![CDATA[Blog posts support Docusaurus Markdown features, such as MDX.]]></description>
-            <content:encoded><![CDATA[<p>Blog posts support <a href="https://docusaurus.io/docs/markdown-features" target="_blank" rel="noopener noreferrer" class="">Docusaurus Markdown features</a>, such as <a href="https://mdxjs.com/" target="_blank" rel="noopener noreferrer" class="">MDX</a>.</p>
-<div class="theme-admonition theme-admonition-tip admonition_xJq3 alert alert--success"><div class="admonitionHeading_Gvgb"><span class="admonitionIcon_Rf37"><svg viewBox="0 0 12 16"><path fill-rule="evenodd" d="M6.5 0C3.48 0 1 2.19 1 5c0 .92.55 2.25 1 3 1.34 2.25 1.78 2.78 2 4v1h5v-1c.22-1.22.66-1.75 2-4 .45-.75 1-2.08 1-3 0-2.81-2.48-5-5.5-5zm3.64 7.48c-.25.44-.47.8-.67 1.11-.86 1.41-1.25 2.06-1.45 3.23-.02.05-.02.11-.02.17H5c0-.06 0-.13-.02-.17-.2-1.17-.59-1.83-1.45-3.23-.2-.31-.42-.67-.67-1.11C2.44 6.78 2 5.65 2 5c0-2.2 2.02-4 4.5-4 1.22 0 2.36.42 3.22 1.19C10.55 2.94 11 3.94 11 5c0 .66-.44 1.78-.86 2.48zM4 14h5c-.23 1.14-1.3 2-2.5 2s-2.27-.86-2.5-2z"></path></svg></span>tip</div><div class="admonitionContent_BuS1"><p>Use the power of React to create interactive blog posts.</p></div></div>
-<!-- -->
-<p>For example, use JSX to create an interactive button:</p>
-<div class="language-js codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-js codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token operator" style="color:#393A34">&lt;</span><span class="token plain">button onClick</span><span class="token operator" style="color:#393A34">=</span><span class="token punctuation" style="color:#393A34">{</span><span class="token punctuation" style="color:#393A34">(</span><span class="token punctuation" style="color:#393A34">)</span><span class="token plain"> </span><span class="token arrow operator" style="color:#393A34">=&gt;</span><span class="token plain"> </span><span class="token function" style="color:#d73a49">alert</span><span class="token punctuation" style="color:#393A34">(</span><span class="token string" style="color:#e3116c">'button clicked!'</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">}</span><span class="token operator" style="color:#393A34">&gt;</span><span class="token maybe-class-name">Click</span><span class="token plain"> me</span><span class="token operator" style="color:#393A34">!</span><span class="token operator" style="color:#393A34">&lt;</span><span class="token operator" style="color:#393A34">/</span><span class="token plain">button</span><span class="token operator" style="color:#393A34">&gt;</span><br></span></code></pre></div></div>
-<button>Click me!</button>]]></content:encoded>
-            <category>Docusaurus</category>
-        </item>
-        <item>
-            <title><![CDATA[Long Blog Post]]></title>
-            <link>https://dealer426.github.io/thresh/blog/long-blog-post</link>
-            <guid>https://dealer426.github.io/thresh/blog/long-blog-post</guid>
-            <pubDate>Wed, 29 May 2019 00:00:00 GMT</pubDate>
-            <description><![CDATA[This is the summary of a very long blog post,]]></description>
-            <content:encoded><![CDATA[<p>This is the summary of a very long blog post,</p>
-<p>Use a <code>&lt;!--</code> <code>truncate</code> <code>--&gt;</code> comment to limit blog post size in the list view.</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>]]></content:encoded>
-            <category>Hello</category>
-            <category>Docusaurus</category>
-        </item>
-        <item>
-            <title><![CDATA[First Blog Post]]></title>
-            <link>https://dealer426.github.io/thresh/blog/first-blog-post</link>
-            <guid>https://dealer426.github.io/thresh/blog/first-blog-post</guid>
-            <pubDate>Tue, 28 May 2019 00:00:00 GMT</pubDate>
-            <description><![CDATA[Lorem ipsum dolor sit amet...]]></description>
-            <content:encoded><![CDATA[<p>Lorem ipsum dolor sit amet...</p>
-<p>...consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>]]></content:encoded>
-            <category>Hola</category>
-            <category>Docusaurus</category>
+            <title><![CDATA[Software Supply Chain Security - Why thresh Publishes SBOM with Every Release]]></title>
+            <link>https://thresh.sh/blog/software-supply-chain-security-sbom</link>
+            <guid>https://thresh.sh/blog/software-supply-chain-security-sbom</guid>
+            <pubDate>Wed, 11 Feb 2026 00:00:00 GMT</pubDate>
+            <description><![CDATA[In an era of increasing software supply chain attacks, transparency and trust are paramount. That's why thresh publishes a Software Bill of Materials (SBOM) with every release, giving you complete visibility into our dependencies and supply chain.]]></description>
+            <content:encoded><![CDATA[<p>In an era of increasing software supply chain attacks, transparency and trust are paramount. That's why <strong>thresh publishes a Software Bill of Materials (SBOM)</strong> with every release, giving you complete visibility into our dependencies and supply chain.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-what-is-an-sbom">🔍 What is an SBOM?<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#-what-is-an-sbom" class="hash-link" aria-label="Direct link to 🔍 What is an SBOM?" title="Direct link to 🔍 What is an SBOM?" translate="no">​</a></h2>
+<p>A <strong>Software Bill of Materials (SBOM)</strong> is like an ingredients label for software. It's a formal record containing the details and supply chain relationships of the components used in building software.</p>
+<p>Think of it as a detailed inventory that includes:</p>
+<ul>
+<li class="">All direct and transitive dependencies</li>
+<li class="">Exact version numbers and package identifiers</li>
+<li class="">Component licenses and origins</li>
+<li class="">Cryptographic hashes for verification</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="️-why-sbom-matters">🛡️ Why SBOM Matters<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#%EF%B8%8F-why-sbom-matters" class="hash-link" aria-label="Direct link to 🛡️ Why SBOM Matters" title="Direct link to 🛡️ Why SBOM Matters" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="vulnerability-management">Vulnerability Management<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#vulnerability-management" class="hash-link" aria-label="Direct link to Vulnerability Management" title="Direct link to Vulnerability Management" translate="no">​</a></h3>
+<p>When a security vulnerability is discovered (like Log4Shell), organizations need to quickly determine: <strong>"Are we affected?"</strong></p>
+<p>With an SBOM, you can:</p>
+<ul>
+<li class="">Instantly identify if vulnerable components are present</li>
+<li class="">Determine which versions of thresh are affected</li>
+<li class="">Make informed decisions about updates and patches</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="supply-chain-transparency">Supply Chain Transparency<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#supply-chain-transparency" class="hash-link" aria-label="Direct link to Supply Chain Transparency" title="Direct link to Supply Chain Transparency" translate="no">​</a></h3>
+<p>Modern software relies on dozens or hundreds of dependencies. SBOM provides:</p>
+<ul>
+<li class=""><strong>Full visibility</strong> into what's running in your environment</li>
+<li class=""><strong>Trust verification</strong> - confirm what we say we ship matches what you receive</li>
+<li class=""><strong>License compliance</strong> - understand all licenses in the dependency tree</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="regulatory-compliance">Regulatory Compliance<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#regulatory-compliance" class="hash-link" aria-label="Direct link to Regulatory Compliance" title="Direct link to Regulatory Compliance" translate="no">​</a></h3>
+<p>Organizations in regulated industries increasingly require SBOMs:</p>
+<ul>
+<li class=""><strong>U.S. Executive Order 14028</strong> mandates SBOMs for federal software</li>
+<li class=""><strong>EU Cyber Resilience Act</strong> emphasizes software supply chain security</li>
+<li class="">Many enterprises now require SBOMs from vendors</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-threshs-sbom-implementation">📦 thresh's SBOM Implementation<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#-threshs-sbom-implementation" class="hash-link" aria-label="Direct link to 📦 thresh's SBOM Implementation" title="Direct link to 📦 thresh's SBOM Implementation" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-we-include">What We Include<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#what-we-include" class="hash-link" aria-label="Direct link to What We Include" title="Direct link to What We Include" translate="no">​</a></h3>
+<p>Every thresh release includes a comprehensive SBOM in <strong>SPDX format</strong>:</p>
+<div class="language-json codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-json codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">"bomFormat"</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">"CycloneDX"</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">"specVersion"</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">"1.4"</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">"version"</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token number" style="color:#36acaa">1</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">"components"</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">"name"</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">"GitHub.Copilot.SDK"</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">"version"</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">"0.1.23-preview.1"</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">"purl"</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">"pkg:nuget/GitHub.Copilot.SDK@0.1.23-preview.1"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token punctuation" style="color:#393A34">}</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">"name"</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">"System.CommandLine"</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">"version"</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">"2.0.0-beta4.22272.1"</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">"purl"</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">"pkg:nuget/System.CommandLine@2.0.0-beta4.22272.1"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token comment" style="color:#999988;font-style:italic">// ... all dependencies</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="our-minimal-dependency-surface">Our Minimal Dependency Surface<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#our-minimal-dependency-surface" class="hash-link" aria-label="Direct link to Our Minimal Dependency Surface" title="Direct link to Our Minimal Dependency Surface" translate="no">​</a></h3>
+<p>thresh v1.3.0 has an exceptionally <strong>small dependency footprint</strong>:</p>
+<p><strong>Direct Dependencies (3):</strong></p>
+<ol>
+<li class=""><code>GitHub.Copilot.SDK</code> 0.1.23-preview.1 - AI functionality</li>
+<li class=""><code>System.CommandLine</code> 2.0.0-beta4.22272.1 - CLI framework</li>
+<li class=""><code>System.Security.Cryptography.ProtectedData</code> 8.0.0 - Secure storage</li>
+</ol>
+<p><strong>Why Small Matters:</strong></p>
+<ul>
+<li class="">Fewer dependencies = smaller attack surface</li>
+<li class="">Easier security audits</li>
+<li class="">Faster vulnerability response</li>
+<li class="">More transparent supply chain</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="version-130-improvements">Version 1.3.0 Improvements<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#version-130-improvements" class="hash-link" aria-label="Direct link to Version 1.3.0 Improvements" title="Direct link to Version 1.3.0 Improvements" translate="no">​</a></h3>
+<p>We recently <strong>reduced dependencies from 6 to 3</strong> by removing:</p>
+<ul>
+<li class="">❌ OpenAI SDK (moved to GitHub Copilot SDK)</li>
+<li class="">❌ Azure OpenAI SDK (consolidated)</li>
+<li class="">❌ Microsoft.Extensions.Configuration (simplified)</li>
+</ul>
+<p>This 50% reduction in dependencies means:</p>
+<ul>
+<li class=""><strong>Smaller attack surface</strong> - fewer components to monitor</li>
+<li class=""><strong>Faster builds</strong> - less to download and compile</li>
+<li class=""><strong>Easier audits</strong> - clearer dependency tree</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-accessing-our-sbom">📥 Accessing Our SBOM<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#-accessing-our-sbom" class="hash-link" aria-label="Direct link to 📥 Accessing Our SBOM" title="Direct link to 📥 Accessing Our SBOM" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="download-from-github-releases">Download from GitHub Releases<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#download-from-github-releases" class="hash-link" aria-label="Direct link to Download from GitHub Releases" title="Direct link to Download from GitHub Releases" translate="no">​</a></h3>
+<p>Every thresh release includes <code>sbom.json</code>:</p>
+<div class="language-powershell codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-powershell codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token comment" style="color:#999988;font-style:italic"># Download SBOM for v1.3.0</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token function" style="color:#d73a49">Invoke-WebRequest</span><span class="token plain"> </span><span class="token operator" style="color:#393A34">-</span><span class="token plain">Uri </span><span class="token string" style="color:#e3116c">"https://github.com/dealer426/thresh/releases/download/v1.3.0/sbom.json"</span><span class="token plain"> </span><span class="token operator" style="color:#393A34">-</span><span class="token plain">OutFile </span><span class="token string" style="color:#e3116c">"sbom.json"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token comment" style="color:#999988;font-style:italic"># View contents</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token function" style="color:#d73a49">Get-Content</span><span class="token plain"> sbom</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">json </span><span class="token punctuation" style="color:#393A34">|</span><span class="token plain"> </span><span class="token function" style="color:#d73a49">ConvertFrom-Json</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="automated-verification">Automated Verification<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#automated-verification" class="hash-link" aria-label="Direct link to Automated Verification" title="Direct link to Automated Verification" translate="no">​</a></h3>
+<p>Integrate SBOM checking into your CI/CD:</p>
+<div class="language-yaml codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-yaml codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token comment" style="color:#999988;font-style:italic"># Example GitHub Action</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">-</span><span class="token plain"> </span><span class="token key atrule" style="color:#00a4db">name</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"> Download and verify SBOM</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token key atrule" style="color:#00a4db">run</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">|</span><span class="token scalar string" style="color:#e3116c"></span><br></span><span class="token-line" style="color:#393A34"><span class="token scalar string" style="color:#e3116c">    curl -LO https://github.com/dealer426/thresh/releases/latest/download/sbom.json</span><br></span><span class="token-line" style="color:#393A34"><span class="token scalar string" style="color:#e3116c">    # Use tools like syft, grype, or your vulnerability scanner</span><br></span><span class="token-line" style="color:#393A34"><span class="token scalar string" style="color:#e3116c">    grype sbom:sbom.json</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="sbom-format">SBOM Format<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#sbom-format" class="hash-link" aria-label="Direct link to SBOM Format" title="Direct link to SBOM Format" translate="no">​</a></h3>
+<p>We use <strong>CycloneDX 1.4</strong> format:</p>
+<ul>
+<li class="">Industry-standard SBOM specification</li>
+<li class="">Widely supported by security tools</li>
+<li class="">Machine-readable JSON format</li>
+<li class="">Includes package URLs (purls) for precise identification</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-how-we-generate-sboms">🔐 How We Generate SBOMs<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#-how-we-generate-sboms" class="hash-link" aria-label="Direct link to 🔐 How We Generate SBOMs" title="Direct link to 🔐 How We Generate SBOMs" translate="no">​</a></h2>
+<p>Our SBOM generation is fully automated in our build pipeline:</p>
+<div class="language-yaml codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-yaml codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token comment" style="color:#999988;font-style:italic"># .github/workflows/release.yml</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">-</span><span class="token plain"> </span><span class="token key atrule" style="color:#00a4db">name</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"> Generate SBOM</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token key atrule" style="color:#00a4db">run</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">|</span><span class="token scalar string" style="color:#e3116c"></span><br></span><span class="token-line" style="color:#393A34"><span class="token scalar string" style="color:#e3116c">    dotnet tool install --global CycloneDX</span><br></span><span class="token-line" style="color:#393A34"><span class="token scalar string" style="color:#e3116c">    dotnet CycloneDX thresh.csproj -o sbom.json</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">-</span><span class="token plain"> </span><span class="token key atrule" style="color:#00a4db">name</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"> Upload SBOM to Release</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token key atrule" style="color:#00a4db">uses</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"> actions/upload</span><span class="token punctuation" style="color:#393A34">-</span><span class="token plain">release</span><span class="token punctuation" style="color:#393A34">-</span><span class="token plain">asset@v1</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token key atrule" style="color:#00a4db">with</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token key atrule" style="color:#00a4db">asset_path</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"> ./sbom.json</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token key atrule" style="color:#00a4db">asset_name</span><span class="token punctuation" style="color:#393A34">:</span><span class="token plain"> sbom.json</span><br></span></code></pre></div></div>
+<p><strong>Benefits of automated generation:</strong></p>
+<ul>
+<li class="">✅ Always up-to-date with actual dependencies</li>
+<li class="">✅ No manual maintenance required</li>
+<li class="">✅ Consistent format across releases</li>
+<li class="">✅ Generated from source of truth (project file)</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-use-cases-for-thresh-sbom">🎯 Use Cases for thresh SBOM<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#-use-cases-for-thresh-sbom" class="hash-link" aria-label="Direct link to 🎯 Use Cases for thresh SBOM" title="Direct link to 🎯 Use Cases for thresh SBOM" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="1-vulnerability-scanning">1. Vulnerability Scanning<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#1-vulnerability-scanning" class="hash-link" aria-label="Direct link to 1. Vulnerability Scanning" title="Direct link to 1. Vulnerability Scanning" translate="no">​</a></h3>
+<div class="language-powershell codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-powershell codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token comment" style="color:#999988;font-style:italic"># Scan thresh SBOM for known vulnerabilities</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">grype sbom:sbom</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">json </span><span class="token operator" style="color:#393A34">--</span><span class="token plain">scope all-layers</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="2-license-compliance">2. License Compliance<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#2-license-compliance" class="hash-link" aria-label="Direct link to 2. License Compliance" title="Direct link to 2. License Compliance" translate="no">​</a></h3>
+<div class="language-powershell codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-powershell codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token comment" style="color:#999988;font-style:italic"># Check all licenses in dependency tree</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">syft sbom</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">json </span><span class="token operator" style="color:#393A34">-</span><span class="token plain">o json </span><span class="token punctuation" style="color:#393A34">|</span><span class="token plain"> jq </span><span class="token string" style="color:#e3116c">'.artifacts[].metadata.licenses'</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="3-policy-enforcement">3. Policy Enforcement<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#3-policy-enforcement" class="hash-link" aria-label="Direct link to 3. Policy Enforcement" title="Direct link to 3. Policy Enforcement" translate="no">​</a></h3>
+<div class="language-powershell codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-powershell codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token comment" style="color:#999988;font-style:italic"># Verify no GPL-licensed dependencies</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token function" style="color:#d73a49">cat</span><span class="token plain"> sbom</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">json </span><span class="token punctuation" style="color:#393A34">|</span><span class="token plain"> jq </span><span class="token string" style="color:#e3116c">'.components[] | select(.licenses[].license.id | contains("GPL"))'</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="4-change-tracking">4. Change Tracking<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#4-change-tracking" class="hash-link" aria-label="Direct link to 4. Change Tracking" title="Direct link to 4. Change Tracking" translate="no">​</a></h3>
+<p>Compare SBOMs between versions to see dependency updates:</p>
+<div class="language-powershell codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-powershell codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token comment" style="color:#999988;font-style:italic"># Diff v1.2.0 and v1.3.0</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token function" style="color:#d73a49">diff</span><span class="token plain"> sbom-1</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">2</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">0</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">json sbom-1</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">3</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">0</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">json</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-our-commitment-to-security">📊 Our Commitment to Security<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#-our-commitment-to-security" class="hash-link" aria-label="Direct link to 📊 Our Commitment to Security" title="Direct link to 📊 Our Commitment to Security" translate="no">​</a></h2>
+<p>Publishing SBOMs is part of our broader security commitment:</p>
+<ul>
+<li class="">✅ <strong>Automated dependency updates</strong> via Dependabot</li>
+<li class="">✅ <strong>Regular security scanning</strong> in CI/CD</li>
+<li class="">✅ <strong>Minimal dependency footprint</strong> (3 direct dependencies)</li>
+<li class="">✅ <strong>Native AOT compilation</strong> - no runtime dependencies</li>
+<li class="">✅ <strong>Reproducible builds</strong> - same source = same binary</li>
+<li class="">✅ <strong>Signed releases</strong> (coming soon)</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-whats-next">🚀 What's Next<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#-whats-next" class="hash-link" aria-label="Direct link to 🚀 What's Next" title="Direct link to 🚀 What's Next" translate="no">​</a></h2>
+<p>We're continuously improving our security posture:</p>
+<ul>
+<li class=""><strong>Signed binaries</strong> - Code signing for Windows executables</li>
+<li class=""><strong>Provenance attestation</strong> - SLSA compliance for build provenance</li>
+<li class=""><strong>Enhanced SBOM</strong> - Include vulnerability data in SBOM</li>
+<li class=""><strong>Automated notifications</strong> - Alert users to vulnerable versions</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-learn-more">📚 Learn More<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#-learn-more" class="hash-link" aria-label="Direct link to 📚 Learn More" title="Direct link to 📚 Learn More" translate="no">​</a></h2>
+<ul>
+<li class=""><a href="https://github.com/dealer426/thresh/releases/tag/v1.3.0" target="_blank" rel="noopener noreferrer" class="">Download thresh v1.3.0 with SBOM</a></li>
+<li class=""><a href="https://cyclonedx.org/" target="_blank" rel="noopener noreferrer" class="">CycloneDX SBOM Specification</a></li>
+<li class=""><a href="https://www.ntia.gov/sbom" target="_blank" rel="noopener noreferrer" class="">NTIA SBOM Resources</a></li>
+<li class=""><a href="https://www.cisa.gov/sbom" target="_blank" rel="noopener noreferrer" class="">CISA SBOM Guide</a></li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="-we-want-your-feedback">💬 We Want Your Feedback<a href="https://thresh.sh/blog/software-supply-chain-security-sbom#-we-want-your-feedback" class="hash-link" aria-label="Direct link to 💬 We Want Your Feedback" title="Direct link to 💬 We Want Your Feedback" translate="no">​</a></h2>
+<p>How do you use SBOMs in your organization? What additional security features would you like to see in thresh?</p>
+<p>Share your thoughts on <a href="https://github.com/dealer426/thresh/discussions" target="_blank" rel="noopener noreferrer" class="">GitHub Discussions</a> or open an issue with suggestions.</p>
+<hr>
+<p><strong>Security and transparency are foundational to thresh. Download our latest release and inspect the SBOM for yourself!</strong></p>]]></content:encoded>
+            <category>Security</category>
+            <category>SBOM</category>
+            <category>Features</category>
         </item>
     </channel>
 </rss>
