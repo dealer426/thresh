@@ -539,8 +539,8 @@ dotnet publish -c Release -r linux-x64
 ## Next Steps
 
 - ✅ Installation complete
-- 🎯 [Get Started](../intro) - Create your first environment
-- 🎯 [CLI Reference](../cli-reference/) - Learn all commands
-- 🎯 [MCP Integration](../mcp-integration) - Use with AI editors
+- 🎯 [Get Started](./intro) - Create your first environment
+- 🎯 [CLI Reference](./cli-reference/) - Learn all commands
+- 🎯 [MCP Integration](./mcp-integration) - Use with AI editors
 
 **Happy provisioning!** 🚀
