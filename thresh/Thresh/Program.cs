@@ -169,7 +169,28 @@ class Program
                 
                 Console.WriteLine();
                 Console.WriteLine($"Access your environment:");
-                Console.WriteLine($"  wsl -d thresh-{envName}");
+                
+                // Show platform-appropriate access instructions
+                if (containerService.Platform == "Windows")
+                {
+                    Console.WriteLine($"  wsl -d thresh-{envName}");
+                }
+                else if (containerService.RuntimeName == "docker")
+                {
+                    Console.WriteLine($"  docker exec -it thresh-{envName} bash");
+                    Console.WriteLine($"  # Or use: docker exec -it thresh-{envName} sh");
+                }
+                else if (containerService.RuntimeName == "nerdctl")
+                {
+                    Console.WriteLine($"  nerdctl exec -it thresh-{envName} bash");
+                    Console.WriteLine($"  # Or use: nerdctl exec -it thresh-{envName} sh");
+                }
+                else
+                {
+                    // Fallback for containerd (ctr) or unknown
+                    Console.WriteLine($"  # Container: thresh-{envName}");
+                    Console.WriteLine($"  # Use your container runtime to access");
+                }
             }
             catch (FileNotFoundException ex)
             {
