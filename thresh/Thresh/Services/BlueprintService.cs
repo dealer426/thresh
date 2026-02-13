@@ -317,20 +317,20 @@ public class BlueprintService
 
         Console.WriteLine($"  Importing as {distroName} (this may take 2-3 minutes)...");
 
-        var result = await ProcessHelper.ExecuteAsync(300, "wsl", "--import", distroName, installPath, tarballPath);
+        // Use container service for platform-agnostic import
+        var success = await _containerService.ImportEnvironmentAsync(
+            distroName.Replace("thresh-", ""), 
+            tarballPath, 
+            installPath);
 
-        if (!result.IsSuccess)
+        if (!success)
         {
-            var error = result.Error ?? result.GetOutputAsString();
-            throw new Exception($"Failed to import distribution: {error}");
+            throw new Exception($"Failed to import distribution via {_containerService.RuntimeName}");
         }
 
-        if (verbose && result.HasOutput())
+        if (verbose)
         {
-            foreach (var line in result.Output)
-            {
-                Console.WriteLine($"    {line}");
-            }
+            Console.WriteLine($"    Imported via {_containerService.RuntimeName}");
         }
 
         Console.WriteLine("  Import complete");
@@ -408,7 +408,9 @@ fi";
         // Normalize line endings to Unix format (LF only) to avoid sh interpretation issues
         var normalizedCommand = command.Replace("\r\n", "\n").Replace("\r", "\n");
         
-        var result = await ProcessHelper.ExecuteAsync(300, "wsl", "-d", distroName, "--", "sh", "-c", normalizedCommand);
+        // Use container service for platform-agnostic execution
+        var envName = distroName.Replace("thresh-", "");
+        var result = await _containerService.ExecuteCommandAsync(envName, normalizedCommand);
 
         if (verbose && result.HasOutput())
         {
