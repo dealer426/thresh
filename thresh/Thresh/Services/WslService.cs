@@ -331,10 +331,10 @@ public partial class WslService : IContainerService
     /// <summary>
     /// Execute a command in a WSL distribution
     /// </summary>
-    public async Task<ProcessHelper.ProcessResult> ExecuteCommandAsync(string environmentName, string command)
+    public async Task<ProcessHelper.ProcessResult> ExecuteCommandAsync(string environmentName, string command, int timeoutSeconds = 30)
     {
         var distributionName = ThreshPrefix + environmentName;
-        return await ProcessHelper.ExecuteAsync("wsl", "-d", distributionName, "sh", "-c", command);
+        return await ProcessHelper.ExecuteAsync(timeoutSeconds, "wsl", "-d", distributionName, "sh", "-c", command);
     }
 
     /// <summary>

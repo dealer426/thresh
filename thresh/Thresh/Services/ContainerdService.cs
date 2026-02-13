@@ -420,7 +420,7 @@ public class ContainerdService : IContainerService
     /// <summary>
     /// Execute a command in an environment
     /// </summary>
-    public async Task<ProcessHelper.ProcessResult> ExecuteCommandAsync(string environmentName, string command)
+    public async Task<ProcessHelper.ProcessResult> ExecuteCommandAsync(string environmentName, string command, int timeoutSeconds = 30)
     {
         var containerName = ThreshPrefix + environmentName;
         var tool = await GetAvailableToolAsync();
@@ -428,7 +428,7 @@ public class ContainerdService : IContainerService
         if (tool == "ctr")
         {
             // ctr exec syntax is different
-            return await ProcessHelper.ExecuteAsync("ctr", "tasks", "exec", "--exec-id", Guid.NewGuid().ToString(), containerName, "sh", "-c", command);
+            return await ProcessHelper.ExecuteAsync(timeoutSeconds, "ctr", "tasks", "exec", "--exec-id", Guid.NewGuid().ToString(), containerName, "sh", "-c", command);
         }
         
         // Check if container is running, start if not
@@ -439,7 +439,7 @@ public class ContainerdService : IContainerService
             await ProcessHelper.ExecuteAsync(tool, "start", containerName);
         }
         
-        return await ProcessHelper.ExecuteAsync(tool, "exec", containerName, "sh", "-c", command);
+        return await ProcessHelper.ExecuteAsync(timeoutSeconds, tool, "exec", containerName, "sh", "-c", command);
     }
 
     /// <summary>

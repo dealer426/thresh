@@ -365,7 +365,8 @@ else
 echo 'ERROR: No supported package manager found'; exit 1; 
 fi";
 
-        await ExecuteInDistroAsync(distroName, detectCmd, verbose);
+        // Package installation can take longer, especially for apt-get update
+        await ExecuteInDistroAsync(distroName, detectCmd, verbose, timeoutSeconds: 300);
         Console.WriteLine("  [OK] Packages installed");
     }
 
@@ -409,14 +410,14 @@ fi";
         Console.WriteLine("  [OK] Environment configured");
     }
 
-    private async Task ExecuteInDistroAsync(string distroName, string command, bool verbose)
+    private async Task ExecuteInDistroAsync(string distroName, string command, bool verbose, int timeoutSeconds = 30)
     {
         // Normalize line endings to Unix format (LF only) to avoid sh interpretation issues
         var normalizedCommand = command.Replace("\r\n", "\n").Replace("\r", "\n");
         
         // Use container service for platform-agnostic execution
         var envName = distroName.Replace("thresh-", "");
-        var result = await _containerService.ExecuteCommandAsync(envName, normalizedCommand);
+        var result = await _containerService.ExecuteCommandAsync(envName, normalizedCommand, timeoutSeconds);
 
         if (verbose && result.HasOutput())
         {
