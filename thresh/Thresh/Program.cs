@@ -10,7 +10,12 @@ class Program
     
     static async Task<int> Main(string[] args)
     {
-        var rootCommand = new RootCommand("thresh - AI-Powered WSL Development Environments");
+        var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+        var description = isWindows 
+            ? "thresh - AI-Powered WSL Development Environments" 
+            : "thresh - AI-Powered Container Development Environments";
+        
+        var rootCommand = new RootCommand(description);
         
         // Verbose option
         var verboseOption = new Option<bool>(
@@ -44,14 +49,19 @@ class Program
     
     private static void DisplayHelp()
     {
-        Console.WriteLine("thresh - AI-Powered WSL Development Environments");
+        var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+        var envType = isWindows ? "WSL environment" : "container environment";
+        var envTypePlural = isWindows ? "WSL environments" : "container environments";
+        var title = isWindows ? "thresh - AI-Powered WSL Development Environments" : "thresh - AI-Powered Container Development Environments";
+        
+        Console.WriteLine(title);
         Console.WriteLine();
         Console.WriteLine("Usage: thresh [command] [options]");
         Console.WriteLine();
         Console.WriteLine("Commands:");
-        Console.WriteLine("  up          Provision a WSL environment from a blueprint");
-        Console.WriteLine("  list        List WSL environments");
-        Console.WriteLine("  destroy     Remove a WSL environment");
+        Console.WriteLine($"  up          Provision a {envType} from a blueprint");
+        Console.WriteLine($"  list        List {envTypePlural}");
+        Console.WriteLine($"  destroy     Remove a {envType}");
         Console.WriteLine("  blueprints  List available blueprints");
         Console.WriteLine("  generate    Generate blueprint from natural language (AI)");
         Console.WriteLine("  chat        Interactive AI chat mode for blueprint help");
@@ -108,7 +118,10 @@ class Program
     
     private static void AddUpCommand(RootCommand rootCommand)
     {
-        var upCommand = new Command("up", "Provision a WSL environment from a blueprint");
+        var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+        var envType = isWindows ? "WSL environment" : "container environment";
+        
+        var upCommand = new Command("up", $"Provision a {envType} from a blueprint");
         var blueprintArg = new Argument<string>("blueprint", "Blueprint name or path to JSON file");
         var nameOption = new Option<string?>("--name", "Custom name for the environment");
         var verboseOption = new Option<bool>("--verbose", "Show detailed output");
@@ -219,8 +232,12 @@ class Program
     
     private static void AddListCommand(RootCommand rootCommand)
     {
-        var listCommand = new Command("list", "List WSL environments");
-        var allOption = new Option<bool>("--all", "Include all WSL distributions, not just thresh environments");
+        var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+        var envTypePlural = isWindows ? "WSL environments" : "container environments";
+        var allOptionDesc = isWindows ? "Include all WSL distributions, not just thresh environments" : "Include all containers, not just thresh environments";
+        
+        var listCommand = new Command("list", $"List {envTypePlural}");
+        var allOption = new Option<bool>("--all", allOptionDesc);
         listCommand.AddOption(allOption);
         
         listCommand.SetHandler(async (bool all) =>
@@ -259,7 +276,10 @@ class Program
     
     private static void AddDestroyCommand(RootCommand rootCommand)
     {
-        var destroyCommand = new Command("destroy", "Remove a WSL environment");
+        var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+        var envType = isWindows ? "WSL environment" : "container environment";
+        
+        var destroyCommand = new Command("destroy", $"Remove a {envType}");
         var nameArg = new Argument<string>("name", "Environment name to remove");
         var forceOption = new Option<bool>("--force", "Skip confirmation prompt");
         
