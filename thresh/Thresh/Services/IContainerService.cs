@@ -66,7 +66,8 @@ public interface IContainerService
     /// <param name="environmentName">Name for the new environment</param>
     /// <param name="sourcePath">Path to tar file or image name</param>
     /// <param name="installPath">Installation path (may be ignored by some runtimes)</param>
-    Task<bool> ImportEnvironmentAsync(string environmentName, string sourcePath, string installPath);
+    /// <param name="blueprintName">Optional blueprint name for metadata tracking</param>
+    Task<bool> ImportEnvironmentAsync(string environmentName, string sourcePath, string installPath, string? blueprintName = null);
 
     /// <summary>
     /// Execute a command in an environment

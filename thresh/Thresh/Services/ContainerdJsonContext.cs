@@ -40,4 +40,5 @@ internal class NerdctlContainer
     public string Names { get; set; } = string.Empty;
     public string State { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string? Labels { get; set; }  // Docker returns labels as comma-separated string
 }

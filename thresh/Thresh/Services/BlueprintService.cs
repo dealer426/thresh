@@ -72,7 +72,7 @@ public class BlueprintService
 
         // Step 1: Install base distribution
         Console.WriteLine($"[1/5] Installing base distribution: {blueprint.Base}");
-        await InstallBaseDistributionAsync(environmentName, blueprint.Base, verbose);
+        await InstallBaseDistributionAsync(environmentName, blueprint.Base, blueprint.Name, verbose);
 
         // Step 2: Install packages FIRST (before scripts that may depend on them)
         if (blueprint.Packages != null && blueprint.Packages.Count > 0)
@@ -169,7 +169,7 @@ public class BlueprintService
         }
     }
 
-    private async Task InstallBaseDistributionAsync(string environmentName, string baseDistro, bool verbose)
+    private async Task InstallBaseDistributionAsync(string environmentName, string baseDistro, string blueprintName, bool verbose)
     {
         var distroName = "thresh-" + environmentName;
 
@@ -193,17 +193,17 @@ public class BlueprintService
         // Handle Microsoft Store distributions differently
         if (distroInfo.Source == RootfsRegistry.DistributionSource.MicrosoftStore)
         {
-            await InstallMicrosoftStoreDistroAsync(distroName, distroInfo, verbose);
+            await InstallMicrosoftStoreDistroAsync(distroName, distroInfo, blueprintName, verbose);
         }
         else
         {
-            await InstallVendorDistroAsync(distroName, environmentName, distroInfo, verbose);
+            await InstallVendorDistroAsync(distroName, environmentName, distroInfo, blueprintName, verbose);
         }
 
         Console.WriteLine("  [OK] Base distribution installed");
     }
 
-    private async Task InstallMicrosoftStoreDistroAsync(string distroName, RootfsRegistry.DistributionInfo distroInfo, bool verbose)
+    private async Task InstallMicrosoftStoreDistroAsync(string distroName, RootfsRegistry.DistributionInfo distroInfo, string blueprintName, bool verbose)
     {
         if (string.IsNullOrEmpty(distroInfo.WslInstallName))
             throw new InvalidOperationException($"MS Store distribution {distroInfo.Name} is missing WslInstallName");
@@ -237,14 +237,14 @@ public class BlueprintService
         }
 
         var installPath = Path.Combine(homeDir, "AppData", "Local", "thresh", distroName);
-        await ImportDistroAsync(distroName, installPath, tempExport, verbose);
+        await ImportDistroAsync(distroName, installPath, tempExport, blueprintName, verbose);
 
         // Clean up temp export and original MS Store distro
         File.Delete(tempExport);
         await ProcessHelper.ExecuteAsync(60, "wsl", "--unregister", distroInfo.WslInstallName);
     }
 
-    private async Task InstallVendorDistroAsync(string distroName, string environmentName, RootfsRegistry.DistributionInfo distroInfo, bool verbose)
+    private async Task InstallVendorDistroAsync(string distroName, string environmentName, RootfsRegistry.DistributionInfo distroInfo, string blueprintName, bool verbose)
     {
         // Setup cache directory
         var homeDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
@@ -263,7 +263,7 @@ public class BlueprintService
         }
         else
         {
-            Console.WriteLine("  [CACHE HIT] Using cached rootfs (fast!)");
+            Console.WriteLine("  [CACHE HIT] Using cached rootfs");
         }
 
         // Import as our custom-named environment
@@ -275,7 +275,7 @@ public class BlueprintService
             Console.WriteLine($"  Install path: {installPath}");
         }
 
-        await ImportDistroAsync(distroName, installPath, cachedRootfs, verbose);
+        await ImportDistroAsync(distroName, installPath, cachedRootfs, blueprintName, verbose);
     }
 
     private async Task DownloadRootfsAsync(string url, string destinationPath, bool verbose)
@@ -310,7 +310,7 @@ public class BlueprintService
         }
     }
 
-    private async Task ImportDistroAsync(string distroName, string installPath, string tarballPath, bool verbose)
+    private async Task ImportDistroAsync(string distroName, string installPath, string tarballPath, string blueprintName, bool verbose)
     {
         // Create install directory
         Directory.CreateDirectory(installPath);
@@ -326,7 +326,8 @@ public class BlueprintService
         var success = await _containerService.ImportEnvironmentAsync(
             distroName.Replace("thresh-", ""), 
             tarballPath, 
-            installPath);
+            installPath,
+            blueprintName);
 
         if (!success)
         {

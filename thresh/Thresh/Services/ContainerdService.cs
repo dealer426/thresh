@@ -205,13 +205,25 @@ public class ContainerdService : IContainerService
                             ? container.Names[ThreshPrefix.Length..] 
                             : container.Names;
 
+                        // Parse blueprint from labels (Docker format: "key=value,key2=value2")
+                        string? blueprint = null;
+                        if (!string.IsNullOrEmpty(container.Labels))
+                        {
+                            var labels = container.Labels.Split(',');
+                            var blueprintLabel = labels.FirstOrDefault(l => l.StartsWith("thresh.blueprint="));
+                            if (blueprintLabel != null)
+                            {
+                                blueprint = blueprintLabel.Substring("thresh.blueprint=".Length);
+                            }
+                        }
+
                         environments.Add(new Models.Environment
                         {
                             Name = envName,
                             WslDistributionName = container.Names,
                             Status = MapContainerState(container.State),
                             Version = tool,
-                            Blueprint = "unknown" // TODO: Load from metadata
+                            Blueprint = blueprint ?? "unknown"
                         });
                     }
                     catch
@@ -345,7 +357,7 @@ public class ContainerdService : IContainerService
     /// <summary>
     /// Import/create a new environment from an image or rootfs tarball
     /// </summary>
-    public async Task<bool> ImportEnvironmentAsync(string environmentName, string sourcePath, string installPath)
+    public async Task<bool> ImportEnvironmentAsync(string environmentName, string sourcePath, string installPath, string? blueprintName = null)
     {
         var containerName = ThreshPrefix + environmentName;
         var tool = await GetAvailableToolAsync();
@@ -361,6 +373,7 @@ public class ContainerdService : IContainerService
         // 2. Rootfs tar/tar.gz file (e.g., "/path/to/rootfs.tar.gz")
         
         ProcessHelper.ProcessResult result;
+        List<string> createArgs = new();
         
         if (File.Exists(sourcePath))
         {
@@ -373,13 +386,32 @@ public class ContainerdService : IContainerService
             
             // Create a container from the imported image with a shell command
             // Rootfs images don't have a default CMD, so we need to provide one
-            result = await ProcessHelper.ExecuteAsync(tool, "create", "--name", containerName, 
-                "-it", imageName, "/bin/sh");
+            createArgs.Add(tool);
+            createArgs.AddRange(new[] { "create", "--name", containerName, "-it" });
+            
+            // Add blueprint label if provided
+            if (!string.IsNullOrEmpty(blueprintName))
+            {
+                createArgs.AddRange(new[] { "--label", $"thresh.blueprint={blueprintName}" });
+            }
+            
+            createArgs.AddRange(new[] { imageName, "/bin/sh" });
+            result = await ProcessHelper.ExecuteAsync(createArgs.ToArray());
         }
         else
         {
             // Assume it's an image name, create container directly
-            result = await ProcessHelper.ExecuteAsync(tool, "create", "--name", containerName, sourcePath);
+            createArgs.Add(tool);
+            createArgs.AddRange(new[] { "create", "--name", containerName });
+            
+            // Add blueprint label if provided
+            if (!string.IsNullOrEmpty(blueprintName))
+            {
+                createArgs.AddRange(new[] { "--label", $"thresh.blueprint={blueprintName}" });
+            }
+            
+            createArgs.Add(sourcePath);
+            result = await ProcessHelper.ExecuteAsync(createArgs.ToArray());
         }
         
         return result.IsSuccess;
