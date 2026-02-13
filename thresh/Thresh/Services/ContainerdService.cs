@@ -343,7 +343,7 @@ public class ContainerdService : IContainerService
     }
 
     /// <summary>
-    /// Import/create a new environment from an image
+    /// Import/create a new environment from an image or rootfs tarball
     /// </summary>
     public async Task<bool> ImportEnvironmentAsync(string environmentName, string sourcePath, string installPath)
     {
@@ -358,23 +358,25 @@ public class ContainerdService : IContainerService
         
         // sourcePath can be:
         // 1. Docker image name (e.g., "ubuntu:22.04")
-        // 2. Tar file path (e.g., "/path/to/rootfs.tar")
+        // 2. Rootfs tar/tar.gz file (e.g., "/path/to/rootfs.tar.gz")
         
         ProcessHelper.ProcessResult result;
         
         if (File.Exists(sourcePath))
         {
-            // Import from tar file
-            result = await ProcessHelper.ExecuteAsync(tool, "load", "-i", sourcePath);
+            // Import rootfs tarball as Docker image using 'docker import'
+            // This creates an image from a filesystem tarball (not a Docker image tar)
+            var imageName = $"thresh/{environmentName}:latest";
+            
+            result = await ProcessHelper.ExecuteAsync(300, tool, "import", sourcePath, imageName);
             if (!result.IsSuccess) return false;
             
-            // Extract image name from tar (simplified - would need better logic)
-            var imageName = "imported-image";
+            // Create a container from the imported image
             result = await ProcessHelper.ExecuteAsync(tool, "create", "--name", containerName, imageName);
         }
         else
         {
-            // Assume it's an image name, run container
+            // Assume it's an image name, create container directly
             result = await ProcessHelper.ExecuteAsync(tool, "create", "--name", containerName, sourcePath);
         }
         
