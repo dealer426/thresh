@@ -26,17 +26,19 @@ public class RootfsRegistry
         public string Name { get; }
         public string Version { get; }
         public string RootfsUrl { get; }
+        public string? DockerImage { get; }  // Optional: Docker Hub image for Linux (e.g., "ubuntu:22.04")
         public PackageManager PackageManager { get; }
         public string UpdateCommand { get; }
         public string InstallCommand { get; }
         public DistributionSource Source { get; }
         public string? WslInstallName { get; }  // Name used for 'wsl --install <name>'
 
-        public DistributionInfo(string name, string version, string rootfsUrl, PackageManager packageManager, DistributionSource source = DistributionSource.Vendor, string? wslInstallName = null)
+        public DistributionInfo(string name, string version, string rootfsUrl, PackageManager packageManager, DistributionSource source = DistributionSource.Vendor, string? wslInstallName = null, string? dockerImage = null)
         {
             Name = name;
             Version = version;
             RootfsUrl = rootfsUrl;
+            DockerImage = dockerImage;
             PackageManager = packageManager;
             Source = source;
             WslInstallName = wslInstallName;
@@ -74,21 +76,24 @@ public class RootfsRegistry
             "ubuntu",
             "22.04",
             "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-amd64-ubuntu22.04lts.rootfs.tar.gz",
-            PackageManager.Apt
+            PackageManager.Apt,
+            dockerImage: "ubuntu:22.04"  // Docker Hub image for Linux
         );
 
         _distributions["ubuntu-24.04"] = new DistributionInfo(
             "ubuntu",
             "24.04",
             "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-ubuntu24.04lts.rootfs.tar.gz",
-            PackageManager.Apt
+            PackageManager.Apt,
+            dockerImage: "ubuntu:24.04"  // Docker Hub image for Linux
         );
 
         _distributions["ubuntu-20.04"] = new DistributionInfo(
             "ubuntu",
             "20.04",
             "https://cloud-images.ubuntu.com/wsl/focal/current/ubuntu-focal-wsl-amd64-ubuntu20.04lts.rootfs.tar.gz",
-            PackageManager.Apt
+            PackageManager.Apt,
+            dockerImage: "ubuntu:20.04"  // Docker Hub image for Linux
         );
 
         // Alpine Linux distributions (very lightweight!)
@@ -96,21 +101,24 @@ public class RootfsRegistry
             "alpine",
             "3.19",
             "https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86_64/alpine-minirootfs-3.19.0-x86_64.tar.gz",
-            PackageManager.Apk
+            PackageManager.Apk,
+            dockerImage: "alpine:3.19"  // Docker Hub image for Linux
         );
 
         _distributions["alpine-3.18"] = new DistributionInfo(
             "alpine",
             "3.18",
             "https://dl-cdn.alpinelinux.org/alpine/v3.18/releases/x86_64/alpine-minirootfs-3.18.5-x86_64.tar.gz",
-            PackageManager.Apk
+            PackageManager.Apk,
+            dockerImage: "alpine:3.18"  // Docker Hub image for Linux
         );
 
         _distributions["alpine-edge"] = new DistributionInfo(
             "alpine",
             "edge",
             "https://dl-cdn.alpinelinux.org/alpine/edge/releases/x86_64/alpine-minirootfs-edge-x86_64.tar.gz",
-            PackageManager.Apk
+            PackageManager.Apk,
+            dockerImage: "alpine:edge"  // Docker Hub image for Linux
         );
 
         // Debian distributions
@@ -119,7 +127,8 @@ public class RootfsRegistry
             "12",
             "https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-amd64/bookworm/rootfs.tar.xz",
             PackageManager.Apt,
-            DistributionSource.Vendor
+            DistributionSource.Vendor,
+            dockerImage: "debian:12"  // Docker Hub image for Linux
         );
 
         _distributions["debian-11"] = new DistributionInfo(
@@ -127,7 +136,8 @@ public class RootfsRegistry
             "11",
             "https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-amd64/bullseye/rootfs.tar.xz",
             PackageManager.Apt,
-            DistributionSource.Vendor
+            DistributionSource.Vendor,
+            dockerImage: "debian:11"  // Docker Hub image for Linux
         );
 
         // Microsoft Store distributions (installed via wsl --install)

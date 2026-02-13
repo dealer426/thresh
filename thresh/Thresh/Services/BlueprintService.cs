@@ -246,36 +246,64 @@ public class BlueprintService
 
     private async Task InstallVendorDistroAsync(string distroName, string environmentName, RootfsRegistry.DistributionInfo distroInfo, string blueprintName, bool verbose)
     {
-        // Setup cache directory
         var homeDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
-        var cacheDir = Path.Combine(homeDir, ".thresh", "rootfs-cache");
-        Directory.CreateDirectory(cacheDir);
-
-        var cacheFilename = _rootfsRegistry.GetCacheFilename(_rootfsRegistry.NormalizeDistributionKey(distroInfo.GetFullName()));
-        var cachedRootfs = Path.Combine(cacheDir, cacheFilename);
-
-        // Download rootfs if not cached
-        if (!File.Exists(cachedRootfs))
+        var installPath = Path.Combine(homeDir, "AppData", "Local", "thresh", environmentName);
+        
+        // Check if we should use Docker Hub image (Linux only)
+        var useDockerImage = _containerService.Platform != "Windows" 
+                             && !string.IsNullOrEmpty(distroInfo.DockerImage);
+        
+        if (useDockerImage)
         {
-            Console.WriteLine("  [CACHE MISS] Downloading rootfs (first time only)...");
-            await DownloadRootfsAsync(distroInfo.RootfsUrl, cachedRootfs, verbose);
-            Console.WriteLine($"  [OK] Rootfs cached at: {cachedRootfs}");
+            // LINUX PATH: Use Docker Hub for faster, smaller downloads
+            Console.WriteLine($"  Pulling from Docker Hub: {distroInfo.DockerImage}");
+            
+            var tool = _containerService.RuntimeName == "WSL" ? "docker" : _containerService.RuntimeName;
+            var pullResult = await ProcessHelper.ExecuteAsync(120, tool, "pull", distroInfo.DockerImage!);
+            
+            if (!pullResult.IsSuccess)
+            {
+                throw new Exception($"Failed to pull {distroInfo.DockerImage}: {pullResult.Output}");
+            }
+            
+            if (verbose)
+            {
+                Console.WriteLine($"  Successfully pulled Docker image");
+                Console.WriteLine($"  Importing as: {distroName}");
+            }
+            
+            // Pass Docker image name directly - ContainerdService will create container from it
+            await ImportDistroAsync(distroName, installPath, distroInfo.DockerImage!, blueprintName, verbose);
         }
         else
         {
-            Console.WriteLine("  Using cached rootfs");
+            // WINDOWS/WSL PATH: Use traditional rootfs download (unchanged)
+            var cacheDir = Path.Combine(homeDir, ".thresh", "rootfs-cache");
+            Directory.CreateDirectory(cacheDir);
+
+            var cacheFilename = _rootfsRegistry.GetCacheFilename(_rootfsRegistry.NormalizeDistributionKey(distroInfo.GetFullName()));
+            var cachedRootfs = Path.Combine(cacheDir, cacheFilename);
+
+            // Download rootfs if not cached
+            if (!File.Exists(cachedRootfs))
+            {
+                Console.WriteLine("  [CACHE MISS] Downloading rootfs (first time only)...");
+                await DownloadRootfsAsync(distroInfo.RootfsUrl, cachedRootfs, verbose);
+                Console.WriteLine($"  [OK] Rootfs cached at: {cachedRootfs}");
+            }
+            else
+            {
+                Console.WriteLine("  Using cached rootfs");
+            }
+
+            if (verbose)
+            {
+                Console.WriteLine($"  Importing as: {distroName}");
+                Console.WriteLine($"  Install path: {installPath}");
+            }
+
+            await ImportDistroAsync(distroName, installPath, cachedRootfs, blueprintName, verbose);
         }
-
-        // Import as our custom-named environment
-        var installPath = Path.Combine(homeDir, "AppData", "Local", "thresh", environmentName);
-
-        if (verbose)
-        {
-            Console.WriteLine($"  Importing as: {distroName}");
-            Console.WriteLine($"  Install path: {installPath}");
-        }
-
-        await ImportDistroAsync(distroName, installPath, cachedRootfs, blueprintName, verbose);
     }
 
     private async Task DownloadRootfsAsync(string url, string destinationPath, bool verbose)

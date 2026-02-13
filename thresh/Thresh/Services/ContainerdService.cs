@@ -400,9 +400,9 @@ public class ContainerdService : IContainerService
         }
         else
         {
-            // Assume it's an image name, create container directly
+            // Assume it's a Docker image name (e.g., "ubuntu:22.04")
             createArgs.Add(tool);
-            createArgs.AddRange(new[] { "create", "--name", containerName });
+            createArgs.AddRange(new[] { "create", "--name", containerName, "-it" });
             
             // Add blueprint label if provided
             if (!string.IsNullOrEmpty(blueprintName))
@@ -410,7 +410,9 @@ public class ContainerdService : IContainerService
                 createArgs.AddRange(new[] { "--label", $"thresh.blueprint={blueprintName}" });
             }
             
-            createArgs.Add(sourcePath);
+            // Add image name and shell command
+            // Use /bin/sh for compatibility (works on Alpine, Ubuntu, Debian, etc.)
+            createArgs.AddRange(new[] { sourcePath, "/bin/sh" });
             result = await ProcessHelper.ExecuteAsync(createArgs.ToArray());
         }
         
