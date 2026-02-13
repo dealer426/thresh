@@ -83,8 +83,8 @@ jobs:
     - name: Install UPX (macOS ARM)
       if: matrix.os == 'macos-14'
       run: |
-        wget https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-arm64_macos.tar.xz
-        tar -xf upx-4.2.4-arm64_macos.tar.xz
+        curl -L -o upx.tar.xz https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-arm64_macos.tar.xz
+        tar -xf upx.tar.xz
         sudo mv upx-4.2.4-arm64_macos/upx /usr/local/bin/
         upx --version
         
