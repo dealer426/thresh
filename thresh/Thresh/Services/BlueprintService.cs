@@ -315,7 +315,12 @@ public class BlueprintService
         // Create install directory
         Directory.CreateDirectory(installPath);
 
-        Console.WriteLine($"  Importing as {distroName} (this may take 2-3 minutes)...");
+        // Platform-specific import time estimates
+        var importMessage = _containerService.Platform == "Windows"
+            ? $"  Importing as {distroName} (this may take 2-3 minutes)..."
+            : $"  Importing as {distroName}...";
+        
+        Console.WriteLine(importMessage);
 
         // Use container service for platform-agnostic import
         var success = await _containerService.ImportEnvironmentAsync(
