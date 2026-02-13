@@ -399,6 +399,14 @@ public class ContainerdService : IContainerService
             return await ProcessHelper.ExecuteAsync("ctr", "tasks", "exec", "--exec-id", Guid.NewGuid().ToString(), containerName, "sh", "-c", command);
         }
         
+        // Check if container is running, start if not
+        var inspectResult = await ProcessHelper.ExecuteAsync(tool, "inspect", "-f", "{{.State.Running}}", containerName);
+        if (inspectResult.IsSuccess && inspectResult.GetOutputAsString().Trim().ToLower() != "true")
+        {
+            // Container not running, start it
+            await ProcessHelper.ExecuteAsync(tool, "start", containerName);
+        }
+        
         return await ProcessHelper.ExecuteAsync(tool, "exec", containerName, "sh", "-c", command);
     }
 
