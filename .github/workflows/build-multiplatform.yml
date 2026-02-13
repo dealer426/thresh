@@ -48,6 +48,63 @@ jobs:
     - name: Publish Native AOT (Release)
       run: dotnet publish thresh/Thresh/Thresh.csproj -c Release -r ${{ matrix.rid }} --self-contained
       
+    - name: Install UPX (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        wget https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz
+        tar -xf upx-4.2.4-amd64_linux.tar.xz
+        sudo mv upx-4.2.4-amd64_linux/upx /usr/local/bin/
+        upx --version
+        
+    - name: Install UPX (macOS)
+      if: matrix.os == 'macos-14'
+      run: |
+        wget https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-arm64_macos.tar.xz
+        tar -xf upx-4.2.4-arm64_macos.tar.xz
+        sudo mv upx-4.2.4-arm64_macos/upx /usr/local/bin/
+        upx --version
+        
+    - name: Install UPX (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-win64.zip" -OutFile upx.zip
+        Expand-Archive upx.zip -DestinationPath .
+        Move-Item upx-4.2.4-win64/upx.exe $env:GITHUB_WORKSPACE
+        echo "$env:GITHUB_WORKSPACE" >> $env:GITHUB_PATH
+      
+    - name: Get uncompressed binary size (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        BINARY="thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}"
+        SIZE=$(stat -f%z "$BINARY" 2>/dev/null || stat -c%s "$BINARY")
+        SIZE_MB=$(echo "scale=2; $SIZE / 1048576" | bc)
+        echo "Uncompressed binary size: $SIZE_MB MB"
+        
+    - name: Get uncompressed binary size (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        $BINARY = "thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}"
+        $size = (Get-Item $BINARY).Length
+        $sizeMB = [math]::Round($size / 1MB, 2)
+        Write-Host "Uncompressed binary size: $sizeMB MB"
+        
+    - name: Compress with UPX (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        BINARY="thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}"
+        upx --best --lzma $BINARY
+        echo "UPX compression complete"
+        
+    - name: Compress with UPX (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        $BINARY = "thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}"
+        upx --best --lzma $BINARY
+        echo "UPX compression complete"
+      
     - name: Install SBOM tool
       run: dotnet tool install --global Microsoft.Sbom.DotNetTool
       
@@ -72,9 +129,9 @@ jobs:
         BINARY="thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}"
         SIZE=$(stat -f%z "$BINARY" 2>/dev/null || stat -c%s "$BINARY")
         SIZE_MB=$(echo "scale=2; $SIZE / 1048576" | bc)
-        echo "Binary size: $SIZE_MB MB (uncompressed)"
-        if (( $(echo "$SIZE_MB > 16" | bc -l) )); then
-          echo "Warning: Binary size ($SIZE_MB MB) exceeds expected size (16 MB)"
+        echo "Compressed binary size: $SIZE_MB MB (UPX compressed)"
+        if (( $(echo "$SIZE_MB > 5" | bc -l) )); then
+          echo "Warning: Binary size ($SIZE_MB MB) exceeds expected size (5 MB compressed)"
         fi
         
     - name: Check binary size (Windows)
@@ -83,9 +140,9 @@ jobs:
       run: |
         $size = (Get-Item thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}).Length
         $sizeMB = [math]::Round($size / 1MB, 2)
-        Write-Host "Binary size: $sizeMB MB (uncompressed)"
-        if ($sizeMB -gt 16) {
-          Write-Warning "Binary size ($sizeMB MB) exceeds expected size (16 MB)"
+        Write-Host "Compressed binary size: $sizeMB MB (UPX compressed)"
+        if ($sizeMB -gt 5) {
+          Write-Warning "Binary size ($sizeMB MB) exceeds expected size (5 MB compressed)"
         }
       
     - name: Test binary execution (Unix)
