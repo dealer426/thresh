@@ -263,7 +263,7 @@ public class BlueprintService
         }
         else
         {
-            Console.WriteLine("  [CACHE HIT] Using cached rootfs");
+            Console.WriteLine("  Using cached rootfs");
         }
 
         // Import as our custom-named environment
