@@ -371,8 +371,10 @@ public class ContainerdService : IContainerService
             result = await ProcessHelper.ExecuteAsync(300, tool, "import", sourcePath, imageName);
             if (!result.IsSuccess) return false;
             
-            // Create a container from the imported image
-            result = await ProcessHelper.ExecuteAsync(tool, "create", "--name", containerName, imageName);
+            // Create a container from the imported image with a shell command
+            // Rootfs images don't have a default CMD, so we need to provide one
+            result = await ProcessHelper.ExecuteAsync(tool, "create", "--name", containerName, 
+                "-it", imageName, "/bin/sh");
         }
         else
         {
