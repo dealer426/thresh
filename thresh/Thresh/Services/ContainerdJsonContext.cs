@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace Thresh.Services;
 
@@ -40,5 +41,30 @@ internal class NerdctlContainer
     public string Names { get; set; } = string.Empty;
     public string State { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
-    public string? Labels { get; set; }  // Docker returns labels as comma-separated string
+    
+    // Labels can be either:
+    // - Docker: "thresh.blueprint=value" (comma-separated string)
+    // - nerdctl: {"thresh.blueprint":"value"} (JSON object)
+    public JsonElement? Labels { get; set; }
+    
+    /// <summary>
+    /// Get labels as a string (handles both Docker string and nerdctl JSON object formats)
+    /// </summary>
+    public string? GetLabelsAsString()
+    {
+        if (Labels == null) return null;
+        
+        if (Labels.Value.ValueKind == JsonValueKind.String)
+        {
+            // Docker format: return as-is
+            return Labels.Value.GetString();
+        }
+        else if (Labels.Value.ValueKind == JsonValueKind.Object)
+        {
+            // nerdctl format: return JSON string
+            return Labels.Value.GetRawText();
+        }
+        
+        return null;
+    }
 }

@@ -1,0 +1,40 @@
+# Python development environment (YAML format example)
+name: python-yaml-test
+description: Python development environment with pip and venv (YAML)
+base: ubuntu-22.04
+
+packages:
+  - python3
+  - python3-pip
+  - python3-venv
+  - git
+  - curl
+  - build-essential
+
+environment:
+  PYTHONUNBUFFERED: "1"
+  PIP_NO_CACHE_DIR: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+scripts:
+  setup: |
+    #!/bin/bash
+    set -e
+    
+    # Upgrade pip
+    python3 -m pip install --upgrade pip setuptools wheel
+    
+    echo "Python environment setup complete"
+  
+  postInstall: |
+    #!/bin/bash
+    set -e
+    
+    # Verify installations
+    python3 --version
+    pip3 --version
+    
+    # Create virtual environment directory
+    mkdir -p /workspace
+    
+    echo "Python YAML blueprint environment ready!"

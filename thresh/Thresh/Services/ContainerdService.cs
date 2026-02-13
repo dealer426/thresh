@@ -6,7 +6,9 @@ using Thresh.Utilities;
 namespace Thresh.Services;
 
 /// <summary>
-/// Service for managing containerd/nerdctl containers on Linux and macOS
+/// Service for Docker-compatible container runtimes on Linux and macOS
+/// Supports: nerdctl (containerd-native) and docker (Docker Engine)
+/// Both tools share the same CLI interface for consistency
 /// </summary>
 public class ContainerdService : IContainerService
 {
@@ -15,7 +17,7 @@ public class ContainerdService : IContainerService
 
     public ContainerdService()
     {
-        // Tool will be auto-detected: nerdctl → docker → ctr
+        // Tool will be auto-detected: nerdctl → docker
     }
 
     /// <summary>
@@ -27,7 +29,6 @@ public class ContainerdService : IContainerService
         {
             if (_detectedTool == "docker") return "docker";
             if (_detectedTool == "nerdctl") return "nerdctl";
-            if (_detectedTool == "ctr") return "containerd";
             return "container-runtime";
         }
     }
@@ -52,24 +53,17 @@ public class ContainerdService : IContainerService
     /// </summary>
     public async Task<bool> IsAvailableAsync()
     {
-        // Try nerdctl first (best for containerd)
+        // Try nerdctl first (containerd-native, Docker-compatible)
         if (await ProcessHelper.IsCommandAvailableAsync("nerdctl"))
         {
             _detectedTool = "nerdctl";
             return true;
         }
 
-        // Try Docker (common in Codespaces, Docker Desktop)
+        // Try Docker (Docker Engine, common everywhere)
         if (await ProcessHelper.IsCommandAvailableAsync("docker"))
         {
             _detectedTool = "docker";
-            return true;
-        }
-
-        // Fallback to ctr (containerd's native CLI)
-        if (await ProcessHelper.IsCommandAvailableAsync("ctr"))
-        {
-            _detectedTool = "ctr";
             return true;
         }
 
@@ -90,60 +84,42 @@ public class ContainerdService : IContainerService
         {
             var tool = await GetAvailableToolAsync();
 
-            // Try nerdctl or docker (both support JSON format)
-            if (tool == "nerdctl" || tool == "docker")
+            // Both nerdctl and docker support the same version API
+            var versionResult = await ProcessHelper.ExecuteAsync(tool, "version", "--format", "json");
+            if (versionResult.IsSuccess && versionResult.HasOutput())
             {
-                var nerdctlResult = await ProcessHelper.ExecuteAsync(tool, "version", "--format", "json");
-                if (nerdctlResult.IsSuccess && nerdctlResult.HasOutput())
+                try
                 {
-                    try
+                    var output = versionResult.GetOutputAsString();
+                    var versionInfo = JsonSerializer.Deserialize(output, ContainerdJsonContext.Default.NerdctlVersion);
+                    if (versionInfo?.Server?.Version != null)
                     {
-                        var output = nerdctlResult.GetOutputAsString();
-                        var versionInfo = JsonSerializer.Deserialize(output, ContainerdJsonContext.Default.NerdctlVersion);
-                        if (versionInfo?.Server?.Version != null)
-                        {
-                            var details = $"{tool} {versionInfo.Client?.Version}";
-                            return RuntimeInfo.Available(
-                                versionInfo.Server.Version,
-                                await GetContainerCountAsync(),
-                                details,
-                                output);
-                        }
-                    }
-                    catch
-                    {
-                        // JSON parsing failed, try text output
+                        var details = $"{tool} {versionInfo.Client?.Version}";
+                        return RuntimeInfo.Available(
+                            versionInfo.Server.Version,
+                            await GetContainerCountAsync(),
+                            details,
+                            output);
                     }
                 }
-
-                // Fallback: Try text version output
-                nerdctlResult = await ProcessHelper.ExecuteAsync(tool, "version");
-                if (nerdctlResult.IsSuccess && nerdctlResult.HasOutput())
+                catch
                 {
-                    var output = nerdctlResult.GetOutputAsString();
-                    var lines = output.Split('\n');
-                    foreach (var line in lines)
-                    {
-                        if (line.Contains("Version:", StringComparison.OrdinalIgnoreCase))
-                        {
-                            var version = line.Split(':')[1].Trim();
-                            return RuntimeInfo.Available(version, await GetContainerCountAsync(), tool, output);
-                        }
-                    }
+                    // JSON parsing failed, try text output
                 }
             }
 
-            // Try ctr as last resort
-            if (tool == "ctr")
+            // Fallback: Try text version output
+            versionResult = await ProcessHelper.ExecuteAsync(tool, "version");
+            if (versionResult.IsSuccess && versionResult.HasOutput())
             {
-                var ctrResult = await ProcessHelper.ExecuteAsync("ctr", "version");
-                if (ctrResult.IsSuccess && ctrResult.HasOutput())
+                var output = versionResult.GetOutputAsString();
+                var lines = output.Split('\n');
+                foreach (var line in lines)
                 {
-                    var output = ctrResult.GetOutputAsString();
-                    var lines = output.Split('\n');
-                    if (lines.Length > 0)
+                    if (line.Contains("Version:", StringComparison.OrdinalIgnoreCase))
                     {
-                        return RuntimeInfo.Available(lines[0].Trim(), await GetContainerCountAsync(), "ctr", output);
+                        var version = line.Split(':')[1].Trim();
+                        return RuntimeInfo.Available(version, await GetContainerCountAsync(), tool, output);
                     }
                 }
             }
@@ -174,18 +150,13 @@ public class ContainerdService : IContainerService
 
         try
         {
-            // List containers using nerdctl/docker ps (both support --format json)
-            if (tool == "nerdctl" || tool == "docker")
-            {
-                var result = await ProcessHelper.ExecuteAsync(tool, "ps", "-a", "--format", "json");
+            // List containers using docker/nerdctl ps (both support --format json)
+            var result = await ProcessHelper.ExecuteAsync(tool, "ps", "-a", "--format", "json");
 
-                if (!result.IsSuccess || !result.HasOutput())
-                {
-                    // Fallback to ctr if nerdctl/docker fails
-                    if (tool != "ctr")
-                        return await ListEnvironmentsWithCtrAsync(includeAll);
-                    return environments;
-                }
+            if (!result.IsSuccess || !result.HasOutput())
+            {
+                return environments;
+            }
 
                 var output = result.GetOutputAsString();
                 var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
@@ -205,23 +176,49 @@ public class ContainerdService : IContainerService
                             ? container.Names[ThreshPrefix.Length..] 
                             : container.Names;
 
-                        // Parse blueprint from labels (Docker format: "key=value,key2=value2")
+                        // Parse blueprint from labels
+                        // Docker format: "key=value,key2=value2" (comma-separated string)
+                        // nerdctl format: {"key":"value","key2":"value2"} (JSON object)
                         string? blueprint = null;
-                        if (!string.IsNullOrEmpty(container.Labels))
+                        var labelsString = container.GetLabelsAsString();
+                        if (!string.IsNullOrEmpty(labelsString))
                         {
-                            var labels = container.Labels.Split(',');
-                            var blueprintLabel = labels.FirstOrDefault(l => l.StartsWith("thresh.blueprint="));
-                            if (blueprintLabel != null)
+                            if (labelsString.StartsWith("{"))
                             {
-                                blueprint = blueprintLabel.Substring("thresh.blueprint=".Length);
+                                // nerdctl JSON format
+                                try
+                                {
+                                    using var doc = JsonDocument.Parse(labelsString);
+                                    if (doc.RootElement.TryGetProperty("thresh.blueprint", out var blueprintProp))
+                                    {
+                                        blueprint = blueprintProp.GetString();
+                                    }
+                                }
+                                catch
+                                {
+                                    // Ignore JSON parsing errors
+                                }
+                            }
+                            else
+                            {
+                                // Docker comma-separated format
+                                var labels = labelsString.Split(',');
+                                var blueprintLabel = labels.FirstOrDefault(l => l.StartsWith("thresh.blueprint="));
+                                if (blueprintLabel != null)
+                                {
+                                    blueprint = blueprintLabel.Substring("thresh.blueprint=".Length);
+                                }
                             }
                         }
 
+                        // nerdctl uses "Status" field, docker uses "State" field
+                        var state = string.IsNullOrEmpty(container.State) ? container.Status : container.State;
+                        
                         environments.Add(new Models.Environment
                         {
                             Name = envName,
                             WslDistributionName = container.Names,
-                            Status = MapContainerState(container.State),
+                            Status = MapContainerState(state),
                             Version = tool,
                             Blueprint = blueprint ?? "unknown"
                         });
@@ -231,59 +228,10 @@ public class ContainerdService : IContainerService
                         // Skip malformed JSON lines
                     }
                 }
-            }
-            else if (tool == "ctr")
-            {
-                return await ListEnvironmentsWithCtrAsync(includeAll);
-            }
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error listing containers: {ex.Message}");
-        }
-
-        return environments;
-    }
-
-    /// <summary>
-    /// Fallback method to list containers using ctr
-    /// </summary>
-    private async Task<List<Models.Environment>> ListEnvironmentsWithCtrAsync(bool includeAll)
-    {
-        var environments = new List<Models.Environment>();
-        
-        try
-        {
-            var result = await ProcessHelper.ExecuteAsync("ctr", "containers", "list");
-            if (!result.IsSuccess) return environments;
-
-            foreach (var line in result.Output.Skip(1)) // Skip header
-            {
-                var parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length < 2) continue;
-
-                var containerName = parts[0];
-                
-                if (!includeAll && !containerName.StartsWith(ThreshPrefix))
-                    continue;
-
-                var envName = containerName.StartsWith(ThreshPrefix)
-                    ? containerName[ThreshPrefix.Length..]
-                    : containerName;
-
-                environments.Add(new Models.Environment
-                {
-                    Name = envName,
-                    WslDistributionName = containerName,
-                    Status = EnvironmentStatus.Unknown,
-                    Version = "containerd",
-                    Blueprint = "unknown"
-                });
-            }
-        }
-        catch
-        {
-            // Ignore ctr errors
         }
 
         return environments;
@@ -305,13 +253,6 @@ public class ContainerdService : IContainerService
     {
         var containerName = ThreshPrefix + environmentName;
         var tool = await GetAvailableToolAsync();
-        
-        if (tool == "ctr")
-        {
-            // ctr doesn't have a simple start command like docker/nerdctl
-            return false;
-        }
-        
         var result = await ProcessHelper.ExecuteAsync(tool, "start", containerName);
         return result.IsSuccess;
     }
@@ -323,12 +264,6 @@ public class ContainerdService : IContainerService
     {
         var containerName = ThreshPrefix + environmentName;
         var tool = await GetAvailableToolAsync();
-        
-        if (tool == "ctr")
-        {
-            return false;
-        }
-        
         var result = await ProcessHelper.ExecuteAsync(tool, "stop", containerName);
         return result.IsSuccess;
     }
@@ -343,13 +278,6 @@ public class ContainerdService : IContainerService
         
         // Stop first, then remove
         await StopEnvironmentAsync(environmentName);
-        
-        if (tool == "ctr")
-        {
-            var result = await ProcessHelper.ExecuteAsync("ctr", "containers", "delete", containerName);
-            return result.IsSuccess;
-        }
-        
         var removeResult = await ProcessHelper.ExecuteAsync(tool, "rm", containerName);
         return removeResult.IsSuccess;
     }
@@ -361,12 +289,6 @@ public class ContainerdService : IContainerService
     {
         var containerName = ThreshPrefix + environmentName;
         var tool = await GetAvailableToolAsync();
-        
-        if (tool == "ctr")
-        {
-            // ctr has different syntax - skip for now
-            return false;
-        }
         
         // sourcePath can be:
         // 1. Docker image name (e.g., "ubuntu:22.04")
@@ -427,12 +349,6 @@ public class ContainerdService : IContainerService
         var containerName = ThreshPrefix + environmentName;
         var tool = await GetAvailableToolAsync();
         
-        if (tool == "ctr")
-        {
-            // ctr exec syntax is different
-            return await ProcessHelper.ExecuteAsync(timeoutSeconds, "ctr", "tasks", "exec", "--exec-id", Guid.NewGuid().ToString(), containerName, "sh", "-c", command);
-        }
-        
         // Check if container is running, start if not
         var inspectResult = await ProcessHelper.ExecuteAsync(tool, "inspect", "-f", "{{.State.Running}}", containerName);
         if (inspectResult.IsSuccess && inspectResult.GetOutputAsString().Trim().ToLower() != "true")
@@ -454,10 +370,7 @@ public class ContainerdService : IContainerService
     }
 
     /// <summary>
-    /// Get count of all containers
-    /// </summary>
-    /// <summary>
-    /// Get the available container tool (nerdctl, docker, or ctr)
+    /// Get the available container tool (nerdctl or docker)
     /// </summary>
     private async Task<string> GetAvailableToolAsync()
     {
@@ -477,22 +390,10 @@ public class ContainerdService : IContainerService
         try
         {
             var tool = await GetAvailableToolAsync();
-            
-            if (tool == "ctr")
+            var result = await ProcessHelper.ExecuteAsync(tool, "ps", "-a", "-q");
+            if (result.IsSuccess)
             {
-                var result = await ProcessHelper.ExecuteAsync("ctr", "containers", "list", "-q");
-                if (result.IsSuccess)
-                {
-                    return result.Output.Count(line => !string.IsNullOrWhiteSpace(line));
-                }
-            }
-            else
-            {
-                var result = await ProcessHelper.ExecuteAsync(tool, "ps", "-a", "-q");
-                if (result.IsSuccess)
-                {
-                    return result.Output.Count(line => !string.IsNullOrWhiteSpace(line));
-                }
+                return result.Output.Count(line => !string.IsNullOrWhiteSpace(line));
             }
         }
         catch
@@ -504,12 +405,14 @@ public class ContainerdService : IContainerService
 
     /// <summary>
     /// Map containerd container state to EnvironmentStatus
+    /// Handles both Docker ("running") and nerdctl ("Up") status formats
     /// </summary>
     private static EnvironmentStatus MapContainerState(string state)
     {
         return state.ToLowerInvariant() switch
         {
             "running" => EnvironmentStatus.Running,
+            "up" => EnvironmentStatus.Running,  // nerdctl format
             "created" => EnvironmentStatus.Stopped,
             "exited" => EnvironmentStatus.Stopped,
             "paused" => EnvironmentStatus.Stopped,

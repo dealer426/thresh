@@ -281,7 +281,7 @@ class Program
         
         var destroyCommand = new Command("destroy", $"Remove a {envType}");
         var nameArg = new Argument<string>("name", "Environment name to remove");
-        var forceOption = new Option<bool>("--force", "Skip confirmation prompt");
+        var forceOption = new Option<bool>(new[] { "-y", "--force" }, "Skip confirmation prompt");
         
         destroyCommand.AddArgument(nameArg);
         destroyCommand.AddOption(forceOption);

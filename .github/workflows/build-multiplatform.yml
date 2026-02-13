@@ -1,0 +1,114 @@
+name: Build thresh (Multi-Platform)
+
+on:
+  push:
+    branches: [ main, dev ]
+    paths-ignore:
+      - 'website/**'
+      - 'docs/**'
+      - '*.md'
+      - 'packages/**'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-matrix:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            binary: thresh.exe
+          - os: ubuntu-latest
+            rid: linux-x64
+            binary: thresh
+          - os: macos-13
+            rid: osx-x64
+            binary: thresh
+          - os: macos-14
+            rid: osx-arm64
+            binary: thresh
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore thresh/Thresh/Thresh.csproj
+      
+    - name: Build (Debug)
+      run: dotnet build thresh/Thresh/Thresh.csproj --configuration Debug --no-restore
+      
+    - name: Publish Native AOT (Release)
+      run: dotnet publish thresh/Thresh/Thresh.csproj -c Release -r ${{ matrix.rid }} --self-contained
+      
+    - name: Install SBOM tool
+      run: dotnet tool install --global Microsoft.Sbom.DotNetTool
+      
+    - name: Generate SBOM (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        sbom-tool generate -b thresh/Thresh -bc thresh/Thresh -pn thresh -pv "1.4.0-dev" -ps "dealer426" -nsb https://github.com/dealer426/thresh
+        mv thresh/Thresh/_manifest/spdx_2.2/manifest.spdx.json sbom-${{ matrix.rid }}.json
+        rm -rf thresh/Thresh/_manifest
+        
+    - name: Generate SBOM (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        sbom-tool generate -b thresh/Thresh -bc thresh/Thresh -pn thresh -pv "1.4.0-dev" -ps "dealer426" -nsb https://github.com/dealer426/thresh
+        Move-Item -Force thresh/Thresh/_manifest/spdx_2.2/manifest.spdx.json sbom-${{ matrix.rid }}.json
+        Remove-Item -Recurse -Force thresh/Thresh/_manifest
+      
+    - name: Check binary size (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        BINARY="thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}"
+        SIZE=$(stat -f%z "$BINARY" 2>/dev/null || stat -c%s "$BINARY")
+        SIZE_MB=$(echo "scale=2; $SIZE / 1048576" | bc)
+        echo "Binary size: $SIZE_MB MB (uncompressed)"
+        if (( $(echo "$SIZE_MB > 16" | bc -l) )); then
+          echo "Warning: Binary size ($SIZE_MB MB) exceeds expected size (16 MB)"
+        fi
+        
+    - name: Check binary size (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        $size = (Get-Item thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}).Length
+        $sizeMB = [math]::Round($size / 1MB, 2)
+        Write-Host "Binary size: $sizeMB MB (uncompressed)"
+        if ($sizeMB -gt 16) {
+          Write-Warning "Binary size ($sizeMB MB) exceeds expected size (16 MB)"
+        }
+      
+    - name: Test binary execution (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        cd thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish
+        chmod +x ${{ matrix.binary }}
+        ./${{ matrix.binary }} --version
+        
+    - name: Test binary execution (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        cd thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish
+        ./${{ matrix.binary }} --version
+      
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: thresh-${{ matrix.rid }}-dev
+        path: |
+          thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}
+          sbom-${{ matrix.rid }}.json
+        retention-days: 7

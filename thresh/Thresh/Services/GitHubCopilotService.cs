@@ -23,25 +23,33 @@ public class GitHubCopilotService : IAIService
 
     public async Task<string> GenerateBlueprintAsync(string prompt, bool streaming = true)
     {
+        // Detect platform to provide context-appropriate guidance
+        var platformName = ContainerServiceFactory.GetPlatformName();
+        var runtimeName = ContainerServiceFactory.GetExpectedRuntimeName();
+        var environmentType = platformName == "Windows" ? "WSL" : "Docker container";
+        
         // Build the system prompt with the correct thresh Blueprint schema
-        var systemPrompt = @"You are a WSL development environment architect. Generate a JSON blueprint following this exact schema:
-{
+        var systemPrompt = $@"You are a development environment architect. Generate a JSON blueprint for {environmentType} environments following this exact schema:
+{{
   ""name"": ""string (environment name)"",
   ""description"": ""string (brief description)"",
   ""base"": ""string (ubuntu-22.04, ubuntu-24.04, debian-12, alpine-3.19, etc.)"",
   ""packages"": [""array of package names""],
-  ""environment"": {""KEY"": ""value""},
-  ""scripts"": {
+  ""environment"": {{""KEY"": ""value""}},
+  ""scripts"": {{
     ""setup"": ""#!/bin/bash\nmulti-line shell script for setup"",
     ""postInstall"": ""#!/bin/bash\nmulti-line shell script for post-install""
-  }
-}
+  }}
+}}
+
+Platform context: {platformName} using {runtimeName}
+{(platformName == "Windows" ? "WSL2 environments support systemd and full Linux distributions." : "Docker containers use lightweight Linux distributions optimized for containerization.")}
 
 Requirements:
 - Use 'base' for the distribution (not 'distribution')
 - Use 'environment' for variables (not 'environment_variables')
 - Use 'scripts' with 'setup' and 'postInstall' properties
-- Include all necessary packages
+- Include all necessary packages for the platform
 - Keep it minimal but functional
 - Return ONLY valid JSON";
 
@@ -140,6 +148,11 @@ Requirements:
 
         try
         {
+            // Detect platform to provide context
+            var platformName = ContainerServiceFactory.GetPlatformName();
+            var runtimeName = ContainerServiceFactory.GetExpectedRuntimeName();
+            var environmentType = platformName == "Windows" ? "WSL" : "Docker container";
+            
             // Create GitHub Copilot client (auto-detects CLI and auth)
             await using var client = new CopilotClient();
             await client.StartAsync();
@@ -171,6 +184,39 @@ Requirements:
                         break;
                 }
             });
+
+            // Send initial system context message (non-streaming to avoid showing it)
+            var systemContext = $@"You are helping a user with thresh, a tool that provisions {environmentType} environments.
+
+CRITICAL CONTEXT:
+- Platform: {platformName} running {runtimeName}
+- Environment type: {environmentType}
+- Blueprint format: JSON (preferred) or YAML (supported)
+
+When user asks for environment blueprints, respond with JSON in this exact format:
+{{
+  ""name"": ""environment-name"",
+  ""description"": ""brief description"",
+  ""base"": ""ubuntu-22.04"",  // or alpine-3.19, debian-12, etc.
+  ""packages"": [""package1"", ""package2""],
+  ""environment"": {{""KEY"": ""value""}},
+  ""scripts"": {{
+    ""setup"": ""#!/bin/bash\ncommands"",
+    ""postInstall"": ""#!/bin/bash\ncommands""
+  }}
+}}
+
+JSON is preferred for compatibility. YAML is also supported but use JSON unless specifically requested.
+{(platformName == "Windows" ? "WSL environments support systemd and full services." : "Docker containers should avoid systemd and focus on lightweight, single-process setups.")}
+
+Available base distributions: ubuntu-22.04, ubuntu-24.04, alpine-3.19, debian-12, and more.
+
+Respond helpfully and provide JSON blueprints when requested.";
+
+            currentRequest = new TaskCompletionSource();
+            await session.SendAsync(new MessageOptions { Prompt = systemContext });
+            await currentRequest.Task; // Wait for acknowledgment
+            currentRequest = null;
 
             while (true)
             {
