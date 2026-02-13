@@ -14,6 +14,7 @@ on:
 jobs:
   build-multiplatform:
     strategy:
+      fail-fast: false  # Don't cancel other jobs if one fails
       matrix:
         include:
           - os: windows-latest
@@ -26,11 +27,6 @@ jobs:
             artifact-name: thresh-linux-x64
             binary: thresh
             archive: thresh-linux-x64.tar.gz
-          - os: macos-12
-            rid: osx-x64
-            artifact-name: thresh-macos-x64
-            binary: thresh
-            archive: thresh-macos-x64.tar.gz
           - os: macos-14
             rid: osx-arm64
             artifact-name: thresh-macos-arm64
@@ -242,7 +238,7 @@ jobs:
         
         ## 🚀 AI-Powered Cross-Platform Environment Manager
         
-        **Native AOT binaries for Windows, Linux, and macOS (Intel & Apple Silicon)**
+        **Native AOT binaries for Windows, Linux, and macOS (Apple Silicon)**
         
         ### Features
         - ✅ Cross-platform support (Windows/WSL, Linux/Docker/nerdctl, macOS/containerd)
@@ -272,10 +268,10 @@ jobs:
         sudo ./thresh up alpine-minimal
         ```
         
-        **macOS:**
+        **macOS (Apple Silicon):**
         ```bash
-        # Download thresh-macos-x64.tar.gz (Intel) or thresh-macos-arm64.tar.gz (Apple Silicon)
-        tar -xzf thresh-macos-*.tar.gz
+        # Download thresh-macos-arm64.tar.gz
+        tar -xzf thresh-macos-arm64.tar.gz
         chmod +x thresh
         ./thresh up alpine-minimal
         ```
@@ -284,7 +280,7 @@ jobs:
         
         **Windows**: Requires WSL2  
         **Linux**: Requires Docker or nerdctl with containerd  
-        **macOS**: Requires containerd or Docker Desktop  
+        **macOS**: Requires containerd or Docker Desktop (Apple Silicon M1/M2/M3 only)  
         
         ### Commands
         ```bash
@@ -308,9 +304,10 @@ jobs:
         ### Package Files
         - `thresh-windows-x64.zip` - Windows x64 (~4MB compressed)
         - `thresh-linux-x64.tar.gz` - Linux x64 (~4MB compressed)
-        - `thresh-macos-x64.tar.gz` - macOS Intel (~4MB compressed)
-        - `thresh-macos-arm64.tar.gz` - macOS Apple Silicon (~4MB compressed)
+        - `thresh-macos-arm64.tar.gz` - macOS Apple Silicon M1/M2/M3 (~4MB compressed)
         - `sbom-*.json` - Software Bill of Materials for each platform
+        
+        **Note:** macOS Intel builds currently unavailable due to GitHub Actions runner limitations. Apple Silicon (M1/M2/M3) Macs can run the ARM64 build natively.
         EOF
         
     - name: Create GitHub Release
@@ -324,7 +321,6 @@ jobs:
         files: |
           artifacts/thresh-windows-x64/*
           artifacts/thresh-linux-x64/*
-          artifacts/thresh-macos-x64/*
           artifacts/thresh-macos-arm64/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

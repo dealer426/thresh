@@ -15,6 +15,7 @@ on:
 jobs:
   build-matrix:
     strategy:
+      fail-fast: false  # Don't cancel other jobs if one fails
       matrix:
         include:
           - os: windows-latest
@@ -22,9 +23,6 @@ jobs:
             binary: thresh.exe
           - os: ubuntu-latest
             rid: linux-x64
-            binary: thresh
-          - os: macos-12
-            rid: osx-x64
             binary: thresh
           - os: macos-14
             rid: osx-arm64
