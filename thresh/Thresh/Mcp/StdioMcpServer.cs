@@ -92,10 +92,10 @@ public class StdioMcpServer
             // Route to handler
             var result = method switch
             {
-                "initialize" => HandleInitialize(paramsElement),
+                "initialize" => HandleInitialize(id, paramsElement),
                 "notifications/initialized" => HandleInitialized(),
-                "tools/list" => HandleListTools(),
-                "tools/call" => await HandleToolCallAsync(paramsElement),
+                "tools/list" => HandleListTools(id),
+                "tools/call" => await HandleToolCallAsync(id, paramsElement),
                 "ping" => CreateSuccessResponse(id, new { status = "ok" }),
                 _ => CreateErrorResponse(id, -32601, $"Method not found: {method}")
             };
@@ -117,7 +117,7 @@ public class StdioMcpServer
     /// <summary>
     /// Handle initialize request
     /// </summary>
-    private string HandleInitialize(JsonElement? paramsElement)
+    private string HandleInitialize(int? id, JsonElement? paramsElement)
     {
         var response = new InitializeResult
         {
@@ -135,7 +135,7 @@ public class StdioMcpServer
                           "Use it to create, manage, and destroy containerized dev environments."
         };
 
-        var jsonResponse = new JsonRpcResponse<InitializeResult> { Result = response };
+        var jsonResponse = new JsonRpcResponse<InitializeResult> { Id = id, Result = response };
         return JsonSerializer.Serialize(jsonResponse, McpJsonContext.Default.JsonRpcResponseInitializeResult);
     }
 
@@ -151,7 +151,7 @@ public class StdioMcpServer
     /// <summary>
     /// Handle tools/list request
     /// </summary>
-    private string HandleListTools()
+    private string HandleListTools(int? id)
     {
         var tools = new Tool[]
         {
@@ -275,18 +275,18 @@ public class StdioMcpServer
         };
 
         var listResult = new ToolsListResult { Tools = tools };
-        var response = new JsonRpcResponse<ToolsListResult> { Result = listResult };
+        var response = new JsonRpcResponse<ToolsListResult> { Id = id, Result = listResult };
         return JsonSerializer.Serialize(response, McpJsonContext.Default.JsonRpcResponseToolsListResult);
     }
 
     /// <summary>
     /// Handle tools/call request
     /// </summary>
-    private async Task<string> HandleToolCallAsync(JsonElement? paramsElement)
+    private async Task<string> HandleToolCallAsync(int? id, JsonElement? paramsElement)
     {
         if (!paramsElement.HasValue)
         {
-            return CreateErrorResponse(null, -32602, "Invalid params: missing");
+            return CreateErrorResponse(id, -32602, "Invalid params: missing");
         }
 
         var toolName = paramsElement.Value.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
@@ -294,7 +294,7 @@ public class StdioMcpServer
 
         if (string.IsNullOrEmpty(toolName))
         {
-            return CreateErrorResponse(null, -32602, "Invalid params: missing tool name");
+            return CreateErrorResponse(id, -32602, "Invalid params: missing tool name");
         }
 
         try
@@ -312,13 +312,13 @@ public class StdioMcpServer
             };
 
             var genericResult = new GenericResult { Result = result };
-            var response = new JsonRpcResponse<GenericResult> { Result = genericResult };
+            var response = new JsonRpcResponse<GenericResult> { Id = id, Result = genericResult };
             return JsonSerializer.Serialize(response, McpJsonContext.Default.JsonRpcResponseGenericResult);
         }
         catch (Exception ex)
         {
             await Console.Error.WriteLineAsync($"❌ Tool error: {ex.Message}");
-            return CreateToolErrorResponse(ex.Message);
+            return CreateToolErrorResponse(id, ex.Message);
         }
     }
 
@@ -575,14 +575,14 @@ public class StdioMcpServer
         };
     }
 
-    private string CreateToolErrorResponse(string message)
+    private string CreateToolErrorResponse(int? id, string message)
     {
         var result = new ToolErrorResult
         {
             Content = new[] { new ContentItem { Type = "text", Text = $"❌ Error: {message}" } },
             IsError = true
         };
-        var response = new JsonRpcResponse<ToolErrorResult> { Result = result };
+        var response = new JsonRpcResponse<ToolErrorResult> { Id = id, Result = result };
         return JsonSerializer.Serialize(response, McpJsonContext.Default.JsonRpcResponseToolErrorResult);
     }
 
