@@ -69,7 +69,7 @@ public class BlueprintService
     /// </summary>
     public Blueprint LoadBundledBlueprint(string blueprintName)
     {
-        var blueprintsDir = "blueprints";
+        var blueprintsDir = Path.Combine(AppContext.BaseDirectory, "blueprints");
         
         // Try JSON first (fastest)
         var jsonPath = Path.Combine(blueprintsDir, $"{blueprintName}.json");
@@ -93,7 +93,7 @@ public class BlueprintService
     /// </summary>
     public List<string> ListBundledBlueprints()
     {
-        var blueprintsDir = "blueprints";
+        var blueprintsDir = Path.Combine(AppContext.BaseDirectory, "blueprints");
         if (!Directory.Exists(blueprintsDir))
             return new List<string>();
 
