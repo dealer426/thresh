@@ -943,7 +943,43 @@ class Program
                     Console.WriteLine($"   Usage: {metrics.StoragePercent:F1}%");
                     Console.WriteLine();
                     
+                    if (!string.IsNullOrEmpty(metrics.IpAddress))
+                    {
+                        Console.WriteLine($"🌐 Network:");
+                        Console.WriteLine($"   IP Address: {metrics.IpAddress}");
+                        
+                        if (metrics.IpAddresses != null && metrics.IpAddresses.Count > 1)
+                        {
+                            Console.WriteLine($"   All IPs: {string.Join(", ", metrics.IpAddresses)}");
+                        }
+                        
+                        if (!string.IsNullOrEmpty(metrics.ExternalIp))
+                        {
+                            Console.WriteLine($"   External IP: {metrics.ExternalIp}");
+                        }
+                        Console.WriteLine();
+                    }
+                    
+                    if (metrics.LoadAverage != null && metrics.LoadAverage.Count == 3)
+                    {
+                        Console.WriteLine($"📈 Load Average:");
+                        Console.WriteLine($"   1 min:  {metrics.LoadAverage[0]:F2}");
+                        Console.WriteLine($"   5 min:  {metrics.LoadAverage[1]:F2}");
+                        Console.WriteLine($"   15 min: {metrics.LoadAverage[2]:F2}");
+                        Console.WriteLine();
+                    }
+                    
                     Console.WriteLine($"📦 Containers: {metrics.Containers}");
+                    
+                    if (!string.IsNullOrEmpty(metrics.DockerStorageDriver))
+                    {
+                        Console.WriteLine($"🐳 Docker:");
+                        Console.WriteLine($"   Storage Driver: {metrics.DockerStorageDriver}");
+                        if (!string.IsNullOrEmpty(metrics.DockerRootDir))
+                        {
+                            Console.WriteLine($"   Root Directory: {metrics.DockerRootDir}");
+                        }
+                    }
                     
                     if (metrics.UptimeSeconds.HasValue)
                     {

@@ -1114,7 +1114,44 @@ rustc --version";
                 sb.AppendLine($"   Free:  {metrics.StorageFreeGb:F2} GB");
                 sb.AppendLine($"   Usage: {metrics.StoragePercent:F1}%");
                 sb.AppendLine();
+                
+                if (!string.IsNullOrEmpty(metrics.IpAddress))
+                {
+                    sb.AppendLine($"🌐 Network:");
+                    sb.AppendLine($"   IP Address: {metrics.IpAddress}");
+                    
+                    if (metrics.IpAddresses != null && metrics.IpAddresses.Count > 1)
+                    {
+                        sb.AppendLine($"   All IPs: {string.Join(", ", metrics.IpAddresses)}");
+                    }
+                    
+                    if (!string.IsNullOrEmpty(metrics.ExternalIp))
+                    {
+                        sb.AppendLine($"   External IP: {metrics.ExternalIp}");
+                    }
+                    sb.AppendLine();
+                }
+                
+                if (metrics.LoadAverage != null && metrics.LoadAverage.Count == 3)
+                {
+                    sb.AppendLine($"📈 Load Average:");
+                    sb.AppendLine($"   1 min:  {metrics.LoadAverage[0]:F2}");
+                    sb.AppendLine($"   5 min:  {metrics.LoadAverage[1]:F2}");
+                    sb.AppendLine($"   15 min: {metrics.LoadAverage[2]:F2}");
+                    sb.AppendLine();
+                }
+                
                 sb.AppendLine($"📦 Containers: {metrics.Containers}");
+                
+                if (!string.IsNullOrEmpty(metrics.DockerStorageDriver))
+                {
+                    sb.AppendLine($"🐳 Docker:");
+                    sb.AppendLine($"   Storage Driver: {metrics.DockerStorageDriver}");
+                    if (!string.IsNullOrEmpty(metrics.DockerRootDir))
+                    {
+                        sb.AppendLine($"   Root Directory: {metrics.DockerRootDir}");
+                    }
+                }
                 
                 if (metrics.UptimeSeconds.HasValue)
                 {
