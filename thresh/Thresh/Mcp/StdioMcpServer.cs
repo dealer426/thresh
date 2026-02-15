@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Thresh.Mcp.Models;
+using Thresh.Models;
 using Thresh.Services;
 
 namespace Thresh.Mcp;
@@ -14,6 +15,8 @@ public class StdioMcpServer
     private readonly IContainerService _containerService;
     private readonly BlueprintService _blueprintService;
     private readonly ConfigurationService _configService;
+    private readonly GitHubCopilotService _copilotService;
+    private readonly MetricsService _metricsService;
     private readonly CancellationTokenSource _cts;
 
     public StdioMcpServer()
@@ -22,6 +25,8 @@ public class StdioMcpServer
         _configService = new ConfigurationService();
         var rootfsRegistry = new RootfsRegistry(_configService);
         _blueprintService = new BlueprintService(_containerService, rootfsRegistry);
+        _copilotService = new GitHubCopilotService(_configService);
+        _metricsService = new MetricsService(_containerService);
         _cts = new CancellationTokenSource();
     }
 
@@ -174,7 +179,7 @@ public class StdioMcpServer
             new Tool
             {
                 Name = "create_environment",
-                Description = "Create a new development environment from a blueprint",
+                Description = "Create development environment(s) from a blueprint. IMPORTANT: To create multiple environments, use the 'names' array parameter (e.g., [\"env1\", \"env2\", \"env3\"]) which creates all environments in parallel simultaneously. Use 'name' only for a single environment.",
                 InputSchema = new JsonSchema
                 {
                     Properties = new Dictionary<string, JsonSchemaProperty>
@@ -182,12 +187,18 @@ public class StdioMcpServer
                         ["blueprint"] = new JsonSchemaProperty
                         {
                             Type = "string",
-                            Description = "Blueprint name (e.g., 'python-dev', 'node-dev', 'ubuntu-dev')"
+                            Description = "Blueprint name (e.g., 'alpine-minimal', 'ubuntu-dev', 'debian-stable') or requirements description (e.g., 'Alpine with Node.js')"
                         },
                         ["name"] = new JsonSchemaProperty
                         {
                             Type = "string",
-                            Description = "Name for the new environment"
+                            Description = "Single environment name. For multiple environments, use 'names' array instead for parallel creation."
+                        },
+                        ["names"] = new JsonSchemaProperty
+                        {
+                            Type = "array",
+                            Description = "Array of environment names for PARALLEL creation (recommended for multiple environments - all created simultaneously, much faster than calling tool multiple times). Example: [\"test-1\", \"test-2\", \"test-3\"]",
+                            Items = new JsonSchemaProperty { Type = "string" }
                         },
                         ["verbose"] = new JsonSchemaProperty
                         {
@@ -195,13 +206,13 @@ public class StdioMcpServer
                             Description = "Show detailed provisioning output"
                         }
                     },
-                    Required = new List<string> { "blueprint", "name" }
+                    Required = new List<string> { "blueprint" }
                 }
             },
             new Tool
             {
                 Name = "destroy_environment",
-                Description = "Destroy/remove a development environment",
+                Description = "Destroy/remove a development environment by name, or destroy all environments with all=true. Either 'name' or 'all' must be provided.",
                 InputSchema = new JsonSchema
                 {
                     Properties = new Dictionary<string, JsonSchemaProperty>
@@ -209,10 +220,14 @@ public class StdioMcpServer
                         ["name"] = new JsonSchemaProperty
                         {
                             Type = "string",
-                            Description = "Name of the environment to destroy"
+                            Description = "Name of the environment to destroy (optional if all=true)"
+                        },
+                        ["all"] = new JsonSchemaProperty
+                        {
+                            Type = "boolean",
+                            Description = "Set to true to destroy all environments (optional if name is provided)"
                         }
-                    },
-                    Required = new List<string> { "name" }
+                    }
                 }
             },
             new Tool
@@ -271,6 +286,53 @@ public class StdioMcpServer
                     },
                     Required = new List<string> { "prompt" }
                 }
+            },
+            new Tool
+            {
+                Name = "save_blueprint",
+                Description = "Save a blueprint JSON to thresh's blueprints directory for reuse",
+                InputSchema = new JsonSchema
+                {
+                    Properties = new Dictionary<string, JsonSchemaProperty>
+                    {
+                        ["name"] = new JsonSchemaProperty
+                        {
+                            Type = "string",
+                            Description = "Name for the blueprint file (without extension)"
+                        },
+                        ["blueprint_json"] = new JsonSchemaProperty
+                        {
+                            Type = "string",
+                            Description = "Complete blueprint JSON content"
+                        }
+                    },
+                    Required = new List<string> { "name", "blueprint_json" }
+                }
+            },
+            new Tool
+            {
+                Name = "get_metrics",
+                Description = "Get host system metrics including CPU, memory, storage, and container count",
+                InputSchema = new JsonSchema
+                {
+                    Properties = new Dictionary<string, JsonSchemaProperty>
+                    {
+                        ["format"] = new JsonSchemaProperty
+                        {
+                            Type = "string",
+                            Description = "Output format: 'text' (default) or 'json'"
+                        }
+                    }
+                }
+            },
+            new Tool
+            {
+                Name = "help",
+                Description = "Display a menu of all available thresh commands with descriptions",
+                InputSchema = new JsonSchema
+                {
+                    Properties = new Dictionary<string, JsonSchemaProperty>()
+                }
             }
         };
 
@@ -308,12 +370,15 @@ public class StdioMcpServer
                 "get_blueprint" => GetBlueprint(arguments),
                 "get_version" => await GetVersionAsync(),
                 "generate_blueprint" => await GenerateBlueprintAsync(arguments),
+                "save_blueprint" => await SaveBlueprintAsync(arguments),
+                "get_metrics" => await GetMetricsAsync(arguments),
+                "help" => GetHelp(),
                 _ => CreateToolError($"Unknown tool: {toolName}")
             };
 
-            var genericResult = new GenericResult { Result = result };
-            var response = new JsonRpcResponse<GenericResult> { Id = id, Result = genericResult };
-            return JsonSerializer.Serialize(response, McpJsonContext.Default.JsonRpcResponseGenericResult);
+            // Result is already a ToolCallResponse, just wrap in JSON-RPC response
+            var response = new JsonRpcResponse<ToolCallResponse> { Id = id, Result = (ToolCallResponse)result };
+            return JsonSerializer.Serialize(response, McpJsonContext.Default.JsonRpcResponseToolCallResponse);
         }
         catch (Exception ex)
         {
@@ -353,13 +418,7 @@ public class StdioMcpServer
             }
         }
 
-        return new
-        {
-            content = new[]
-            {
-                new { type = "text", text = sb.ToString() }
-            }
-        };
+        return ToolCallResponse.Success(sb.ToString());
     }
 
     private async Task<object> CreateEnvironmentAsync(JsonElement? args)
@@ -371,68 +430,282 @@ public class StdioMcpServer
         var name = args.Value.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
         var verbose = args.Value.TryGetProperty("verbose", out var verboseProp) && verboseProp.GetBoolean();
 
-        if (string.IsNullOrEmpty(blueprint) || string.IsNullOrEmpty(name))
-            return CreateToolError("Missing required arguments: blueprint and name");
+        if (string.IsNullOrEmpty(blueprint))
+            return CreateToolError("Missing required argument: blueprint");
+
+        // Check for names array (parallel creation)
+        List<string>? namesList = null;
+        if (args.Value.TryGetProperty("names", out var namesProp) && namesProp.ValueKind == JsonValueKind.Array)
+        {
+            namesList = new List<string>();
+            foreach (var nameElement in namesProp.EnumerateArray())
+            {
+                var n = nameElement.GetString();
+                if (!string.IsNullOrEmpty(n))
+                    namesList.Add(n);
+            }
+        }
+
+        // Either name or names must be provided
+        if (string.IsNullOrEmpty(name) && (namesList == null || namesList.Count == 0))
+            return CreateToolError("Either 'name' or 'names' must be provided");
+
+        // PARALLEL CREATION: Multiple environments
+        if (namesList != null && namesList.Count > 0)
+        {
+            await Console.Error.WriteLineAsync($"🚀 Creating {namesList.Count} environment(s) in parallel...");
+            
+            var sb = new StringBuilder();
+            sb.AppendLine($"🎯 Creating {namesList.Count} environment(s) in parallel from blueprint '{blueprint}'...");
+            sb.AppendLine();
+
+            // Create all environments in parallel
+            var createTasks = namesList.Select(async envName =>
+            {
+                try
+                {
+                    // Check if environment exists
+                    if (await _containerService.EnvironmentExistsAsync(envName))
+                        return new { Name = envName, Success = false, Error = "already exists" };
+
+                    // Determine blueprint
+                    Blueprint bp;
+                    var bundledBlueprints = _blueprintService.ListBundledBlueprints();
+                    if (bundledBlueprints.Contains(blueprint, StringComparer.OrdinalIgnoreCase))
+                    {
+                        bp = _blueprintService.LoadBundledBlueprint(blueprint);
+                    }
+                    else
+                    {
+                        bp = GenerateCustomBlueprint(blueprint, envName);
+                    }
+
+                    await _blueprintService.ProvisionEnvironmentAsync(envName, bp, verbose: false);
+                    return new { Name = envName, Success = true, Error = (string?)null };
+                }
+                catch (Exception ex)
+                {
+                    return new { Name = envName, Success = false, Error = ex.Message };
+                }
+            }).ToList();
+
+            var results = await Task.WhenAll(createTasks);
+
+            // Display results sorted by name
+            var successCount = 0;
+            var failureCount = 0;
+
+            foreach (var result in results.OrderBy(r => r.Name))
+            {
+                if (result.Success)
+                {
+                    sb.AppendLine($"  ✅ Created: {result.Name}");
+                    successCount++;
+                }
+                else
+                {
+                    sb.AppendLine($"  ❌ Failed: {result.Name} ({result.Error})");
+                    failureCount++;
+                }
+            }
+
+            sb.AppendLine();
+            sb.AppendLine($"📊 Summary: {successCount} succeeded, {failureCount} failed");
+            
+            if (successCount > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("Access environments:");
+                foreach (var result in results.Where(r => r.Success).OrderBy(r => r.Name))
+                {
+                    sb.AppendLine($"  docker exec -it thresh-{result.Name} bash");
+                }
+            }
+
+            return ToolCallResponse.Success(sb.ToString());
+        }
+
+        // SINGLE CREATION: Original behavior
+        if (string.IsNullOrEmpty(name))
+            return CreateToolError("Missing required argument: name");
 
         // Check if environment exists
         if (await _containerService.EnvironmentExistsAsync(name))
             return CreateToolError($"Environment '{name}' already exists");
 
-        // Load and provision blueprint
-        var bp = _blueprintService.LoadBundledBlueprint(blueprint);
+        // Determine if blueprint is a bundled name or a requirements description
+        Blueprint bp;
+        var blueprintDescription = blueprint;
         
-        var output = new StringBuilder();
-        output.AppendLine($"🚀 Creating environment '{name}' from blueprint '{blueprint}'...");
-        output.AppendLine();
-        
-        // Capture provisioning output
-        var originalOut = Console.Out;
-        using (var writer = new StringWriter())
+        // Check if it's a bundled blueprint
+        var bundledBlueprints = _blueprintService.ListBundledBlueprints();
+        if (bundledBlueprints.Contains(blueprint, StringComparer.OrdinalIgnoreCase))
         {
-            Console.SetOut(writer);
-            await _blueprintService.ProvisionEnvironmentAsync(name, bp, verbose);
-            Console.SetOut(originalOut);
-            output.Append(writer.ToString());
+            // Use existing bundled blueprint
+            bp = _blueprintService.LoadBundledBlueprint(blueprint);
         }
-
-        output.AppendLine();
-        output.AppendLine($"✅ Environment '{name}' created successfully!");
-
-        return new
+        else
         {
-            content = new[]
+            // Generate custom blueprint from requirements description
+            bp = GenerateCustomBlueprint(blueprint, name);
+            blueprintDescription = "custom";
+        }
+        
+        try
+        {
+            await _blueprintService.ProvisionEnvironmentAsync(name, bp, verbose);
+            
+            return ToolCallResponse.Success(
+                $"✅ Environment '{name}' created successfully!\n\n" +
+                $"Blueprint: {blueprintDescription}\n" +
+                $"Base: {bp.Base}\n" +
+                $"Packages: {bp.Packages?.Count ?? 0}\n\n" +
+                $"Access: docker exec -it thresh-{name} bash"
+            );
+        }
+        catch (Exception ex)
+        {
+            return CreateToolError($"Failed to create environment: {ex.Message}");
+        }
+    }
+
+    private Blueprint GenerateCustomBlueprint(string requirements, string envName)
+    {
+        var reqLower = requirements.ToLowerInvariant();
+        
+        // Detect base distribution
+        var baseDistro = "ubuntu-24.04";
+        var packages = new List<string> { "curl", "wget", "git" };
+        var setupScript = "#!/bin/bash\necho \"Environment ready\"";
+        
+        if (reqLower.Contains("alpine"))
+        {
+            baseDistro = "alpine-3.19";
+            packages = new List<string> { "curl", "wget", "git", "bash" };
+        }
+        else if (reqLower.Contains("debian"))
+        {
+            baseDistro = "debian-12";
+        }
+        
+        // Detect Node.js
+        if (reqLower.Contains("node") || reqLower.Contains("nodejs"))
+        {
+            if (baseDistro.Contains("alpine"))
             {
-                new { type = "text", text = output.ToString() }
+                packages.AddRange(new[] { "nodejs", "npm" });
+                setupScript = "#!/bin/bash\nnode --version\nnpm --version\necho \"Node.js installed\"";
+            }
+            else
+            {
+                packages.Add("ca-certificates");
+                setupScript = "#!/bin/bash\ncurl -fsSL https://deb.nodesource.com/setup_20.x | bash -\napt-get install -y nodejs\nnode --version\nnpm --version";
+            }
+        }
+        
+        // Detect Python
+        if (reqLower.Contains("python"))
+        {
+            packages.AddRange(baseDistro.Contains("alpine") 
+                ? new[] { "python3", "py3-pip" } 
+                : new[] { "python3", "python3-pip" });
+        }
+        
+        // Detect Go
+        if (reqLower.Contains("go") || reqLower.Contains("golang"))
+        {
+            packages.Add(baseDistro.Contains("alpine") ? "go" : "golang");
+        }
+        
+        return new Blueprint
+        {
+            Name = envName,
+            Description = requirements,
+            Base = baseDistro,
+            Packages = packages.Distinct().ToList(),
+            Environment = new Dictionary<string, string>
+            {
+                ["PATH"] = "/usr/local/bin:/usr/bin:/bin"
+            },
+            Scripts = new BlueprintScripts
+            {
+                Setup = setupScript,
+                PostInstall = "#!/bin/bash\necho \"Installation complete!\""
             }
         };
     }
 
     private async Task<object> DestroyEnvironmentAsync(JsonElement? args)
     {
-        if (!args.HasValue)
-            return CreateToolError("Missing arguments");
-
-        var name = args.Value.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
-
-        if (string.IsNullOrEmpty(name))
-            return CreateToolError("Missing required argument: name");
-
-        if (!await _containerService.EnvironmentExistsAsync(name))
-            return CreateToolError($"Environment '{name}' not found");
-
-        var success = await _containerService.RemoveEnvironmentAsync(name);
+        var destroyAll = args?.TryGetProperty("all", out var allProp) == true && allProp.GetBoolean();
         
-        var message = success 
-            ? $"✅ Environment '{name}' destroyed successfully"
-            : $"❌ Failed to destroy environment '{name}'";
-
-        return new
+        if (destroyAll)
         {
-            content = new[]
+            // Destroy all environments
+            var environments = await _containerService.ListEnvironmentsAsync(includeAll: false);
+            
+            if (environments.Count == 0)
             {
-                new { type = "text", text = message }
+                return ToolCallResponse.Success("ℹ️  No environments to destroy");
             }
-        };
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"🗑️  Destroying {environments.Count} environment(s) in parallel...");
+            sb.AppendLine();
+
+            // Destroy all environments in parallel
+            var destroyTasks = environments.Select(async env =>
+            {
+                var success = await _containerService.RemoveEnvironmentAsync(env.Name);
+                return new { env.Name, Success = success };
+            }).ToList();
+
+            var results = await Task.WhenAll(destroyTasks);
+
+            var successCount = 0;
+            var failureCount = 0;
+
+            foreach (var result in results.OrderBy(r => r.Name))
+            {
+                if (result.Success)
+                {
+                    sb.AppendLine($"  ✅ Destroyed: {result.Name}");
+                    successCount++;
+                }
+                else
+                {
+                    sb.AppendLine($"  ❌ Failed: {result.Name}");
+                    failureCount++;
+                }
+            }
+
+            sb.AppendLine();
+            sb.AppendLine($"📊 Summary: {successCount} succeeded, {failureCount} failed");
+            
+            return ToolCallResponse.Success(sb.ToString());
+        }
+        else
+        {
+            // Destroy single environment by name
+            if (!args.HasValue)
+                return CreateToolError("Missing arguments");
+
+            var name = args.Value.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
+
+            if (string.IsNullOrEmpty(name))
+                return CreateToolError("Missing required argument: name (or use all=true to destroy all environments)");
+
+            if (!await _containerService.EnvironmentExistsAsync(name))
+                return CreateToolError($"Environment '{name}' not found");
+
+            var success = await _containerService.RemoveEnvironmentAsync(name);
+            
+            var message = success 
+                ? $"✅ Environment '{name}' destroyed successfully"
+                : $"❌ Failed to destroy environment '{name}'";
+
+            return ToolCallResponse.Success(message);
+        }
     }
 
     private object ListBlueprints()
@@ -448,13 +721,7 @@ public class StdioMcpServer
             sb.AppendLine($"  • {name}");
         }
 
-        return new
-        {
-            content = new[]
-            {
-                new { type = "text", text = sb.ToString() }
-            }
-        };
+        return ToolCallResponse.Success(sb.ToString());
     }
 
     private object GetBlueprint(JsonElement? args)
@@ -500,13 +767,7 @@ public class StdioMcpServer
                 sb.AppendLine($"Post-Install Script: ✓");
         }
 
-        return new
-        {
-            content = new[]
-            {
-                new { type = "text", text = sb.ToString() }
-            }
-        };
+        return ToolCallResponse.Success(sb.ToString());
     }
 
     private async Task<object> GetVersionAsync()
@@ -531,13 +792,7 @@ public class StdioMcpServer
             sb.AppendLine($"Status: ❌ Not available ({runtimeInfo.Version})");
         }
 
-        return new
-        {
-            content = new[]
-            {
-                new { type = "text", text = sb.ToString() }
-            }
-        };
+        return ToolCallResponse.Success(sb.ToString());
     }
 
     private async Task<object> GenerateBlueprintAsync(JsonElement? args)
@@ -551,28 +806,339 @@ public class StdioMcpServer
         if (string.IsNullOrEmpty(prompt))
             return CreateToolError("Missing required argument: prompt");
 
-        // This would call the AI service - for now, return a placeholder
-        return new
+        // Generate a template blueprint based on the prompt
+        var blueprintTemplate = GenerateBlueprintTemplate(prompt);
+        
+        return ToolCallResponse.Success(
+            $"✅ Generated Blueprint: {prompt}\n\n" +
+            $"```json\n{blueprintTemplate}\n```\n\n" +
+            $"**This blueprint is ready to use!**\n\n" +
+            $"To create an environment from this blueprint:\n" +
+            $"1. Save the JSON above to a file (e.g., `my-blueprint.json`)\n" +
+            $"2. Run: `thresh up my-blueprint.json --name <environment-name>`\n\n" +
+            $"Or ask me to create an environment using this configuration!"
+        );
+    }
+
+    private string GenerateBlueprintTemplate(string prompt)
+    {
+        // Parse prompt to determine base distro and packages
+        var promptLower = prompt.ToLowerInvariant();
+        
+        var baseName = "custom-dev";
+        var baseDistro = "ubuntu-24.04";
+        var description = prompt;
+        var packages = new List<string> { "curl", "wget", "git" };
+        var setupScript = "#!/bin/bash\\necho \\\"Setting up environment...\\\"";
+        var postInstallScript = "#!/bin/bash\\necho \\\"Installation complete!\\\"";
+        
+        // Detect distribution
+        var isAlpine = promptLower.Contains("alpine");
+        var isDebian = promptLower.Contains("debian");
+        var isUbuntu = !isAlpine && !isDebian; // Default to Ubuntu
+        
+        if (isAlpine)
         {
-            content = new[]
+            baseName = "alpine-dev";
+            baseDistro = "alpine-3.19";
+            packages = new List<string> { "curl", "wget", "git", "bash" };
+        }
+        else if (isDebian)
+        {
+            baseName = "debian-dev";
+            baseDistro = "debian-12";
+        }
+        
+        // Detect Node.js with version handling
+        if (promptLower.Contains("node") || promptLower.Contains("nodejs"))
+        {
+            if (isAlpine)
             {
-                new { type = "text", text = $"🤖 AI blueprint generation coming soon!\n\nPrompt: {prompt}\nModel: {model}" }
+                // Alpine: Use official nodejs package + handle versions if needed
+                packages.AddRange(new[] { "nodejs", "npm" });
+                setupScript = @"#!/bin/bash
+# Alpine Node.js setup
+node --version
+npm --version
+echo \""Node.js installed successfully\""";
             }
-        };
+            else
+            {
+                // Ubuntu/Debian: Use NodeSource for specific versions
+                packages.Add("ca-certificates");
+                setupScript = @"#!/bin/bash
+# Install Node.js 20.x from NodeSource
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+node --version
+npm --version";
+            }
+        }
+        
+        // Python detection
+        if (promptLower.Contains("python"))
+        {
+            if (isAlpine)
+            {
+                packages.AddRange(new[] { "python3", "py3-pip" });
+            }
+            else
+            {
+                packages.AddRange(new[] { "python3", "python3-pip" });
+            }
+            
+            if (setupScript.Contains("Setting up environment"))
+            {
+                setupScript = "#!/bin/bash\\npython3 --version\\npip3 --version";
+            }
+        }
+        
+        // Go detection
+        if (promptLower.Contains("go") || promptLower.Contains("golang"))
+        {
+            if (isAlpine)
+            {
+                packages.Add("go");
+            }
+            else
+            {
+                packages.Add("golang");
+            }
+        }
+        
+        // Rust detection
+        if (promptLower.Contains("rust"))
+        {
+            if (isAlpine)
+            {
+                packages.AddRange(new[] { "rust", "cargo" });
+            }
+            else
+            {
+                setupScript = @"#!/bin/bash
+# Install Rust via rustup
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source $HOME/.cargo/env
+rustc --version";
+            }
+        }
+        
+        // Java detection
+        if (promptLower.Contains("java"))
+        {
+            if (isAlpine)
+            {
+                packages.Add("openjdk17");
+            }
+            else
+            {
+                packages.AddRange(new[] { "openjdk-17-jdk", "maven" });
+            }
+        }
+        
+        // Manual JSON construction to avoid AOT issues
+        var json = new StringBuilder();
+        json.AppendLine("{");
+        json.AppendLine($"  \"name\": \"{baseName}\",");
+        json.AppendLine($"  \"description\": \"{description}\",");
+        json.AppendLine($"  \"base\": \"{baseDistro}\",");
+        json.AppendLine($"  \"packages\": [");
+        var distinctPackages = packages.Distinct().ToList();
+        for (int i = 0; i < distinctPackages.Count; i++)
+        {
+            var comma = i < distinctPackages.Count - 1 ? "," : "";
+            json.AppendLine($"    \"{distinctPackages[i]}\"{comma}");
+        }
+        json.AppendLine("  ],");
+        json.AppendLine("  \"environment\": {");
+        json.AppendLine("    \"PATH\": \"/usr/local/bin:/usr/bin:/bin\"");
+        json.AppendLine("  },");
+        json.AppendLine("  \"scripts\": {");
+        json.AppendLine($"    \"setup\": \"{setupScript}\",");
+        json.AppendLine($"    \"postInstall\": \"{postInstallScript}\"");
+        json.AppendLine("  }");
+        json.AppendLine("}");
+        
+        return json.ToString();
+    }
+
+    private async Task<object> SaveBlueprintAsync(JsonElement? args)
+    {
+        if (!args.HasValue)
+            return CreateToolError("Missing arguments");
+
+        var name = args.Value.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
+        var blueprintJson = args.Value.TryGetProperty("blueprint_json", out var jsonProp) ? jsonProp.GetString() : null;
+
+        if (string.IsNullOrEmpty(name))
+            return CreateToolError("Missing required argument: name");
+        
+        if (string.IsNullOrEmpty(blueprintJson))
+            return CreateToolError("Missing required argument: blueprint_json");
+
+        try
+        {
+            // Validate JSON - use JsonDocument for AOT compatibility
+            using var testParse = JsonDocument.Parse(blueprintJson);
+            
+            // Get blueprints directory
+            var blueprintsDir = Path.Combine(AppContext.BaseDirectory, "blueprints");
+            if (!Directory.Exists(blueprintsDir))
+            {
+                Directory.CreateDirectory(blueprintsDir);
+            }
+            
+            // Sanitize filename
+            var safeName = name.Replace(" ", "-").ToLowerInvariant();
+            safeName = new string(safeName.Where(c => char.IsLetterOrDigit(c) || c == '-' || c == '_').ToArray());
+            
+            var filePath = Path.Combine(blueprintsDir, $"{safeName}.json");
+            
+            // Check if already exists
+            if (File.Exists(filePath))
+            {
+                return CreateToolError($"Blueprint '{safeName}' already exists. Choose a different name.");
+            }
+            
+            // Write file - pretty print the JSON
+            var prettyJson = PrettyPrintJson(blueprintJson);
+            await File.WriteAllTextAsync(filePath, prettyJson);
+            
+            return ToolCallResponse.Success(
+                $"✅ Blueprint saved successfully!\n\n" +
+                $"Name: {safeName}\n" +
+                $"Location: {filePath}\n\n" +
+                $"You can now use this blueprint:\n" +
+                $"• From MCP: create_environment with blueprint=\"{safeName}\"\n" +
+                $"• From CLI: thresh up {safeName} --name <env-name>\n" +
+                $"• View: thresh blueprints"
+            );
+        }
+        catch (JsonException)
+        {
+            return CreateToolError("Invalid JSON format. Please provide valid blueprint JSON.");
+        }
+        catch (Exception ex)
+        {
+            return CreateToolError($"Failed to save blueprint: {ex.Message}");
+        }
+    }
+
+    private string PrettyPrintJson(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        using var stream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
+        doc.WriteTo(writer);
+        writer.Flush();
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    /// <summary>
+    /// Get help menu showing all available commands
+    /// </summary>
+    private object GetHelp()
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("📖 thresh MCP Commands");
+        sb.AppendLine("═══════════════════════");
+        sb.AppendLine();
+        sb.AppendLine("🌍 Environment Management:");
+        sb.AppendLine("  • list_environments     - List all development environments");
+        sb.AppendLine("  • create_environment    - Create a new environment from a blueprint");
+        sb.AppendLine("  • destroy_environment   - Remove an environment (or all with all=true)");
+        sb.AppendLine();
+        sb.AppendLine("📋 Blueprint Operations:");
+        sb.AppendLine("  • list_blueprints       - Show all available blueprints");
+        sb.AppendLine("  • get_blueprint         - Get detailed blueprint information");
+        sb.AppendLine("  • generate_blueprint    - Generate custom blueprint using AI");
+        sb.AppendLine("  • save_blueprint        - Save a blueprint for reuse");
+        sb.AppendLine();
+        sb.AppendLine("📊 System Information:");
+        sb.AppendLine("  • get_metrics           - Display host system metrics");
+        sb.AppendLine("  • get_version           - Show thresh version info");
+        sb.AppendLine();
+        sb.AppendLine("❓ Help:");
+        sb.AppendLine("  • help                  - Display this menu");
+        sb.AppendLine();
+        sb.AppendLine("💡 Tips:");
+        sb.AppendLine($"  • Platform: {_containerService.Platform}");
+        sb.AppendLine($"  • Runtime: {_containerService.RuntimeName}");
+        sb.AppendLine("  • Use natural language to describe what you want!");
+        sb.AppendLine("  • Example: 'Create an Alpine environment with Node.js'");
+        
+        return ToolCallResponse.Success(sb.ToString());
+    }
+
+    /// <summary>
+    /// Get host system metrics
+    /// </summary>
+    private async Task<object> GetMetricsAsync(JsonElement? args)
+    {
+        var format = args?.TryGetProperty("format", out var formatProp) == true 
+            ? formatProp.GetString()?.ToLowerInvariant() 
+            : "text";
+
+        try
+        {
+            var metrics = await _metricsService.CollectMetricsAsync();
+
+            if (format == "json")
+            {
+                // Return metrics as JSON string
+                var jsonText = JsonSerializer.Serialize(metrics, MetricsJsonContext.Default.HostMetrics);
+                return ToolCallResponse.Success(jsonText);
+            }
+            else
+            {
+                // Return metrics as formatted text (matching CLI output)
+                var sb = new StringBuilder();
+                sb.AppendLine("📊 Host Metrics");
+                sb.AppendLine("═══════════════");
+                sb.AppendLine();
+                sb.AppendLine($"🖥️  Hostname: {metrics.Hostname}");
+                sb.AppendLine($"🔧 Platform: {metrics.Platform}");
+                sb.AppendLine($"📦 Runtime: {metrics.Runtime} {metrics.RuntimeVersion}");
+                sb.AppendLine();
+                sb.AppendLine($"⚙️  CPU:");
+                sb.AppendLine($"   Cores: {metrics.CpuCores}");
+                sb.AppendLine($"   Usage: {metrics.CpuPercent:F1}%");
+                sb.AppendLine();
+                sb.AppendLine($"💾 Memory:");
+                sb.AppendLine($"   Total: {metrics.MemoryTotalGb:F2} GB");
+                sb.AppendLine($"   Used:  {metrics.MemoryUsedGb:F2} GB");
+                sb.AppendLine($"   Usage: {metrics.MemoryPercent:F1}%");
+                sb.AppendLine();
+                sb.AppendLine($"💿 Storage:");
+                sb.AppendLine($"   Total: {metrics.StorageTotalGb:F2} GB");
+                sb.AppendLine($"   Free:  {metrics.StorageFreeGb:F2} GB");
+                sb.AppendLine($"   Usage: {metrics.StoragePercent:F1}%");
+                sb.AppendLine();
+                sb.AppendLine($"📦 Containers: {metrics.Containers}");
+                
+                if (metrics.UptimeSeconds.HasValue)
+                {
+                    var uptime = TimeSpan.FromSeconds(metrics.UptimeSeconds.Value);
+                    sb.AppendLine($"⏱️  Uptime: {uptime.Days}d {uptime.Hours}h {uptime.Minutes}m");
+                }
+                
+                sb.AppendLine();
+                sb.AppendLine($"🕐 Collected: {metrics.Timestamp:yyyy-MM-dd HH:mm:ss} UTC");
+                
+                return ToolCallResponse.Success(sb.ToString());
+            }
+        }
+        catch (Exception ex)
+        {
+            return CreateToolError($"Failed to collect metrics: {ex.Message}");
+        }
     }
 
     // Helper Methods
 
     private object CreateToolError(string message)
     {
-        return new
-        {
-            content = new[]
-            {
-                new { type = "text", text = $"❌ Error: {message}" }
-            },
-            isError = true
-        };
+        return ToolCallResponse.Error(message);
     }
 
     private string CreateToolErrorResponse(int? id, string message)

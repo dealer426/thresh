@@ -279,14 +279,16 @@ class Program
         var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
         var envType = isWindows ? "WSL environment" : "container environment";
         
-        var destroyCommand = new Command("destroy", $"Remove a {envType}");
-        var nameArg = new Argument<string>("name", "Environment name to remove");
+        var destroyCommand = new Command("destroy", $"Remove a {envType} or all environments");
+        var nameArg = new Argument<string?>("name", () => null, "Environment name to remove (not required if --all is used)");
         var forceOption = new Option<bool>(new[] { "-y", "--force" }, "Skip confirmation prompt");
+        var allOption = new Option<bool>(new[] { "--all" }, "Destroy all environments");
         
         destroyCommand.AddArgument(nameArg);
         destroyCommand.AddOption(forceOption);
+        destroyCommand.AddOption(allOption);
         
-        destroyCommand.SetHandler(async (string name, bool force) =>
+        destroyCommand.SetHandler(async (string? name, bool force, bool destroyAll) =>
         {
             var containerService = Services.ContainerServiceFactory.Create();
             
@@ -296,36 +298,101 @@ class Program
                 Console.WriteLine($"❌ {containerService.RuntimeName} is not available on this system");
                 return;
             }
-            
-            // Check if environment exists
-            if (!await containerService.EnvironmentExistsAsync(name))
+
+            if (destroyAll)
             {
-                Console.WriteLine($"❌ Environment '{name}' not found");
-                return;
-            }
-            
-            // Confirm unless --force
-            if (!force)
-            {
-                Console.Write($"Are you sure you want to destroy '{name}'? (y/N): ");
-                var response = Console.ReadLine()?.Trim().ToLowerInvariant();
-                if (response != "y" && response != "yes")
+                // Destroy all environments
+                var environments = await containerService.ListEnvironmentsAsync(includeAll: false);
+                
+                if (environments.Count == 0)
                 {
-                    Console.WriteLine("Cancelled.");
+                    Console.WriteLine("ℹ️  No environments to destroy");
                     return;
                 }
-            }
-            
-            Console.WriteLine($"Removing environment: {name}");
-            if (await containerService.RemoveEnvironmentAsync(name))
-            {
-                Console.WriteLine($"✅ Environment '{name}' removed successfully");
+
+                // Confirm unless --force
+                if (!force)
+                {
+                    Console.Write($"⚠️  Are you sure you want to destroy ALL {environments.Count} environment(s)? (y/N): ");
+                    var response = Console.ReadLine()?.Trim().ToLowerInvariant();
+                    if (response != "y" && response != "yes")
+                    {
+                        Console.WriteLine("Cancelled.");
+                        return;
+                    }
+                }
+
+                Console.WriteLine($"🗑️  Destroying {environments.Count} environment(s) in parallel...");
+                Console.WriteLine();
+
+                // Destroy all environments in parallel
+                var destroyTasks = environments.Select(async env =>
+                {
+                    var success = await containerService.RemoveEnvironmentAsync(env.Name);
+                    return new { env.Name, Success = success };
+                }).ToList();
+
+                var results = await Task.WhenAll(destroyTasks);
+
+                var successCount = 0;
+                var failureCount = 0;
+
+                foreach (var result in results.OrderBy(r => r.Name))
+                {
+                    if (result.Success)
+                    {
+                        Console.WriteLine($"  ✅ Destroyed: {result.Name}");
+                        successCount++;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"  ❌ Failed: {result.Name}");
+                        failureCount++;
+                    }
+                }
+
+                Console.WriteLine();
+                Console.WriteLine($"📊 Summary: {successCount} succeeded, {failureCount} failed");
             }
             else
             {
-                Console.WriteLine($"❌ Failed to remove environment '{name}'");
+                // Destroy single environment
+                if (string.IsNullOrEmpty(name))
+                {
+                    Console.WriteLine("❌ Error: Environment name is required (or use --all to destroy all environments)");
+                    return;
+                }
+
+                // Check if environment exists
+                if (!await containerService.EnvironmentExistsAsync(name))
+                {
+                    Console.WriteLine($"❌ Environment '{name}' not found");
+                    return;
+                }
+                
+                // Confirm unless --force
+                if (!force)
+                {
+                    Console.Write($"Are you sure you want to destroy '{name}'? (y/N): ");
+                    var response = Console.ReadLine()?.Trim().ToLowerInvariant();
+                    if (response != "y" && response != "yes")
+                    {
+                        Console.WriteLine("Cancelled.");
+                        return;
+                    }
+                }
+                
+                Console.WriteLine($"Removing environment: {name}");
+                if (await containerService.RemoveEnvironmentAsync(name))
+                {
+                    Console.WriteLine($"✅ Environment '{name}' removed successfully");
+                }
+                else
+                {
+                    Console.WriteLine($"❌ Failed to remove environment '{name}'");
+                }
             }
-        }, nameArg, forceOption);
+        }, nameArg, forceOption, allOption);
         
         rootCommand.AddCommand(destroyCommand);
     }

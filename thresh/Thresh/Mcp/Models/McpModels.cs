@@ -109,4 +109,7 @@ public class JsonSchemaProperty
 
     [JsonPropertyName("enum")]
     public List<string>? Enum { get; set; }
+
+    [JsonPropertyName("items")]
+    public JsonSchemaProperty? Items { get; set; }
 }

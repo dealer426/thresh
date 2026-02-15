@@ -314,7 +314,8 @@ public class BlueprintService
             
             if (!pullResult.IsSuccess)
             {
-                throw new Exception($"Failed to pull {distroInfo.DockerImage}: {pullResult.Output}");
+                var error = pullResult.Error ?? pullResult.GetOutputAsString();
+                throw new Exception($"Failed to pull {distroInfo.DockerImage}: {error}");
             }
             
             if (verbose)

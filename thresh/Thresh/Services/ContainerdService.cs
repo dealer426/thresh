@@ -53,17 +53,17 @@ public class ContainerdService : IContainerService
     /// </summary>
     public async Task<bool> IsAvailableAsync()
     {
-        // Try nerdctl first (containerd-native, Docker-compatible)
-        if (await ProcessHelper.IsCommandAvailableAsync("nerdctl"))
-        {
-            _detectedTool = "nerdctl";
-            return true;
-        }
-
-        // Try Docker (Docker Engine, common everywhere)
+        // Try Docker first (Docker Engine, widely available and configured)
         if (await ProcessHelper.IsCommandAvailableAsync("docker"))
         {
             _detectedTool = "docker";
+            return true;
+        }
+
+        // Try nerdctl as fallback (containerd-native, Docker-compatible)
+        if (await ProcessHelper.IsCommandAvailableAsync("nerdctl"))
+        {
+            _detectedTool = "nerdctl";
             return true;
         }
 
