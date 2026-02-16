@@ -1,0 +1,12 @@
+{
+  "name": "alpine_npm",
+  "description": "Alpine Linux with Node.js and npm",
+  "base": "alpine-3.19",
+  "packages": ["nodejs", "npm"],
+  "environment": {
+    "NODE_ENV": "development"
+  },
+  "scripts": {
+    "setup": "#!/bin/sh\nnode --version\nnpm --version"
+  }
+}

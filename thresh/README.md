@@ -1,25 +1,28 @@
-# thresh - AI-Powered WSL Environment Manager
+# thresh - AI-Powered Container Environment Manager
 
-**Single-binary CLI for provisioning WSL development environments with AI**
+**Single-binary CLI for provisioning development environments with AI**
 
+![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
 ![.NET 10](https://img.shields.io/badge/.NET-10.0-purple.svg)
-![Native AOT](https://img.shields.io/badge/Native%20AOT-14MB-green.svg)
+![Native AOT](https://img.shields.io/badge/Native%20AOT-Yes-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
 ---
 
 ## Overview
 
-`thresh` is a **.NET 10 Native AOT** command-line tool that provisions WSL2 environments using AI-generated blueprints. It replaces the legacy Quarkus-based `thresh-cli` with a unified, dependency-free solution.
+`thresh` is a **.NET 10 Native AOT** command-line tool that provisions container-based development environments using AI-generated blueprints. It supports multiple platforms and container runtimes.
 
 **Key Features**:
-- 🚀 **14 MB native binary** - No .NET runtime required
-- 🤖 **Multi-Provider AI** - OpenAI, Azure OpenAI, or GitHub Copilot SDK
-- 🎯 **20+ AI Models** - GPT-4o, Claude, o1, and more
-- 📦 **12 built-in distros** - Ubuntu, Alpine, Debian, Kali, Oracle, openSUSE
-- 🔧 **Custom distro support** - Add any Linux with AI discovery
-- 💬 **Interactive AI chat** - Streaming responses for blueprint help
-- 🎯 **Hybrid distribution system** - Vendor downloads + MS Store wrapper
+- 🚀 **Native binary** - No .NET runtime required (Linux: ~5MB compressed, Windows: ~5MB compressed, macOS: ~13MB uncompressed)
+- 🌍 **Multi-Platform** - Windows/WSL2, Linux/Docker/nerdctl, macOS/containerd
+- 🤖 **AI-Powered** - GitHub Copilot SDK, OpenAI, Azure OpenAI
+- 🎯 **20+ AI Models** - GPT-4o, Claude 3.5 Sonnet, o1, and more
+- ⚡ **Parallel Creation** - Create multiple environments simultaneously (10x faster)
+- 📦 **Built-in Blueprints** - Alpine, Ubuntu, Debian, Python, Node.js, and more
+- 🗑️ **Blueprint Management** - List, generate, and delete blueprints
+- 💬 **Interactive AI Chat** - Streaming responses for blueprint assistance
+- 🔧 **Platform-Aware AI** - Generates appropriate blueprints for your platform
 
 ---
 
@@ -77,28 +80,47 @@ See [DUAL_AI_PROVIDERS.md](../docs/DUAL_AI_PROVIDERS.md) for detailed model comp
 
 ### Environment Management
 
-```powershell
+```bash
 # List available blueprints
 thresh blueprint list
 
-# Provision environment
+# Provision single environment
 thresh up alpine-minimal
+
+# Provision with custom name
+thresh up alpine-minimal --name my-dev
 
 # List environments
 thresh list [--all]
 
 # Destroy environment
-thresh destroy alpine-minimal
+thresh destroy alpine-minimal -y
 ```
 
-### AI Features
+### Blueprint Management
 
-```powershell
+```bash
+# List blueprints (built-in + generated)
+thresh blueprint list
+
 # Generate blueprint from prompt
-thresh blueprint generate "Python ML environment with Jupyter"
+thresh blueprint generate "Python ML environment with Jupyter" --output python-ml
 
-# Interactive AI chat
+# Delete generated blueprint
+thresh blueprint delete python-ml
+
+# Interactive AI chat for blueprint assistance
 thresh chat
+```
+
+### System Metrics
+
+```bash
+# Show system metrics (text format)
+thresh metrics
+
+# Export metrics as JSON
+thresh metrics --format json
 ```
 
 ### Distribution Management
@@ -437,11 +459,14 @@ thresh destroy alpine-minimal
 ### Build Results
 
 ```
-Binary Size:     14 MB
-Startup Time:    ~50ms
+Binary Size:     
+  - Linux:   ~5 MB (UPX compressed)
+  - Windows: ~5 MB (UPX compressed)
+  - macOS:   ~13 MB (uncompressed, code signing preserved)
+Startup Time:    ~20-30ms
 Memory (Idle):   ~30MB
-Dependencies:    None (Windows system libraries only)
-Warnings:        12 (Azure SDK and StreamJsonRpc trim warnings - acceptable)
+Dependencies:    None (platform system libraries only)
+Warnings:        7 (YAML trim warnings - acceptable, legacy support)
 ```
 
 ---
@@ -460,22 +485,50 @@ Warnings:        12 (Azure SDK and StreamJsonRpc trim warnings - acceptable)
 
 ---
 
-## Migration from Quarkus CLI
+## Platform Support
 
-This replaces the legacy Java/Quarkus `thresh-cli` with a unified .NET solution.
+| Platform | Runtime | Binary Size | Compression | Status |
+|----------|---------|-------------|-------------|--------|
+| Windows | WSL2 | ~5 MB | UPX | ✅ Supported |
+| Linux | Docker, nerdctl, containerd | ~5 MB | UPX | ✅ Supported |
+| macOS | containerd, Docker Desktop | ~13 MB | Uncompressed* | ✅ Supported |
 
-### Why Migrate?
+*macOS binaries are uncompressed to preserve Apple code signing and notarization.
 
-| Aspect | Quarkus CLI | thresh (.NET) |
-|--------|-------------|---------------|
-| Language | Java 23 | C# 13 |
-| Binary Size | 25 MB | 14 MB |
-| Startup Time | ~10ms | ~50ms |
-| AI Integration | ❌ No (Java only) | ✅ OpenAI SDK |
-| Runtime Required | ❌ None | ❌ None |
-| Dependencies | GraalVM | None |
-| Code Complexity | High | Medium |
-| Maintenance | Dual stack | Single stack |
+### Runtime Detection
+
+thresh automatically detects the best container runtime:
+- **Windows**: WSL2 (required)
+- **Linux**: Docker > nerdctl > containerd
+- **macOS**: containerd > Docker Desktop
+
+## Version History
+
+### v1.4.0 (Current) - Breaking Changes
+
+**⚠️ Command Structure Changed:**
+- `thresh blueprints` → `thresh blueprint list`
+- `thresh generate` → `thresh blueprint generate`
+- **New:** `thresh blueprint delete`
+
+**Migration Guide:**
+```bash
+# Old commands (v1.3.0 and earlier)
+thresh blueprints
+thresh generate "nginx server"
+
+# New commands (v1.4.0+)
+thresh blueprint list
+thresh blueprint generate "nginx server" --output nginx
+thresh blueprint delete nginx
+```
+
+**New Features:**
+- Parallel environment creation (MCP)
+- Enhanced metrics (IP address, load average, storage)
+- Multi-platform support (Linux, macOS, Windows)
+- Blueprint deletion
+- Platform-aware AI generation
 
 ### Migration Complete ✅
 

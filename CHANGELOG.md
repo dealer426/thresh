@@ -1,103 +1,166 @@
-<a name="v0.51.0"></a>
-## [Release v0.51.0](https://github.com/vmware/govmomi/compare/v0.51.0-alpha.0...v0.51.0)
+# Changelog
 
-> Release Date: 2025-05-23
+All notable changes to **thresh** will be documented in this file.
 
-### 🐞 Fix
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-- [e61afb1d]	vcsim: Avoid possible race in SessionManager.Logout
+---
 
-### 💫 API Changes
+## [Unreleased]
 
-- [2250eba3]	Add option to use a filter function as value of property.Match (#3785)
-- [a534f395]	Add object.VirtualMachine.CreateSnapshotEx method
-- [761efe91]	Add object.VirtualMachine.PromoteDisks method
-- [a09e0ec5]	Extend vmdk.Info to include Descriptor
+### ⚠️ Breaking Changes
 
-### 💫 `govc` (CLI)
+- **Command Structure Refactoring**: Migrated from flat command structure to grouped blueprint commands
+  - `thresh blueprints` → `thresh blueprint list`
+  - `thresh generate <prompt>` → `thresh blueprint generate <prompt>`
+  - Old commands no longer supported (System.CommandLine provides automatic suggestions)
 
-- [59cb29b9]	Add vm.disk.promote command
-- [eaaeb841]	Add import.vmdk '-i' flag to output vmdk info only
+### Added
 
-### 💫 `vcsim` (Simulator)
+- **Blueprint Delete Command**: `thresh blueprint delete <name>` to remove generated blueprints
+- **Parallel Environment Creation**: Create multiple environments simultaneously via MCP
+  - New MCP tool: `create_environment` with `names` array parameter
+  - 10x faster when creating multiple environments
+- **Enhanced System Metrics**:
+  - IP address display
+  - Load average monitoring
+  - Docker/containerd storage information
+  - JSON export support (`--format json`)
+- **Multi-Platform Support**:
+  - Full Linux Docker/nerdctl/containerd support
+  - macOS containerd support (Apple Silicon M1/M2/M3)
+  - Platform-aware AI blueprint generation
+  - Docker Hub image support for Linux environments
+- **Auto-Save for AI Blueprints**: Generated blueprints automatically save to bundled `blueprints/` directory
+- **Blueprint Metadata Tracking**: Enhanced caching and metadata for all blueprints
+- **Platform-Aware Help Text**: CLI commands show platform-specific instructions
+- **Platform-Aware Access Instructions**: Post-provisioning instructions tailored to each platform
 
-- [30750a65]	Add CreateSnapshotEx for simulator
-- [6af11fcf]	Use OptionManager to configure session timeout duration
-- [40a596c8]	Add VirtualMachine.PromoteDisks_Task method
-- [22c7be30]	Use vmdk.Descriptor for vmdk file metadata
-- [54f2b702]	Avoid use of sha1 for stable UUIDs (OIDs) (#3766)
+### Changed
 
-### 🧹 Chore
+- **Blueprint Command Structure**: All blueprint operations now under `thresh blueprint` parent command
+- **UPX Compression**: 
+  - Updated to UPX v5.1.0 for Linux and Windows
+  - macOS binaries uncompressed (~13MB) to preserve Apple code signing
+  - Linux/Windows binaries UPX compressed (~5MB)
+- **Improved Cache Messaging**: Removed redundant `[CACHE HIT]` prefix from output
+- **Package Installation Timeout**: Increased from 30s to 300s for better reliability
 
-- [50196949]	Update version.go for v0.51.0
-- [a5f933dc]	update container images
-- [9002dc9e]	update `.goreleaser.yml` to v2
+### Fixed
 
-### ⚠️ BREAKING
+- **macOS CI/CD Builds**: 
+  - Use Homebrew for UPX installation (pre-built binaries no longer available)
+  - Skip UPX compression on macOS to preserve code signing
+- **MCP JSON-RPC Responses**: Include request ID in all responses for proper protocol compliance
+- **Blueprint Path Resolution**: Use `AppContext.BaseDirectory` for consistent cross-platform paths
+- **Container Startup**: Ensure containers start before executing commands in ContainerdService
+- **Python Blueprints**: Remove pip upgrade for PEP 668 compliance
+- **GitHub Actions**: Remove macOS Intel builds due to runner deprecation
+- **Linux/macOS Messages**: Remove misleading "2-3 minutes" import time message
 
-Use OptionManager to configure session timeout duration [6af11fcf]:
-var simulator.SessionIdleTimeout has been removed.
-Use sim25.SetSessionTimeout instead.
+### Deprecated
 
-### 📖 Commits
+- `thresh blueprints` - Use `thresh blueprint list` instead
+- `thresh generate` - Use `thresh blueprint generate` instead
 
-- [50196949]	chore: Update version.go for v0.51.0
-- [2250eba3]	api: Add option to use a filter function as value of property.Match (#3785)
-- [30750a65]	vcsim: Add CreateSnapshotEx for simulator
-- [a534f395]	api: Add object.VirtualMachine.CreateSnapshotEx method
-- [6af11fcf]	vcsim: Use OptionManager to configure session timeout duration
-- [2bcb4c36]	build(deps): bump actions/setup-go from 5.4.0 to 5.5.0
-- [bf0dfcbe]	chore(deps): go mod tidy
-- [d41f29dc]	build(deps): bump golang.org/x/text from 0.24.0 to 0.25.0
-- [40a596c8]	vcsim: Add VirtualMachine.PromoteDisks_Task method
-- [59cb29b9]	govc: Add vm.disk.promote command
-- [761efe91]	api: Add object.VirtualMachine.PromoteDisks method
-- [22c7be30]	vcsim: Use vmdk.Descriptor for vmdk file metadata
-- [98ad4c12]	build(deps): bump mxschmitt/action-tmate from 3.21 to 3.22
-- [eaaeb841]	govc: Add import.vmdk '-i' flag to output vmdk info only
-- [a09e0ec5]	api: Extend vmdk.Info to include Descriptor
-- [e61afb1d]	fix: vcsim: Avoid possible race in SessionManager.Logout
-- [0cbdbf0d]	emacs: Add datastore.ls '-a' flag when prefix arg is given
-- [a5f933dc]	chore: update container images
-- [54f2b702]	vcsim: Avoid use of sha1 for stable UUIDs (OIDs) (#3766)
-- [49ec77a5]	build(deps): bump test-unit from 3.6.7 to 3.6.8 in /gen
-- [ecbccf52]	build(deps): bump mxschmitt/action-tmate from 3.20 to 3.21
-- [b1a3a202]	build(deps): bump nokogiri in /gen in the bundler group
-- [9002dc9e]	chore: update `.goreleaser.yml` to v2
+---
 
-<a name="v0.50.0"></a>
-## [Release v0.50.0](https://github.com/vmware/govmomi/compare/v0.50.0-alpha.0...v0.50.0)
+## [1.3.0] - 2026-02-12
 
-> Release Date: 2025-04-21
+### Added
 
-### 🐞 Fix
+- **Docusaurus Documentation Site**: Comprehensive documentation with versioning
+- **MCP Integration Guide**: Complete guide for VS Code, Cursor, and Windsurf
+- **SBOM Supply Chain Security**: Software Bill of Materials for all releases
+- **Blog System**: Release announcements and technical articles
 
-- [28b39ed2]	vcsim -load Datastore summary.url property (#3705)
-- [5833c6c4]	vcsim: fix PropertyFilter/Collector memory leak
+### Changed
 
-### 💫 API Changes
+- **Windows/WSL Focus**: Version 1.3.0 optimized for Windows/WSL environments
+- **Documentation Overhaul**: Migrated to Docusaurus for better organization
 
-- [7a02bd92]	Rewrite lookup service URLs on DNS error
-- [eb53c23b]	add PodVMOverheadInfo type and HostCapability field
-- [af92671c]	use `crypto/rand` for nonce generation
-- [036a4d13]	use `ParseInt` and add `int32` bounds check
-- [c99e28ca]	Add optional CategoryID,TagID fields for category and tag creation (#3706)
+### Fixed
 
-### 💫 `govc` (CLI)
+- **Documentation Accuracy**: Removed Linux/macOS references for Windows-focused release
 
-- [ab3050b1]	Support Datastore Cluster in import.ova command (#1265)
-- [75f2762f]	Add import.ova -net flag (#3679)
-- [96ad8abd]	Add -lease option to import/export commands
-- [aa5a378a]	Support -p and -s in with single task.set
-- [088003eb]	Add vm.policy.ls command (#3727)
-- [278ebc9b]	Support snapshot.export
-- [a8997d55]	fix integer type conversion
-- [b40a2ace]	fix integer type conversion for `guest.chown`
-- [d2b4cc7b]	Add '-id' option for tags.category and tags create commands
+---
 
-### 💫 `vcsim` (Simulator)
+## [1.2.0] - 2026-02-09
 
-- [af3bc8b7]	Populate guest.ipStack property for container backed VMs
+### Added
+
+- **Native AOT Compilation**: 
+  - Single-file executable with zero dependencies
+  - Fast startup time (~20-30ms)
+  - Reduced binary size to ~14MB
+- **GitHub Copilot SDK Integration**:
+  - AI-powered blueprint generation
+  - Interactive chat mode for environment creation
+  - Streaming responses with real-time feedback
+- **MCP Server**: Model Context Protocol server for AI agent integration
+- **JSON Blueprint Support**: Primary blueprint format (YAML still supported)
+- **Blueprint Caching**: Improved performance for frequently used blueprints
+- **Comprehensive Documentation**: README, getting started guides, and examples
+
+### Changed
+
+- **Build System**: Migrated to .NET 10 with Native AOT
+- **Performance**: Significant improvements in startup and execution time
+- **Binary Distribution**: Self-contained executable, no runtime required
+
+### Fixed
+
+- **Memory Management**: Optimized for Native AOT constraints
+- **Cross-Platform Paths**: Better handling of Windows vs Unix paths
+
+---
+
+## [1.1.0] - 2026-01-15
+
+### Added
+
+- **Custom Blueprint Support**: User-defined blueprints in `~/.thresh/blueprints/`
+- **Environment Variables**: Support for environment variables in blueprints
+- **Post-Install Scripts**: Run custom scripts after environment creation
+- **WSL Distribution Management**: List and manage WSL distributions
+
+### Changed
+
+- **Improved Error Messages**: More helpful error messages and suggestions
+- **Better Logging**: Enhanced verbose mode with detailed operation logs
+
+### Fixed
+
+- **WSL Import Reliability**: More robust WSL distribution import process
+- **Package Installation**: Better handling of package manager errors
+
+---
+
+## [1.0.0] - 2025-12-01
+
+### Added
+
+- **Initial Release**: AI-powered WSL container development environments
+- **Built-in Blueprints**: Alpine, Ubuntu, Debian, Python, Node.js templates
+- **Core Commands**:
+  - `thresh up <blueprint>` - Create environment
+  - `thresh list` - List environments
+  - `thresh destroy <name>` - Remove environment
+  - `thresh blueprints` - List available blueprints
+- **WSL Integration**: Seamless WSL2 environment management
+- **JSON/YAML Blueprints**: Flexible blueprint definition formats
+- **Configuration Management**: `thresh config` for user preferences
+
+---
+
+## Release Links
+
+- [Unreleased](https://github.com/dealer426/thresh/compare/v1.3.0...HEAD)
+- [1.3.0](https://github.com/dealer426/thresh/compare/v1.2.0...v1.3.0)
+- [1.2.0](https://github.com/dealer426/thresh/compare/v1.1.0...v1.2.0)
+- [1.1.0](https://github.com/dealer426/thresh/compare/v1.0.0...v1.1.0)
+- [1.0.0](https://github.com/dealer426/thresh/releases/tag/v1.0.0)
 - [282553ee]	Add minimal json-rpc support
 - [89942b79]	Use the simulator's URL.Host in NFC lease URLs
 - [3040a0a9]	support multiple VirtualSystemType in OvfManager.CreateImportSpec

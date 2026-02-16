@@ -1,6 +1,8 @@
 # Getting Started with thresh
 
-**Quick start guide to provision your first WSL environment in under 5 minutes**
+**Quick start guide to provision your first development environment in under 5 minutes**
+
+**Supports:** Windows (WSL2), Linux (Docker/nerdctl), macOS (containerd)
 
 ---
 
@@ -119,8 +121,8 @@ ubuntu-22.04              22.04           Vendor               Apt
 
 ### 2. List Available Blueprints
 
-```powershell
-thresh blueprints
+```bash
+thresh blueprint list
 ```
 
 **Example output:**
@@ -189,14 +191,22 @@ thresh destroy alpine-minimal
 
 ### Generate Custom Blueprint
 
-```powershell
+```bash
 # Generate a blueprint from natural language
-thresh generate "Python data science environment with Jupyter, pandas, and matplotlib"
+thresh blueprint generate "Python data science environment with Jupyter, pandas, and matplotlib" --output python-ds
 ```
 
-**Save the output to a file:**
-```powershell
-thresh generate "Node.js 20 with TypeScript and PostgreSQL" > custom-node.yaml
+**The blueprint will be automatically saved to the blueprints directory and available via:**
+```bash
+thresh blueprint list
+thresh up python-ds
+```
+
+### Delete Generated Blueprint
+
+```bash
+# Remove a generated blueprint
+thresh blueprint delete python-ds
 ```
 
 ### Interactive AI Chat
@@ -261,36 +271,54 @@ thresh config reset
 
 ## Quick Reference Commands
 
-```powershell
+```bash
 # Environment Management
-thresh up <blueprint>           # Provision environment
-thresh list                     # List environments  
-thresh list --all              # List all (including stopped)
-thresh destroy <name>           # Remove environment
+thresh up <blueprint>                      # Provision environment
+thresh list                                # List environments  
+thresh list --all                         # List all (including stopped)
+thresh destroy <name>                      # Remove environment
+thresh destroy <name> -y                   # Remove without confirmation
+
+# Blueprint Management (NEW in v1.4.0)
+thresh blueprint list                      # List available blueprints
+thresh blueprint generate <prompt>         # Generate blueprint from AI
+thresh blueprint generate <prompt> -o name # Generate and save with name
+thresh blueprint delete <name>             # Delete generated blueprint
 
 # AI Features
-thresh generate <prompt>       # Generate blueprint
-thresh chat                    # Interactive AI chat
+thresh chat                                # Interactive AI chat
 
-# Distributions
-thresh distros                 # List all available distros
-thresh distro add <name> --ai  # Add custom distro with AI
-thresh distro list             # List custom distros
-thresh distro remove <name>    # Remove custom distro
+# System Metrics (NEW in v1.4.0) 
+thresh metrics                             # Show system metrics
+thresh metrics --format json               # Export metrics as JSON
+
+# Distributions (Windows/WSL only)
+thresh distros                             # List all available distros
+thresh distro add <name> --ai              # Add custom distro with AI
+thresh distro list                         # List custom distros
+thresh distro remove <name>                # Remove custom distro
 
 # Configuration
-thresh config set <key> <val>  # Set config value
-thresh config get <key>        # Get config value
-thresh config status           # Show config status
-thresh config reset            # Reset all config
+thresh config set <key> <val>              # Set config value
+thresh config get <key>                    # Get config value
+thresh config list                         # Show all config
+thresh config reset                        # Reset all config
 
-# Blueprints
-thresh blueprints              # List available blueprints
+# MCP Server (NEW in v1.4.0)
+thresh serve                               # Start MCP server
+thresh serve --stdio                       # Start in stdio mode
 
 # Information
-thresh --version               # Show version
-thresh --help                  # Show help
+thresh version                             # Show version info
+thresh --help                              # Show help
 ```
+
+### ⚠️ Command Changes in v1.4.0
+
+**Old commands (v1.3.0 and earlier) no longer work:**
+- ❌ `thresh blueprints` → ✅ `thresh blueprint list`
+- ❌ `thresh generate` → ✅ `thresh blueprint generate`
+- **NEW:** `thresh blueprint delete`
 
 ---
 
@@ -321,21 +349,22 @@ thresh destroy python-dev
 
 ### Workflow 2: Generate Custom Environment with AI
 
-```powershell
-# Generate blueprint
-thresh generate "Go development environment with Docker and PostgreSQL" > go-dev.yaml
+```bash
+# Generate blueprint with AI
+thresh blueprint generate "Go development environment with Docker and PostgreSQL" --output go-dev
 
-# Review the blueprint
-cat go-dev.yaml
+# List to verify it was saved
+thresh blueprint list | grep go-dev
 
-# Edit if needed (use notepad or VS Code)
-notepad go-dev.yaml
-
-# Provision from custom blueprint
+# Provision from generated blueprint
 thresh up go-dev
 
-# Access
-wsl -d go-dev
+# Access (command varies by platform)
+wsl -d go-dev              # Windows
+docker exec -it go-dev sh  # Linux/Docker
+
+# Delete blueprint when done
+thresh blueprint delete go-dev
 ```
 
 ### Workflow 3: Create Multiple Test Environments

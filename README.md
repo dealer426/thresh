@@ -1,80 +1,385 @@
-<!-- markdownlint-disable first-line-h1 no-inline-html -->
+# thresh - AI-Powered Container Environment Manager
 
-[![Build](https://github.com/vmware/govmomi/actions/workflows/govmomi-build.yaml/badge.svg)][ci-build]
-[![Tests](https://github.com/vmware/govmomi/actions/workflows/govmomi-go-tests.yaml/badge.svg)][ci-tests]
-[![Go Report Card](https://goreportcard.com/badge/github.com/vmware/govmomi)][go-report-card]
-[![Latest Release](https://img.shields.io/github/release/vmware/govmomi.svg?logo=github&style=flat-square)][latest-release]
-[![Go Reference](https://pkg.go.dev/badge/github.com/vmware/govmomi.svg)][go-reference]
-[![go.mod Go version](https://img.shields.io/github/go-mod/go-version/vmware/govmomi)][go-version]
+**Cross-platform CLI for provisioning development environments with AI**
 
-# govmomi
+[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/dealer426/thresh/releases)
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
+[![Native AOT](https://img.shields.io/badge/Native%20AOT-Yes-green.svg)](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Build](https://github.com/dealer426/thresh/actions/workflows/build-multiplatform.yml/badge.svg)](https://github.com/dealer426/thresh/actions)
 
-A Go library for interacting with VMware vSphere APIs (ESXi and/or vCenter Server).
+---
 
-In addition to the vSphere API client, this repository includes:
+## Overview
 
-* [govc][govc] - vSphere CLI
-* [vcsim][vcsim] - vSphere API mock framework
-* [toolbox][toolbox] - VM guest tools framework
+`thresh` is a **.NET 10 Native AOT** command-line tool that provisions container-based development environments using AI-generated blueprints. Create development environments in seconds with natural language prompts.
 
-## Compatibility
+**✨ Key Features:**
+- 🌍 **Multi-Platform** - Windows/WSL2, Linux/Docker/nerdctl, macOS/containerd
+- 🤖 **AI-Powered** - GitHub Copilot SDK integration for intelligent blueprint generation
+- ⚡ **Parallel Creation** - Create multiple environments simultaneously (10x faster)
+- 📦 **Built-in Blueprints** - Alpine, Ubuntu, Debian, Python, Node.js, and more
+- 🗑️ **Blueprint Management** - List, generate, and delete blueprints
+- 💬 **Interactive AI Chat** - Streaming responses for blueprint assistance
+- 🚀 **Native Binary** - No .NET runtime required (5-13 MB)
+- 📊 **System Metrics** - Monitor CPU, memory, storage, and container usage
+- 🔧 **MCP Server** - Model Context Protocol for VS Code, Cursor, Windsurf
 
-vSphere 7.0 and higher.
+---
+
+## Quick Start
+
+### Installation
+
+**Download Pre-built Binaries:**
+
+```bash
+# Linux
+wget https://github.com/dealer426/thresh/releases/latest/download/thresh-linux-x64.tar.gz
+tar -xzf thresh-linux-x64.tar.gz
+sudo mv thresh /usr/local/bin/
+chmod +x /usr/local/bin/thresh
+
+# macOS (Apple Silicon)
+curl -L https://github.com/dealer426/thresh/releases/latest/download/thresh-macos-arm64.tar.gz -o thresh.tar.gz
+tar -xzf thresh.tar.gz
+sudo mv thresh /usr/local/bin/
+chmod +x /usr/local/bin/thresh
+
+# Windows (PowerShell)
+Invoke-WebRequest -Uri \"https://github.com/dealer426/thresh/releases/latest/download/thresh-windows-x64.zip\" -OutFile thresh.zip
+Expand-Archive thresh.zip -DestinationPath .
+Move-Item thresh.exe C:\\Windows\\System32\\
+```
+
+**Build from Source:**
+
+```bash
+cd thresh/Thresh
+dotnet publish -c Release -r linux-x64 --self-contained   # Linux
+dotnet publish -c Release -r osx-arm64 --self-contained   # macOS
+dotnet publish -c Release -r win-x64 --self-contained     # Windows
+```
+
+### First Steps
+
+```bash
+# Verify installation
+thresh version
+
+# Authenticate GitHub Copilot (required for AI features)
+gh auth login
+
+# List available blueprints
+thresh blueprint list
+
+# Create your first environment
+thresh up alpine-minimal
+
+# Generate custom blueprint with AI
+thresh blueprint generate \"Python ML environment with Jupyter\" --output python-ml
+
+# Start interactive chat
+thresh chat
+```
+
+---
+
+## Platform Support
+
+| Platform | Runtime | Binary Size | Compression | Status |
+|----------|---------|-------------|-------------|--------|
+| Windows 11 | WSL2 | ~5 MB | UPX | ✅ Supported |
+| Linux | Docker, nerdctl, containerd | ~5 MB | UPX | ✅ Supported |
+| macOS (M1/M2/M3) | containerd, Docker | ~13 MB | None* | ✅ Supported |
+
+*macOS binaries are uncompressed to preserve Apple code signing and notarization.
+
+### Requirements
+
+- **Windows**: Windows 11 with WSL2 enabled
+- **Linux**: Docker, nerdctl, or containerd installed
+- **macOS**: containerd or Docker Desktop (Apple Silicon only)
+- **AI Features**: GitHub CLI authenticated (`gh auth login`)
+
+---
+
+## Commands
+
+### Blueprint Management
+
+```bash
+# List all blueprints (built-in + generated)
+thresh blueprint list
+
+# Generate blueprint from natural language
+thresh blueprint generate \"nginx web server with SSL\" --output nginx-ssl
+
+# Delete generated blueprint
+thresh blueprint delete nginx-ssl
+
+# Interactive AI chat
+thresh chat
+```
+
+### Environment Management
+
+```bash
+# Create environment from blueprint
+thresh up alpine-minimal
+
+# Create with custom name
+thresh up python-dev --name ml-project
+
+# List all environments
+thresh list
+
+# Destroy environment (with confirmation)
+thresh destroy alpine-minimal
+
+# Destroy without confirmation
+thresh destroy alpine-minimal -y
+```
+
+### System Metrics
+
+```bash
+# Show system metrics (text)
+thresh metrics
+
+# Export as JSON
+thresh metrics --format json
+```
+
+### MCP Server
+
+```bash
+# Start MCP server for AI agent integration
+thresh serve
+
+# Start in stdio mode (for VS Code/Cursor/Windsurf)
+thresh serve --stdio
+```
+
+### Configuration
+
+```bash
+# Show current configuration
+thresh config list
+
+# Set configuration value
+thresh config set default-model gpt-4o
+
+# Get specific value
+thresh config get default-model
+```
+
+---
+
+## 🚨 Breaking Changes in v1.4.0
+
+**Command structure has changed from flat to grouped:**
+
+| Old (v1.3.0 and earlier) | New (v1.4.0+) |
+|--------------------------|---------------|
+| `thresh blueprints` | `thresh blueprint list` |
+| `thresh generate <prompt>` | `thresh blueprint generate <prompt>` |
+| *(no command)* | `thresh blueprint delete <name>` |
+
+The old commands will show helpful error messages with suggestions.
+
+**Migration Example:**
+
+```bash
+# Old way (v1.3.0)
+thresh blueprints
+thresh generate \"redis cache\"
+
+# New way (v1.4.0+)
+thresh blueprint list
+thresh blueprint generate \"redis cache\" --output redis-cache
+thresh blueprint delete redis-cache
+```
+
+---
+
+## Blueprint Format
+
+Blueprints are JSON files that define environments:
+
+```json
+{
+  \"name\": \"python-ml\",
+  \"description\": \"Python machine learning environment\",
+  \"base\": \"ubuntu-22.04\",
+  \"packages\": [
+    \"python3\",
+    \"python3-pip\",
+    \"python3-venv\",
+    \"build-essential\"
+  ],
+  \"environment\": {
+    \"PYTHONUNBUFFERED\": \"1\"
+  },
+  \"scripts\": {
+    \"setup\": \"pip3 install --upgrade pip\",
+    \"postInstall\": \"pip3 install jupyter pandas numpy scikit-learn\"
+  }
+}
+```
+
+**Supported Base Images:**
+- Ubuntu: 20.04, 22.04, 24.04
+- Alpine: 3.18, 3.19, edge
+- Debian: 11, 12
+- And more...
+
+---
 
 ## Documentation
 
-The APIs exposed by this library closely follow the API described in the [VMware vSphere API Reference Documentation][reference-api]. Refer to the documentation to become familiar with the upstream API.
+- 📚 **[Getting Started Guide](GETTING_STARTED.md)** - Detailed setup and usage
+- 📖 **[Full Documentation](https://dealer426.github.io/thresh/)** - Docusaurus site with tutorials
+- 🔧 **[CLI Reference](website/docs/cli-reference/)** - Complete command documentation
+- 🤖 **[MCP Integration Guide](docs/MCP_INTEGRATION.md)** - VS Code, Cursor, Windsurf setup
+- 🗺️ **[Roadmap](docs/ROADMAP_2026.md)** - Future plans and features
+- 📝 **[Changelog](CHANGELOG.md)** - Version history and changes
 
-The code in the `govmomi` package is a wrapper for the code that is generated from the vSphere API description. It primarily provides convenience functions for working with the vSphere API. See [godoc.org][reference-godoc] for documentation.
+---
 
-## Installation
+## Architecture
 
-### Binaries and Docker Images for `govc` and `vcsim`
+### Project Structure
 
-Installation instructions, released binaries, and Docker images are documented in the respective README files of [`govc`][govc] and [`vcsim`][vcsim].
+```
+thresh/
+├── Thresh/                      # Main CLI application
+│   ├── Program.cs               # CLI entry point
+│   ├── Services/                # Core services
+│   │   ├── BlueprintService.cs  # Environment provisioning
+│   │   ├── GitHubCopilotService.cs  # AI integration
+│   │   ├── ContainerServiceFactory.cs  # Multi-platform support
+│   │   └── WslService.cs / DockerService.cs / ContainerdService.cs
+│   ├── Models/                  # Data models
+│   ├── Mcp/                     # MCP server implementation
+│   └── blueprints/              # Built-in blueprints
+├── website/                     # Docusaurus documentation
+├── docs/                        # Additional documentation
+└── packages/                    # Package manager configs
 
-## Discussion
+```
 
-Collaborate with the community using GitHub [discussions][govmomi-github-discussions] and GitHub [issues][govmomi-github-issues].
+### Technology Stack
 
-## Status
+- **.NET 10** with Native AOT compilation
+- **System.CommandLine** for CLI framework
+- **GitHub.Copilot.SDK** for AI integration
+- **Docusaurus** for documentation
+- **GitHub Actions** for CI/CD
 
-Changes to the API are subject to [semantic versioning][reference-semver].
+---
 
-Refer to the [CHANGELOG][govmomi-changelog] for version to version changes.
+## Performance
 
-## Related Projects
+| Metric | Value |
+|--------|-------|
+| Binary Size (Linux/Windows) | ~5 MB (UPX compressed) |
+| Binary Size (macOS) | ~13 MB (uncompressed) |
+| Startup Time | ~20-30ms |
+| Memory Usage (Idle) | ~30MB |
+| Provision Time (Alpine) | ~15s |
+| Provision Time (Ubuntu) | ~25s |
+| AI First Token | ~1-2s |
 
-* [pyvmomi][reference-pyvmomi]
-* [rbvmomi][reference-rbvmomi]
+---
+
+## What's New in v1.4.0
+
+### 🎯 Grouped Commands
+
+More intuitive command structure with `thresh blueprint` as the parent command for all blueprint operations.
+
+### ⚡ Parallel Creation (MCP)
+
+Create multiple environments simultaneously via Model Context Protocol:
+
+```javascript
+// Create 5 test environments in parallel
+{
+  \"names\": [\"test-1\", \"test-2\", \"test-3\", \"test-4\", \"test-5\"],
+  \"blueprint\": \"alpine-minimal\"
+}
+```
+
+### 📊 Enhanced Metrics
+
+- IP address display
+- Load average monitoring
+- Docker/containerd storage information
+- JSON export support
+
+### 🌍 Multi-Platform Support
+
+Full support for Windows, Linux, and macOS with automatic runtime detection.
+
+### 🗑️ Blueprint Deletion
+
+Remove unwanted generated blueprints easily:
+
+```bash
+thresh blueprint delete my-old-blueprint
+```
+
+---
+
+## Contributing
+
+Contributions welcome! Please read our [Contributing Guidelines](.github/CONTRIBUTING.md).
+
+### Development Setup
+
+```bash
+# Clone repository
+git clone https://github.com/dealer426/thresh.git
+cd thresh
+
+# Install .NET 10 SDK
+# https://dotnet.microsoft.com/download
+
+# Build project
+cd thresh/Thresh
+dotnet build
+
+# Run tests
+dotnet test
+
+# Run development version
+dotnet run -- --version
+```
+
+---
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/dealer426/thresh/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/dealer426/thresh/discussions)
+- **Documentation**: [https://dealer426.github.io/thresh/](https://dealer426.github.io/thresh/)
+
+---
 
 ## License
 
-govmomi is available under the [Apache 2 License][govmomi-license].
+MIT License - see [LICENSE](LICENSE) for details.
 
-## Name
+---
 
-Pronounced: _go·​v·​mom·​e_
+## Acknowledgments
 
-Follows pyvmomi and rbvmomi: language prefix + the vSphere acronym "VM Object Management Infrastructure".
+- **GitHub Copilot SDK** - AI-powered blueprint generation
+- **.NET Team** - Native AOT compilation support
+- **Docusaurus Team** - Documentation framework
+- **Community Contributors** - Testing and feedback
 
-[//]: Links
+---
 
-[ci-build]: https://github.com/vmware/govmomi/actions/workflows/govmomi-build.yaml
-[ci-tests]: https://github.com/vmware/govmomi/actions/workflows/govmomi-go-tests.yaml
-[latest-release]: https://github.com/vmware/govmomi/releases/latest
-[govc]: govc/README.md
-[govmomi-github-issues]: https://github.com/vmware/govmomi/issues
-[govmomi-github-discussions]: https://github.com/vmware/govmomi/discussions
-[govmomi-changelog]: CHANGELOG.md
-[govmomi-license]: LICENSE.txt
-[go-reference]: https://pkg.go.dev/github.com/vmware/govmomi
-[go-report-card]: https://goreportcard.com/report/github.com/vmware/govmomi
-[go-version]: https://github.com/vmware/govmomi
-[reference-api]: https://developer.broadcom.com/xapis/vsphere-web-services-api/latest/
-[reference-godoc]: https://pkg.go.dev/github.com/vmware/govmomi
-[reference-pyvmomi]: https://github.com/vmware/pyvmomi
-[reference-rbvmomi]: https://github.com/vmware/rbvmomi
-[reference-semver]: http://semver.org
-[toolbox]: toolbox/README.md
-[vcsim]: vcsim/README.md
+**Built with .NET 10 Native AOT** | **Cross-Platform** | **AI-Powered** | **Zero Dependencies**
