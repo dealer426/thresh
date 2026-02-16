@@ -79,7 +79,7 @@ Chat> save this as php-dev.json
 
 AI: I'll generate the complete blueprint. Run this command:
 
-thresh generate "PHP 8.2 with nginx, MySQL, and Redis" > php-dev.json
+thresh blueprint generate "PHP 8.2 with nginx, MySQL, and Redis" --output php-dev
 
 Chat> exit
 
@@ -269,6 +269,6 @@ AI: [Adds gunicorn, nginx, systemd]
 
 ## See Also
 
-- [`thresh generate`](./generate) - One-shot blueprint generation
+- [`thresh blueprint generate`](./generate) - One-shot blueprint generation
 - [`thresh config`](./config) - Configure AI settings
 - [`thresh up`](./up) - Provision environments

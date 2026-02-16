@@ -179,8 +179,8 @@ ubuntu-22.04              22.04           Vendor               Apt
 
 ### 2. List Available Blueprints
 
-```powershell
-thresh blueprints
+```bash
+thresh blueprint list
 ```
 
 **Example output:**
@@ -256,14 +256,16 @@ thresh destroy alpine-minimal
 
 ### Generate Custom Blueprint
 
-```powershell
+```bash
 # Generate a blueprint from natural language
-thresh generate "Python data science environment with Jupyter, pandas, and matplotlib"
+thresh blueprint generate "Python data science environment with Jupyter, pandas, and matplotlib"
 ```
 
-**Save the output to a file:**
-```powershell
-thresh generate "Node.js 20 with TypeScript and PostgreSQL" > custom-node.json
+**Generated blueprints are automatically saved** and available in `thresh blueprint list`.
+
+**Generate with custom name:**
+```bash
+thresh blueprint generate "Node.js 20 with TypeScript and PostgreSQL" --output custom-node
 ```
 
 ### Interactive AI Chat
@@ -342,8 +344,12 @@ thresh list                     # List environments
 thresh list --all              # List all (including stopped)
 thresh destroy <name>           # Remove environment
 
+# Blueprint Management (v1.4.0+)
+thresh blueprint list          # List available blueprints
+thresh blueprint generate <prompt>  # Generate blueprint with AI
+thresh blueprint delete <name> # Delete generated blueprint
+
 # AI Features
-thresh generate <prompt>       # Generate blueprint
 thresh chat                    # Interactive AI chat
 
 # Distributions
@@ -357,12 +363,6 @@ thresh config set <key> <val>  # Set config value
 thresh config get <key>        # Get config value
 thresh config status           # Show config status
 thresh config reset            # Reset all config
-
-# Blueprints
-thresh blueprints              # List available blueprints
-
-# MCP Server
-thresh serve                   # Start MCP server (stdio mode)
 
 # Information
 thresh --version               # Show version
@@ -396,15 +396,12 @@ thresh destroy python-dev
 
 ### Workflow 2: Generate Custom Environment with AI
 
-```powershell
+```bash
 # Generate blueprint
-thresh generate "Go development environment with Docker and PostgreSQL" > go-dev.json
+thresh blueprint generate "Go development environment with Docker and PostgreSQL" --output go-dev
 
-# Review the blueprint
-cat go-dev.json
-
-# Edit if needed (use notepad or VS Code)
-notepad go-dev.json
+# Verify it was saved
+thresh blueprint list | grep go-dev
 
 # Provision from custom blueprint
 thresh up go-dev

@@ -216,5 +216,5 @@ thresh up python-dev
 ## See Also
 
 - [`thresh distro`](/docs/cli-reference/distro) - Manage custom distributions
-- [`thresh blueprints`](/docs/cli-reference/blueprints) - List blueprints
+- [`thresh blueprint list`](/docs/cli-reference/blueprints) - List blueprints
 - [`thresh up`](/docs/cli-reference/up) - Provision environments

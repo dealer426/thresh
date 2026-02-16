@@ -81,9 +81,9 @@ thresh up ubuntu-dev --force
 
 ### Using Custom Blueprint
 
-```powershell
-# Create custom blueprint first
-thresh generate "Rust development with cargo and rustfmt" > rust-dev.json
+```bash
+# Generate custom blueprint first
+thresh blueprint generate "Rust development with cargo and rustfmt" --output rust-dev
 
 # Provision from custom blueprint
 thresh up rust-dev
@@ -91,7 +91,7 @@ thresh up rust-dev
 
 ## Built-in Blueprints
 
-See `thresh blueprints` for the full list of available blueprints:
+See `thresh blueprint list` for the full list of available blueprints:
 
 - `alpine-minimal` - Lightweight Alpine Linux base (fastest)
 - `ubuntu-dev` - General purpose Ubuntu development
@@ -121,12 +121,12 @@ Distributions are cached after first download in `~/.thresh/cache/`. Subsequent 
 
 ### "Blueprint not found"
 
-```powershell
+```bash
 # List available blueprints
-thresh blueprints
+thresh blueprint list
 
 # Check custom blueprints directory
-ls ~/.thresh/blueprints
+ls ~/.local/bin/blueprints
 ```
 
 ### "WSL distribution already exists"
@@ -204,5 +204,5 @@ Blueprints are JSON files with this structure:
 
 - [`thresh list`](/docs/cli-reference/list) - List provisioned environments
 - [`thresh destroy`](/docs/cli-reference/destroy) - Remove environments
-- [`thresh generate`](/docs/cli-reference/generate) - Generate custom blueprints
-- `thresh blueprints` - List available blueprints
+- [`thresh blueprint generate`](/docs/cli-reference/generate) - Generate custom blueprints
+- [`thresh blueprint list`](/docs/cli-reference/blueprints) - List available blueprints

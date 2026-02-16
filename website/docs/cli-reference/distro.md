@@ -317,5 +317,5 @@ Look for "container base image" or "root filesystem" downloads (`.tar.gz`, `.tar
 ## See Also
 
 - [`thresh distros`](/docs/cli-reference/distros) - List all distributions
-- [`thresh blueprints`](/docs/cli-reference/blueprints) - List blueprints
+- [`thresh blueprint list`](/docs/cli-reference/blueprints) - List blueprints
 - [`thresh up`](/docs/cli-reference/up) - Create environments with custom distros

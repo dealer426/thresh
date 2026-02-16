@@ -309,7 +309,7 @@ thresh --help
 ### List Built-in Blueprints
 
 ```bash
-thresh blueprints
+thresh blueprint list
 ```
 
 **Expected output:**

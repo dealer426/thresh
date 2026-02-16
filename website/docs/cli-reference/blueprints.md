@@ -1,25 +1,33 @@
 ---
-sidebar_position: 8
-title: thresh blueprints
+sidebar_position: 4
+title: thresh blueprint list
 description: List all available blueprints
 ---
 
-# thresh blueprints
+# thresh blueprint list
 
 List all available environment blueprints (built-in and custom).
 
+:::info New in v1.4.0
+This command replaces `thresh blueprints` as part of the grouped blueprint command structure.
+
+**Migration:**
+- Old: `thresh blueprints`
+- New: `thresh blueprint list`
+:::
+
 ## Synopsis
 
-```powershell
-thresh blueprints [options]
+```bash
+thresh blueprint list [options]
 ```
 
 ## Description
 
-The `blueprints` command displays all available blueprints that can be used with `thresh up`. It shows:
+The `blueprint list` subcommand displays all available blueprints that can be used with `thresh up`. It shows:
 
 - Built-in blueprints (shipped with thresh)
-- Custom blueprints (from `~/.thresh/blueprints/`)
+- Custom blueprints (generated via `thresh blueprint generate` or manually created)
 - Blueprint metadata (name, base distribution, packages)
 
 Blueprints are JSON files that define:
@@ -40,9 +48,9 @@ Blueprints are JSON files that define:
 
 ### List All Blueprints
 
-```powershell
+```bash
 # Show all available blueprints
-thresh blueprints
+thresh blueprint list
 ```
 
 **Output:**
@@ -66,9 +74,9 @@ Use 'thresh up <blueprint-name>' to provision
 
 ### JSON Output
 
-```powershell
+```bash
 # Get blueprints in JSON format
-thresh blueprints --json
+thresh blueprint list --json
 ```
 
 **Output:**
@@ -104,9 +112,9 @@ thresh blueprints --json
 
 ### Verbose Output
 
-```powershell
+```bash
 # Show detailed blueprint information
-thresh blueprints --verbose
+thresh blueprint list --verbose
 ```
 
 **Output:**
@@ -131,8 +139,8 @@ python-dev
 Blueprints are searched in this order:
 
 1. **Built-in**: Embedded in thresh binary
-2. **User directory**: `~/.thresh/blueprints/`
-3. **Project directory**: `./.thresh/blueprints/`
+2. **User directory**: `~/.local/bin/blueprints/` (Linux/macOS) or `%USERPROFILE%\.local\bin\blueprints\` (Windows)
+3. **Project directory**: `./.thresh/blueprints/` (optional)
 
 Custom blueprints override built-in ones with the same name.
 
@@ -170,12 +178,12 @@ Example `custom-stack.json`:
 
 ### Creating Custom Blueprints
 
-```powershell
+```bash
 # Generate a new blueprint with AI
-thresh generate "Node.js with PostgreSQL"
+thresh blueprint generate "Node.js with PostgreSQL"
 
 # Manually create in user directory
-notepad ~/.thresh/blueprints/my-blueprint.json
+vim ~/.local/bin/blueprints/my-blueprint.json
 ```
 
 ### Using Blueprints
@@ -201,6 +209,8 @@ thresh up node-dev --force
 
 ## See Also
 
+- [`thresh blueprint`](/docs/cli-reference/blueprint) - Parent blueprint command
+- [`thresh blueprint generate`](/docs/cli-reference/generate) - Create custom blueprints with AI
+- [`thresh blueprint delete`](/docs/cli-reference/blueprint-delete) - Delete generated blueprints
 - [`thresh up`](/docs/cli-reference/up) - Provision from blueprint
-- [`thresh generate`](/docs/cli-reference/generate) - Create custom blueprints
 - [`thresh list`](/docs/cli-reference/list) - List provisioned environments

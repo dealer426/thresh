@@ -489,8 +489,8 @@ exit
 
 ### Verify with JSON Output
 
-```powershell
-thresh blueprints --json | jq '.[] | select(.name == "my-blueprint")'
+```bash
+thresh blueprint list --json | jq '.[] | select(.name == "my-blueprint")'
 ```
 
 ### Iterate Quickly
