@@ -116,8 +116,8 @@ jobs:
         echo "SIZE_MB=$sizeMB" >> $env:GITHUB_OUTPUT
         echo "Uncompressed binary size: $sizeMB MB"
       
-    - name: Compress with UPX (Unix)
-      if: matrix.os != 'windows-latest'
+    - name: Compress with UPX (Linux only)
+      if: matrix.os == 'ubuntu-latest'
       run: |
         BINARY="thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}"
         upx --best --lzma $BINARY
@@ -157,11 +157,16 @@ jobs:
         SIZE=$(stat -f%z "$BINARY" 2>/dev/null || stat -c%s "$BINARY")
         SIZE_MB=$(echo "scale=2; $SIZE / 1048576" | bc)
         UNCOMPRESSED=${{ steps.pre_upx_size_unix.outputs.SIZE_MB }}
-        REDUCTION=$(echo "scale=2; (1 - ($SIZE_MB / $UNCOMPRESSED)) * 100" | bc)
         echo "SIZE_MB=$SIZE_MB" >> $GITHUB_OUTPUT
         echo "UNCOMPRESSED_MB=$UNCOMPRESSED" >> $GITHUB_OUTPUT
-        echo "REDUCTION=$REDUCTION" >> $GITHUB_OUTPUT
-        echo "Compressed binary size: $SIZE_MB MB (was $UNCOMPRESSED MB, $REDUCTION% reduction)"
+        if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+          REDUCTION=$(echo "scale=2; (1 - ($SIZE_MB / $UNCOMPRESSED)) * 100" | bc)
+          echo "REDUCTION=$REDUCTION" >> $GITHUB_OUTPUT
+          echo "Compressed binary size: $SIZE_MB MB (was $UNCOMPRESSED MB, $REDUCTION% reduction)"
+        else
+          echo "REDUCTION=0" >> $GITHUB_OUTPUT
+          echo "Binary size: $SIZE_MB MB (uncompressed - macOS code signing preserved)"
+        fi
         
     - name: Get compressed binary info (Windows)
       if: matrix.os == 'windows-latest'
