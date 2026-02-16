@@ -1011,7 +1011,7 @@ rustc --version";
                 $"You can now use this blueprint:\n" +
                 $"• From MCP: create_environment with blueprint=\"{safeName}\"\n" +
                 $"• From CLI: thresh up {safeName} --name <env-name>\n" +
-                $"• View: thresh blueprints"
+                $"• View: thresh blueprint list"
             );
         }
         catch (JsonException)

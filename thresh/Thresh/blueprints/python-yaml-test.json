@@ -1,0 +1,22 @@
+{
+  "name": "python-yaml-test",
+  "description": "Python development environment with pip and venv (YAML)",
+  "base": "ubuntu-22.04",
+  "packages": [
+    "python3",
+    "python3-pip",
+    "python3-venv",
+    "git",
+    "curl",
+    "build-essential"
+  ],
+  "environment": {
+    "PYTHONUNBUFFERED": "1",
+    "PIP_NO_CACHE_DIR": "1",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "scripts": {
+    "setup": "#!/bin/bash\nset -e\n\n# Upgrade pip\npython3 -m pip install --upgrade pip setuptools wheel\n\necho \"Python environment setup complete\"",
+    "postInstall": "#!/bin/bash\nset -e\n\n# Verify installations\npython3 --version\npip3 --version\n\n# Create virtual environment directory\nmkdir -p /workspace\n\necho \"Python YAML blueprint environment ready!\""
+  }
+}

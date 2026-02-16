@@ -110,6 +110,12 @@ Desktop.ini
 *.tar
 *.zip
 
+# VM images (large binary files)
+*.ova
+*.vmdk
+*.vdi
+*.qcow2
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

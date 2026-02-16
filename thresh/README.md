@@ -79,7 +79,7 @@ See [DUAL_AI_PROVIDERS.md](../docs/DUAL_AI_PROVIDERS.md) for detailed model comp
 
 ```powershell
 # List available blueprints
-thresh blueprints
+thresh blueprint list
 
 # Provision environment
 thresh up alpine-minimal
@@ -95,7 +95,7 @@ thresh destroy alpine-minimal
 
 ```powershell
 # Generate blueprint from prompt
-thresh generate "Python ML environment with Jupyter"
+thresh blueprint generate "Python ML environment with Jupyter"
 
 # Interactive AI chat
 thresh chat
@@ -382,7 +382,7 @@ bin\Release\net10.0\win-x64\publish\thresh.exe  # 14 MB
 thresh distros
 
 # Generate test blueprint
-thresh generate "minimal Ubuntu environment"
+thresh blueprint generate "minimal Ubuntu environment"
 
 # Provision test environment
 thresh up alpine-minimal

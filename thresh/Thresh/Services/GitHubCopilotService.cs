@@ -57,8 +57,31 @@ Requirements:
 
         try
         {
-            // Create GitHub Copilot client (auto-detects CLI and auth)
-            await using var client = new CopilotClient();
+            // Create GitHub Copilot client with system CLI path
+            // On Windows, npm installs as PowerShell script, so we need to use pwsh/powershell
+            var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                System.Runtime.InteropServices.OSPlatform.Windows);
+            
+            var options = new CopilotClientOptions
+            {
+                UseStdio = true,
+                AutoStart = true
+            };
+            
+            // On Windows with npm-installed copilot, use command shell wrapper
+            if (isWindows)
+            {
+                // Use cmd.exe to execute copilot (works with npm PowerShell wrappers)
+                options.CliPath = "cmd.exe";
+                options.CliArgs = ["/c", "copilot"];
+            }
+            else
+            {
+                // On Linux/macOS, copilot is a native binary
+                options.CliPath = "copilot";
+            }
+            
+            await using var client = new CopilotClient(options);
             await client.StartAsync();
 
             if (streaming)
@@ -153,8 +176,28 @@ Requirements:
             var runtimeName = ContainerServiceFactory.GetExpectedRuntimeName();
             var environmentType = platformName == "Windows" ? "WSL" : "Docker container";
             
-            // Create GitHub Copilot client (auto-detects CLI and auth)
-            await using var client = new CopilotClient();
+            // Create GitHub Copilot client with system CLI path
+            var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                System.Runtime.InteropServices.OSPlatform.Windows);
+            
+            var options = new CopilotClientOptions
+            {
+                UseStdio = true,
+                AutoStart = true
+            };
+            
+            // On Windows with npm-installed copilot, use command shell wrapper
+            if (isWindows)
+            {
+                options.CliPath = "cmd.exe";
+                options.CliArgs = ["/c", "copilot"];
+            }
+            else
+            {
+                options.CliPath = "copilot";
+            }
+            
+            await using var client = new CopilotClient(options);
             await client.StartAsync();
 
             await using var session = await client.CreateSessionAsync(new SessionConfig
@@ -165,6 +208,7 @@ Requirements:
 
             // Subscribe once for the entire session (outside the loop)
             TaskCompletionSource? currentRequest = null;
+            var responseBuffer = new StringBuilder(); // Accumulate response for blueprint detection
 
             using var subscription = session.On(evt =>
             {
@@ -173,13 +217,20 @@ Requirements:
                     case AssistantMessageDeltaEvent delta:
                         var chunk = delta.Data.DeltaContent ?? "";
                         Console.Write(chunk);
+                        responseBuffer.Append(chunk); // Accumulate for saving
                         break;
                     case SessionIdleEvent:
                         Console.WriteLine("\n");
+                        
+                        // Try to extract and save blueprint if response contains valid JSON
+                        TrySaveBlueprintFromResponse(responseBuffer.ToString());
+                        responseBuffer.Clear(); // Clear for next response
+                        
                         currentRequest?.SetResult();
                         break;
                     case SessionErrorEvent error:
                         Console.WriteLine($"\n❌ Error: {error.Data.Message}\n");
+                        responseBuffer.Clear();
                         currentRequest?.SetException(new Exception(error.Data.Message));
                         break;
                 }
@@ -193,7 +244,10 @@ CRITICAL CONTEXT:
 - Environment type: {environmentType}
 - Blueprint format: JSON (preferred) or YAML (supported)
 
-When user asks for environment blueprints, respond with JSON in this exact format:
+IMPORTANT: When user asks for a blueprint, you MUST output the complete JSON blueprint in your response. 
+DO NOT just say you ""created"" a file - actually OUTPUT the JSON content so it can be auto-saved.
+
+Blueprint JSON format:
 {{
   ""name"": ""environment-name"",
   ""description"": ""brief description"",
@@ -211,7 +265,7 @@ JSON is preferred for compatibility. YAML is also supported but use JSON unless 
 
 Available base distributions: ubuntu-22.04, ubuntu-24.04, alpine-3.19, debian-12, and more.
 
-Respond helpfully and provide JSON blueprints when requested.";
+REMEMBER: Always output the actual JSON blueprint content. Blueprints containing valid JSON will be automatically saved to a file for the user.";
 
             currentRequest = new TaskCompletionSource();
             await session.SendAsync(new MessageOptions { Prompt = systemContext });
@@ -296,6 +350,74 @@ Respond helpfully and provide JSON blueprints when requested.";
         {
             // Return as-is if not valid JSON, let caller handle
             return cleaned;
+        }
+    }
+
+    /// <summary>
+    /// Try to extract and save a blueprint from AI response
+    /// </summary>
+    private void TrySaveBlueprintFromResponse(string response)
+    {
+        try
+        {
+            // Clean the response to extract JSON
+            var cleaned = CleanJsonOutput(response);
+            
+            // Try to parse as JSON
+            using var jsonDoc = JsonDocument.Parse(cleaned);
+            var root = jsonDoc.RootElement;
+            
+            // Check if it looks like a blueprint (has required fields)
+            if (!root.TryGetProperty("name", out var nameElement) ||
+                !root.TryGetProperty("base", out _))
+            {
+                return; // Not a blueprint, skip saving
+            }
+            
+            var blueprintName = nameElement.GetString() ?? "unnamed";
+            
+            // Sanitize filename (remove invalid characters)
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var sanitized = string.Join("-", blueprintName.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
+            var filename = $"{sanitized}.json";
+            
+            // Get blueprints directory (next to executable)
+            var baseDir = AppContext.BaseDirectory;
+            var blueprintsDir = Path.Combine(baseDir, "blueprints");
+            
+            // Ensure blueprints directory exists
+            if (!Directory.Exists(blueprintsDir))
+            {
+                Directory.CreateDirectory(blueprintsDir);
+            }
+            
+            var fullPath = Path.Combine(blueprintsDir, filename);
+            
+            // Check if blueprint already exists
+            if (File.Exists(fullPath))
+            {
+                Console.WriteLine($"💾 Blueprint updated: {filename}");
+            }
+            else
+            {
+                Console.WriteLine($"💾 Blueprint saved: {filename}");
+            }
+            
+            // Save to blueprints folder
+            File.WriteAllText(fullPath, cleaned);
+            
+            Console.WriteLine($"   Available in: thresh blueprint list");
+            Console.WriteLine($"   To provision: thresh up {sanitized} --name my-env");
+            Console.WriteLine();
+        }
+        catch (JsonException)
+        {
+            // Not valid JSON or not a blueprint, ignore
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't interrupt chat
+            Console.WriteLine($"⚠️  Failed to auto-save blueprint: {ex.Message}");
         }
     }
 }

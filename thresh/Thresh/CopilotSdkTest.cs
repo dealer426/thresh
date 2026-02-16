@@ -16,7 +16,28 @@ public static class CopilotSdkTest
         {
             // Basic initialization test
             Console.WriteLine("Step 1: Creating CopilotClient...");
-            await using var client = new CopilotClient();
+            
+            var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                System.Runtime.InteropServices.OSPlatform.Windows);
+            
+            var options = new CopilotClientOptions
+            {
+                UseStdio = true,
+                AutoStart = true
+            };
+            
+            // On Windows with npm-installed copilot, use command shell wrapper
+            if (isWindows)
+            {
+                options.CliPath = "cmd.exe";
+                options.CliArgs = ["/c", "copilot"];
+            }
+            else
+            {
+                options.CliPath = "copilot";
+            }
+            
+            await using var client = new CopilotClient(options);
             
             Console.WriteLine("Step 2: Starting client...");
             await client.StartAsync();

@@ -27,8 +27,7 @@ class Program
         AddUpCommand(rootCommand);
         AddListCommand(rootCommand);
         AddDestroyCommand(rootCommand);
-        AddBlueprintsCommand(rootCommand);
-        AddGenerateCommand(rootCommand);
+        AddBlueprintCommand(rootCommand);
         AddChatCommand(rootCommand);
         AddConfigCommand(rootCommand);
         AddDistroCommand(rootCommand);
@@ -62,8 +61,7 @@ class Program
         Console.WriteLine($"  up          Provision a {envType} from a blueprint");
         Console.WriteLine($"  list        List {envTypePlural}");
         Console.WriteLine($"  destroy     Remove a {envType}");
-        Console.WriteLine("  blueprints  List available blueprints");
-        Console.WriteLine("  generate    Generate blueprint from natural language (AI)");
+        Console.WriteLine("  blueprint   Manage blueprints (list, generate, delete)");
         Console.WriteLine("  chat        Interactive AI chat mode for blueprint help");
         Console.WriteLine("  config      Manage configuration");
         Console.WriteLine("  distro      Manage custom distributions");
@@ -78,7 +76,9 @@ class Program
         Console.WriteLine("Examples:");
         Console.WriteLine("  thresh version");
         Console.WriteLine("  thresh up alpine-minimal");
-        Console.WriteLine("  thresh generate 'Python ML environment with Jupyter'");
+        Console.WriteLine("  thresh blueprint list");
+        Console.WriteLine("  thresh blueprint generate 'Python ML with Jupyter'");
+        Console.WriteLine("  thresh blueprint delete alpine-test");
         Console.WriteLine("  thresh list");
         Console.WriteLine("  thresh config set default-model gpt-4o");
         Console.WriteLine("  thresh config set default-base ubuntu-24.04");
@@ -397,11 +397,12 @@ class Program
         rootCommand.AddCommand(destroyCommand);
     }
     
-    private static void AddBlueprintsCommand(RootCommand rootCommand)
+    private static void AddBlueprintCommand(RootCommand rootCommand)
     {
-        var blueprintsCommand = new Command("blueprints", "List available blueprints");
+        var blueprintCommand = new Command("blueprint", "Manage blueprints");
         
-        blueprintsCommand.SetHandler(() =>
+        // Shared list handler action
+        Action listBlueprintsAction = () =>
         {
             var containerService = Services.ContainerServiceFactory.Create();
             var configService = new Services.ConfigurationService();
@@ -434,76 +435,165 @@ class Program
 
             Console.WriteLine();
             Console.WriteLine("Usage: thresh up <blueprint-name>");
-        });
+        };
         
-        rootCommand.AddCommand(blueprintsCommand);
-    }
-    
-    private static void AddGenerateCommand(RootCommand rootCommand)
-    {
-        var generateCommand = new Command("generate", "Generate blueprint from natural language using AI");
-        var promptArg = new Argument<string>("prompt", "Description of desired environment");
-        var outputOption = new Option<string?>("--output", "Save blueprint to file");
-        var modelOption = new Option<string?>("--model", "AI model to use (default: gpt-4o)");
-        var providerOption = new Option<string?>("--provider", "AI provider: openai, azure, or github (auto-detect if not specified)");
-        var noStreamOption = new Option<bool>("--no-stream", "Disable streaming output");
+        // Subcommand: blueprint list
+        var listCommand = new Command("list", "List available blueprints");
+        listCommand.SetHandler(listBlueprintsAction);
+        blueprintCommand.AddCommand(listCommand);
         
-        generateCommand.AddArgument(promptArg);
-        generateCommand.AddOption(outputOption);
-        generateCommand.AddOption(modelOption);
-        generateCommand.AddOption(providerOption);
-        generateCommand.AddOption(noStreamOption);
-        
-        generateCommand.SetHandler(async (string prompt, string? output, string? model, string? provider, bool noStream) =>
+        // Subcommand: blueprint delete
+        var deleteCommand = new Command("delete", "Delete a blueprint");
+        var deleteBlueprintArg = new Argument<string>("blueprint", "Name of blueprint to delete");
+        deleteCommand.AddArgument(deleteBlueprintArg);
+        deleteCommand.SetHandler((string blueprintName) =>
         {
-            Console.WriteLine($"🎯 Generating blueprint for: '{prompt}'");
-            Console.WriteLine();
+            var blueprintsDir = Path.Combine(AppContext.BaseDirectory, "blueprints");
+            
+            if (!Directory.Exists(blueprintsDir))
+            {
+                Console.WriteLine("No blueprints folder found.");
+                return;
+            }
+            
+            // Try to find the blueprint file (JSON, YAML, or YML)
+            var jsonPath = Path.Combine(blueprintsDir, $"{blueprintName}.json");
+            var yamlPath = Path.Combine(blueprintsDir, $"{blueprintName}.yaml");
+            var ymlPath = Path.Combine(blueprintsDir, $"{blueprintName}.yml");
+            
+            string? fileToDelete = null;
+            if (File.Exists(jsonPath))
+                fileToDelete = jsonPath;
+            else if (File.Exists(yamlPath))
+                fileToDelete = yamlPath;
+            else if (File.Exists(ymlPath))
+                fileToDelete = ymlPath;
+            
+            if (fileToDelete == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"❌ Blueprint not found: {blueprintName}");
+                Console.ResetColor();
+                Console.WriteLine();
+                Console.WriteLine("Available blueprints:");
+                
+                var blueprintService = new Services.BlueprintService(
+                    Services.ContainerServiceFactory.Create(), 
+                    new Services.RootfsRegistry(new Services.ConfigurationService()));
+                var blueprints = blueprintService.ListBundledBlueprints();
+                
+                foreach (var bp in blueprints.OrderBy(b => b))
+                {
+                    Console.WriteLine($"  {bp}");
+                }
+                return;
+            }
             
             try
             {
-                var configService = new Services.ConfigurationService();
-                var factory = new Services.AiProviderFactory(configService);
-                var aiService = factory.CreateAIService(model, provider);
-                
-                var jsonContent = await aiService.GenerateBlueprintAsync(prompt, streaming: !noStream);
-                
-                if (noStream)
-                {
-                    Console.WriteLine(jsonContent);
-                    Console.WriteLine();
-                }
-                
-                // Clean the output (remove markdown code blocks)
-                var cleanedJson = aiService switch
-                {
-                    GitHubCopilotService copilot => copilot.CleanJsonOutput(jsonContent),
-                    _ => CleanJsonOutput(jsonContent)
-                };
-                
-                // Save to file if requested
-                if (!string.IsNullOrEmpty(output))
-                {
-                    File.WriteAllText(output, cleanedJson);
-                    Console.WriteLine($"✅ Blueprint saved to: {output}");
-                    Console.WriteLine();
-                    Console.WriteLine("To provision this environment:");
-                    Console.WriteLine($"  thresh up {output}");
-                }
-                else
-                {
-                    Console.WriteLine("To save this blueprint:");
-                    Console.WriteLine($"  thresh generate '{prompt}' --output my-blueprint.json");
-                }
+                File.Delete(fileToDelete);
+                var filename = Path.GetFileName(fileToDelete);
+                Console.WriteLine($"🗑️  Blueprint deleted: {filename}");
             }
             catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"❌ Generation failed: {ex.Message}");
+                Console.WriteLine($"❌ Failed to delete blueprint: {ex.Message}");
                 Console.ResetColor();
             }
-        }, promptArg, outputOption, modelOption, providerOption, noStreamOption);
+        }, deleteBlueprintArg);
+        blueprintCommand.AddCommand(deleteCommand);
         
-        rootCommand.AddCommand(generateCommand);
+        // Subcommand: blueprint generate
+        var generateCommand = new Command("generate", "Generate blueprint from natural language using AI");
+        var generatePromptArg = new Argument<string>("prompt", "Description of desired environment");
+        var generateOutputOption = new Option<string?>("--output", "Save blueprint to file");
+        var generateModelOption = new Option<string?>("--model", "AI model to use (default: gpt-4o)");
+        var generateProviderOption = new Option<string?>("--provider", "AI provider: openai, azure, or github (auto-detect if not specified)");
+        var generateNoStreamOption = new Option<bool>("--no-stream", "Disable streaming output");
+        
+        generateCommand.AddArgument(generatePromptArg);
+        generateCommand.AddOption(generateOutputOption);
+        generateCommand.AddOption(generateModelOption);
+        generateCommand.AddOption(generateProviderOption);
+        generateCommand.AddOption(generateNoStreamOption);
+        
+        generateCommand.SetHandler(async (string prompt, string? output, string? model, string? provider, bool noStream) =>
+        {
+            await GenerateBlueprintHandler(prompt, output, model, provider, noStream);
+        }, generatePromptArg, generateOutputOption, generateModelOption, generateProviderOption, generateNoStreamOption);
+        
+        blueprintCommand.AddCommand(generateCommand);
+        
+        // Add grouped command
+        rootCommand.AddCommand(blueprintCommand);
+    }
+    
+    private static async Task GenerateBlueprintHandler(string prompt, string? output, string? model, string? provider, bool noStream)
+    {
+        Console.WriteLine($"🎯 Generating blueprint for: '{prompt}'");
+        Console.WriteLine();
+        
+        try
+        {
+            var configService = new Services.ConfigurationService();
+            var factory = new Services.AiProviderFactory(configService);
+            var aiService = factory.CreateAIService(model, provider);
+            
+            var jsonContent = await aiService.GenerateBlueprintAsync(prompt, streaming: !noStream);
+            
+            if (noStream)
+            {
+                Console.WriteLine(jsonContent);
+                Console.WriteLine();
+            }
+            
+            // Clean the output (remove markdown code blocks)
+            var cleanedJson = aiService switch
+            {
+                GitHubCopilotService copilot => copilot.CleanJsonOutput(jsonContent),
+                _ => CleanJsonOutput(jsonContent)
+            };
+            
+            // Save to file if requested
+            if (!string.IsNullOrEmpty(output))
+            {
+                // Ensure .json extension
+                var filename = output.EndsWith(".json", StringComparison.OrdinalIgnoreCase) 
+                    ? output 
+                    : $"{output}.json";
+                
+                // Save to blueprints directory
+                var baseDir = AppContext.BaseDirectory;
+                var blueprintsDir = Path.Combine(baseDir, "blueprints");
+                
+                if (!Directory.Exists(blueprintsDir))
+                {
+                    Directory.CreateDirectory(blueprintsDir);
+                }
+                
+                var fullPath = Path.Combine(blueprintsDir, filename);
+                File.WriteAllText(fullPath, cleanedJson);
+                
+                Console.WriteLine($"💾 Blueprint saved: {filename}");
+                Console.WriteLine($"   Available in: thresh blueprint list");
+                
+                // Extract blueprint name from filename for usage message
+                var blueprintName = Path.GetFileNameWithoutExtension(filename);
+                Console.WriteLine($"   To provision: thresh up {blueprintName} --name my-env");
+            }
+            else
+            {
+                Console.WriteLine("To save this blueprint:");
+                Console.WriteLine($"  thresh blueprint generate '{prompt}' --output my-blueprint");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"❌ Generation failed: {ex.Message}");
+            Console.ResetColor();
+        }
     }
     
     private static void AddChatCommand(RootCommand rootCommand)

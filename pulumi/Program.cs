@@ -13,10 +13,14 @@ class Program
         // Get configuration from environment
         var vSphereServer = Environment.GetEnvironmentVariable("VSPHERE_SERVER") 
             ?? throw new Exception("VSPHERE_SERVER not set in .env");
+        var vSphereUser = Environment.GetEnvironmentVariable("VSPHERE_USER") 
+            ?? throw new Exception("VSPHERE_USER not set in .env");
+        var vSpherePassword = Environment.GetEnvironmentVariable("VSPHERE_PASSWORD") 
+            ?? throw new Exception("VSPHERE_PASSWORD not set in .env");
         var datacenterName = Environment.GetEnvironmentVariable("VSPHERE_DATACENTER") 
             ?? throw new Exception("VSPHERE_DATACENTER not set in .env");
         var clusterName = Environment.GetEnvironmentVariable("VSPHERE_CLUSTER") 
-            ?? throw new Exception("VSPHERE_CLUSTER not set in .env");
+            ?? "";
         var datastoreName = Environment.GetEnvironmentVariable("VSPHERE_DATASTORE") 
             ?? throw new Exception("VSPHERE_DATASTORE not set in .env");
         var networkName = Environment.GetEnvironmentVariable("VSPHERE_NETWORK") 
@@ -29,45 +33,67 @@ class Program
         var ubuntuOvaPath = Environment.GetEnvironmentVariable("UBUNTU_OVA_PATH") 
             ?? "[datastore1] ISO/ubuntu-22.04-server-cloudimg-amd64.ova";
         var sshPublicKeyPath = Environment.GetEnvironmentVariable("SSH_PUBLIC_KEY_PATH") 
-            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh", "id_rsa.pub");
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh", "id_ed25519.pub");
+
+        // Create vSphere provider with explicit credentials
+        var vsphereProvider = new Provider("vsphere", new ProviderArgs
+        {
+            User = vSphereUser,
+            Password = vSpherePassword,
+            VsphereServer = vSphereServer,
+            AllowUnverifiedSsl = true
+        });
 
         // Get vSphere datacenter
         var datacenter = GetDatacenter.Invoke(new GetDatacenterInvokeArgs
         {
             Name = datacenterName
-        });
+        }, new InvokeOptions { Provider = vsphereProvider });
 
-        // Get compute cluster
-        var cluster = datacenter.Apply(dc => GetComputeCluster.Invoke(new GetComputeClusterInvokeArgs
+        // Get resource pool (skip cluster lookup for standalone ESXi)
+        Output<GetResourcePoolResult> resourcePool;
+        if (!string.IsNullOrEmpty(clusterName))
         {
-            Name = clusterName,
-            DatacenterId = dc.Id
-        }));
+            // Get compute cluster if specified
+            var cluster = datacenter.Apply(dc => GetComputeCluster.Invoke(new GetComputeClusterInvokeArgs
+            {
+                Name = clusterName,
+                DatacenterId = dc.Id
+            }, new InvokeOptions { Provider = vsphereProvider }));
 
-        // Get resource pool
-        var resourcePool = cluster.Apply(c => GetResourcePool.Invoke(new GetResourcePoolInvokeArgs
+            resourcePool = cluster.Apply(c => GetResourcePool.Invoke(new GetResourcePoolInvokeArgs
+            {
+                Name = resourcePoolName,
+                DatacenterId = datacenter.Apply(dc => dc.Id)
+            }, new InvokeOptions { Provider = vsphereProvider }));
+        }
+        else
         {
-            Name = resourcePoolName,
-            DatacenterId = datacenter.Apply(dc => dc.Id)
-        }));
+            // For standalone ESXi, get resource pool directly
+            resourcePool = datacenter.Apply(dc => GetResourcePool.Invoke(new GetResourcePoolInvokeArgs
+            {
+                Name = resourcePoolName,
+                DatacenterId = dc.Id
+            }, new InvokeOptions { Provider = vsphereProvider }));
+        }
 
         // Get datastore
         var datastore = datacenter.Apply(dc => GetDatastore.Invoke(new GetDatastoreInvokeArgs
         {
             Name = datastoreName,
             DatacenterId = dc.Id
-        }));
+        }, new InvokeOptions { Provider = vsphereProvider }));
 
         // Get network
         var network = datacenter.Apply(dc => GetNetwork.Invoke(new GetNetworkInvokeArgs
         {
             Name = networkName,
             DatacenterId = dc.Id
-        }));
+        }, new InvokeOptions { Provider = vsphereProvider }));
 
         // Read SSH public key
-        var sshPublicKey = File.Exists(sshPublicKeyPath) 
-            ? File.ReadAllText(sshPublicKeyPath).Trim()
+        var sshPublicKey = System.IO.File.Exists(sshPublicKeyPath) 
+            ? System.IO.File.ReadAllText(sshPublicKeyPath).Trim()
             : throw new Exception($"SSH public key not found at {sshPublicKeyPath}");
 
         // === TEMPLATE CREATION SECTION ===
@@ -108,7 +134,7 @@ class Program
                 ExtraConfig = {
                     { "disk.EnableUUID", "TRUE" }
                 }
-            });
+            }, new CustomResourceOptions { Provider = vsphereProvider });
             
             Pulumi.Log.Warn($@"
 ================================================================================
@@ -165,39 +191,31 @@ OPTION 2 - Use govc CLI (AUTOMATED):
 After template is ready, set CREATE_TEMPLATE=false in .env
 ================================================================================
 ");
+            
+            // Export placeholder VM details
+            return new Dictionary<string, object?>
+            {
+                ["templateName"] = templateVM.Name,
+                ["templateId"] = templateVM.Id,
+                ["instructions"] = Output.Create(@"
+Template placeholder created. Follow the instructions above to import Ubuntu Cloud Image.
+
+Once template is ready:
+1. Set CREATE_TEMPLATE=false in .env
+2. Run: pulumi up (to create the test VM)
+")
+            };
         }
 
-        // Get VM template (will fail if template doesn't exist and CREATE_TEMPLATE=false)
-        Output<GetVirtualMachineResult>? template = null;
+        // === TEST VM CREATION SECTION ===
+        // Only proceed if CREATE_TEMPLATE=false (template should already exist)
         
-        try
+        // Get VM template
+        var template = datacenter.Apply(dc => GetVirtualMachine.Invoke(new GetVirtualMachineInvokeArgs
         {
-            template = datacenter.Apply(dc => GetVirtualMachine.Invoke(new GetVirtualMachineInvokeArgs
-            {
-                Name = ubuntuTemplate,
-                DatacenterId = dc.Id
-            }));
-        }
-        catch
-        {
-            if (!createTemplate)
-            {
-                Pulumi.Log.Error($@"
-Template '{ubuntuTemplate}' not found in vCenter!
-
-SOLUTION:
-1. Set CREATE_TEMPLATE=true in .env
-2. Run: pulumi up
-3. Follow the instructions to import Ubuntu Cloud Image
-4. Set CREATE_TEMPLATE=false
-5. Run: pulumi up again
-
-OR manually import Ubuntu Cloud Image OVA to vCenter and name it '{ubuntuTemplate}'
-");
-                throw new Exception($"Template '{ubuntuTemplate}' not found. Set CREATE_TEMPLATE=true in .env and follow instructions.");
-            }
-            throw;
-        }
+            Name = ubuntuTemplate,
+            DatacenterId = dc.Id
+        }, new InvokeOptions { Provider = vsphereProvider }));
 
         // Cloud-init configuration for Ubuntu
         var cloudInitMetadata = @"
@@ -302,14 +320,7 @@ final_message: ""thresh Ubuntu test VM is ready! SSH as thresh@${{public_ip}}""
                 }
             },
             
-            // Inject cloud-init configuration
-            Cdrom = new VirtualMachineCdromArgs
-            {
-                ClientDevice = true
-            },
-            
-            VappTransport = new[] { "com.vmware.guestInfo" },
-            
+            // Inject cloud-init configuration via ExtraConfig
             ExtraConfig = 
             {
                 { "guestinfo.metadata", System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(cloudInitMetadata)) },
@@ -317,7 +328,7 @@ final_message: ""thresh Ubuntu test VM is ready! SSH as thresh@${{public_ip}}""
                 { "guestinfo.userdata", System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(cloudInitUserdata)) },
                 { "guestinfo.userdata.encoding", "base64" }
             }
-        });
+        }, new CustomResourceOptions { Provider = vsphereProvider });
 
         // Export VM details
         return new Dictionary<string, object?>
