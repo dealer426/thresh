@@ -89,11 +89,19 @@ We're looking for macOS users to test:
      brew install --cask docker
      # Launch Docker Desktop
      ```
-4. **GitHub CLI** (for AI features):
+4. **GitHub CLI + GitHub Copilot CLI** (for AI features):
    ```bash
+   # Install GitHub CLI
    brew install gh
+   
+   # Authenticate
    gh auth login
+   
+   # Install Copilot CLI extension
+   gh extension install github/gh-copilot
    ```
+   
+   **Info:** https://github.com/features/copilot/cli
 
 ### Download and Install
 

@@ -261,7 +261,15 @@ gh auth login
 
 Follow the prompts to authenticate with your GitHub account.
 
-### 3. Verify
+### 3. Install GitHub Copilot CLI Extension
+
+```bash
+gh extension install github/gh-copilot
+```
+
+**More Info:** https://github.com/features/copilot/cli
+
+### 4. Verify
 
 ```bash
 # Check GitHub CLI

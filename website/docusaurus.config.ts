@@ -6,7 +6,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'thresh',
-  tagline: 'AI-Powered WSL Development Environments - Provision in <30 seconds with AI-generated blueprints',
+  tagline: 'Cross-Platform Container Environment Manager with AI-Powered Blueprint Generation',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future

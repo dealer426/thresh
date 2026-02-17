@@ -28,12 +28,7 @@ function HomepageHeader() {
         <p className="hero__subtitle">{siteConfig.tagline}</p>
         <div className={styles.buttons}>
           <Link
-            className="button button--secondary button--lg"
-            to="/docs/intro">
-            Get Started - 5min ⏱️
-          </Link>
-          <Link
-            className="button button--primary button--lg margin-left--md"
+            className="button button--primary button--lg"
             to="https://github.com/dealer426/thresh/releases/latest">
             Download v1.4.0
           </Link>
@@ -60,6 +55,20 @@ function HomepageHeader() {
         </div>
       </div>
     </header>
+  );
+}
+
+function GetStartedSection() {
+  return (
+    <section className="text--center padding-vert--lg">
+      <div className="container">
+        <Link
+          className="button button--secondary button--lg"
+          to="/docs/intro">
+          Get Started in 5 Minutes ⏱️
+        </Link>
+      </div>
+    </section>
   );
 }
 
@@ -205,6 +214,7 @@ export default function Home(): ReactNode {
       description="Cross-platform CLI for provisioning isolated development environments with AI-powered blueprint generation">
       <HomepageHeader />
       <main>
+        <GetStartedSection />
         <HomepageFeatures />
         <QuickDemo />
         <UseCases />

@@ -253,12 +253,17 @@ Go 1.21 development environment with:
 # Check authentication
 gh auth status
 
-# Re-authenticate
+# Re-authenticate if needed
 gh auth login
 
-# Verify
+# Install GitHub Copilot CLI extension (if not installed)
+gh extension install github/gh-copilot
+
+# Verify thresh can access Copilot
 thresh config status
 ```
+
+**Info:** https://github.com/features/copilot/cli
 
 ### "Model not available"
 

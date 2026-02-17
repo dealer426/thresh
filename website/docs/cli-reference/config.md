@@ -226,9 +226,14 @@ gh auth status
 # Authenticate if needed
 gh auth login
 
+# Install GitHub Copilot CLI extension (required)
+gh extension install github/gh-copilot
+
 # Verify thresh can access AI
 thresh config status
 ```
+
+**More Info:** https://github.com/features/copilot/cli
 
 **Output:**
 ```

@@ -133,7 +133,12 @@ winget install GitHub.cli
 
 # Authenticate with GitHub
 gh auth login
+
+# Install GitHub Copilot CLI extension
+gh extension install github/gh-copilot
 ```
+
+**More Info:** https://github.com/features/copilot/cli
 
 :::info AI Model Support
 thresh supports 20+ AI models through GitHub Copilot SDK:

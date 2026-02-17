@@ -87,9 +87,14 @@ winget install GitHub.cli
 # Authenticate with GitHub
 gh auth login
 
+# Install GitHub Copilot CLI extension
+gh extension install github/gh-copilot
+
 # Optional: Set default model
 thresh config set default-model gpt-4o
 ```
+
+**More Info:** https://github.com/features/copilot/cli
 
 ### Verify Configuration
 

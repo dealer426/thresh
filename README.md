@@ -103,21 +103,26 @@ thresh chat
 - **macOS**: containerd or Docker Desktop (Apple Silicon only)
 
 **AI Features (Optional but Recommended):**
-- **GitHub CLI** - Required for AI blueprint generation and chat
+- **GitHub CLI + GitHub Copilot CLI** - Required for AI blueprint generation and chat
   ```bash
-  # Install GitHub CLI
+  # 1. Install GitHub CLI
   # Windows: winget install GitHub.cli
   # Linux: sudo apt install gh  # or brew install gh
   # macOS: brew install gh
   
-  # Authenticate
+  # 2. Authenticate with GitHub
   gh auth login
   
-  # Verify
+  # 3. Install GitHub Copilot CLI extension
+  gh extension install github/gh-copilot
+  
+  # 4. Verify thresh can access Copilot
   thresh config status
   ```
   
-  Without GitHub CLI, you can still use built-in blueprints and manual blueprint creation,
+  **More Info:** https://github.com/features/copilot/cli
+  
+  Without GitHub CLI and Copilot CLI extension, you can still use built-in blueprints and manual blueprint creation,
   but AI features (`thresh blueprint generate`, `thresh chat`) will not be available.
 
 ---
