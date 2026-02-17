@@ -35,7 +35,7 @@ function HomepageHeader() {
           <Link
             className="button button--primary button--lg margin-left--md"
             to="https://github.com/dealer426/thresh/releases/latest">
-            Download v1.3.0
+            Download v1.4.0
           </Link>
         </div>
         <div className={styles.installCommand}>
@@ -83,7 +83,7 @@ function QuickDemo() {
 # Provision Python dev environment
 > thresh up python-dev
 
-Creating WSL distribution: thresh-python-dev
+Creating container environment: thresh-python-dev
 Distribution: Alpine Linux 3.19
 Installing: python3 pip git vim curl
 
@@ -95,8 +95,8 @@ Installing: python3 pip git vim curl
 NAME             STATUS    DISTRO        CPU    MEM
 thresh-python-dev  Running   Alpine 3.19   0.5%   64MB
 
-# Enter environment
-> wsl -d thresh-python-dev
+# Enter environment (platform-specific)
+> thresh exec python-dev  # or: wsl -d, docker exec, nerdctl exec
 (thresh-python-dev)$ python3 --version
 Python 3.12.1
 

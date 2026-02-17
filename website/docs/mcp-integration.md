@@ -20,17 +20,18 @@ sequenceDiagram
     participant User
     participant AI as AI Client<br/>(VS Code/Claude)
     participant MCP as thresh MCP Server
-    participant Runtime as Container Runtime
+    participant Runtime as Container Runtime<br/>(WSL2/Docker/containerd)
     
     User->>AI: "Create a Python environment"
     AI->>MCP: tools/call: thresh_up
     MCP->>Runtime: Provision container
-    Runtime->>MCP: Environment created
-    MCP->>AI: Success response
-    AI->>User: "Python environment ready!"
+    Runtime-->>MCP: Environment created
+    MCP-->>AI: Success response
+    AI-->>User: "Python environment ready!"
     
     Note over AI,MCP: JSON-RPC 2.0 over stdio
-    Note over MCP,Runtime: Native container API
+    Note over MCP,Runtime: Platform: Windows/Linux/macOS
+    Note over Runtime: WSL2, Docker, nerdctl, containerd
 ```
 
 :::info Use Cases

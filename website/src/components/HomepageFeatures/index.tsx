@@ -31,12 +31,12 @@ const FeatureList: FeatureItem[] = [
     ),
   },
   {
-    title: 'Windows WSL Optimized',
-    Emoji: '🪟',
+    title: 'Cross-Platform Support',
+    Emoji: '🌍',
     description: (
       <>
-        Built specifically for Windows WSL environments. Provision Alpine, Ubuntu,
-        Debian, and custom distributions in under 30 seconds.
+        Works on Windows (WSL2), Linux (Docker/nerdctl/containerd), and macOS (Apple Silicon).
+        Provision Alpine, Ubuntu, Debian, and custom distributions in under 30 seconds.
       </>
     ),
   },

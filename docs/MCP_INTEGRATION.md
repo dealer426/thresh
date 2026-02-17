@@ -10,6 +10,46 @@
 
 MCP (Model Context Protocol) is a standard protocol that allows AI assistants like GitHub Copilot, Cursor, and Windsurf to interact with external tools and services. thresh implements MCP to let AI assistants create and manage development environments on your behalf.
 
+### Cross-Platform Architecture
+
+```mermaid
+graph TB
+    subgraph "AI Clients"
+        A1[VS Code + Copilot]
+        A2[Cursor]
+        A3[Windsurf]
+        A4[Claude Desktop]
+    end
+    
+    subgraph "thresh MCP Server"
+        B[MCP Protocol Handler]
+        C[Command Router]
+    end
+    
+    subgraph "Platform Runtimes"
+        D1[Windows WSL2]
+        D2[Linux Docker]
+        D3[Linux containerd]
+        D4[macOS containerd]
+    end
+    
+    A1 -->|stdio| B
+    A2 -->|stdio| B
+    A3 -->|stdio| B
+    A4 -->|stdio| B
+    
+    B --> C
+    C -->|Auto-detect| D1
+    C -->|Auto-detect| D2
+    C -->|Auto-detect| D3
+    C -->|Auto-detect| D4
+    
+    D1 --> E[Container Environments]
+    D2 --> E
+    D3 --> E
+    D4 --> E
+```
+
 ## 🚀 Quick Start
 
 ### 1. Test the MCP Server

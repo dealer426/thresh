@@ -97,10 +97,28 @@ thresh chat
 
 ### Requirements
 
+**Platform-Specific:**
 - **Windows**: Windows 11 with WSL2 enabled
 - **Linux**: Docker, nerdctl, or containerd installed
 - **macOS**: containerd or Docker Desktop (Apple Silicon only)
-- **AI Features**: GitHub CLI authenticated (`gh auth login`)
+
+**AI Features (Optional but Recommended):**
+- **GitHub CLI** - Required for AI blueprint generation and chat
+  ```bash
+  # Install GitHub CLI
+  # Windows: winget install GitHub.cli
+  # Linux: sudo apt install gh  # or brew install gh
+  # macOS: brew install gh
+  
+  # Authenticate
+  gh auth login
+  
+  # Verify
+  thresh config status
+  ```
+  
+  Without GitHub CLI, you can still use built-in blueprints and manual blueprint creation,
+  but AI features (`thresh blueprint generate`, `thresh chat`) will not be available.
 
 ---
 
