@@ -511,6 +511,19 @@ Success indicators:
 
 ---
 
+---
+
+## Future Enhancements
+
+**Planned for v1.4.0+:**
+- `delete_blueprint` tool - Delete user-generated blueprints (new CLI command)
+- Streaming progress updates for long-running operations
+- Resource/prompt capabilities
+- Multi-step workflows
+- Environment templates export via MCP
+
+---
+
 ## References
 
 - [MCP Specification](https://modelcontextprotocol.io/)

@@ -419,9 +419,9 @@ thresh serve --stdio
 - ✅ Input schemas
 - ✅ VS Code integration
 
-**Future:**
+**Future (v1.4.0+):**
+- `delete_blueprint` tool - Delete user-generated blueprints
 - Streaming progress updates (long operations)
-- AI blueprint generation integration
 - Resource/prompt capabilities
 - Multi-step workflows
 - Environment templates export via MCP
