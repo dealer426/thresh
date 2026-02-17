@@ -123,6 +123,12 @@ Desktop.ini
 *.vdi
 *.qcow2
 
+# govc (VMware CLI tool)
+**/govc
+**/govc.exe
+govc
+govc.exe
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
