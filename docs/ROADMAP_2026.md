@@ -720,13 +720,13 @@ jobs:
 
 **Goal:** Enable multi-machine awareness and connectivity
 
-#### Week 9: Host Metrics Collection
-- [ ] Create `HostMetrics` model
-- [ ] Implement cross-platform metrics (CPU, RAM, storage)
-- [ ] Add `thresh metrics` command
-- [ ] JSON output for scripting
+#### Week 9: Host Metrics Collection ✅ COMPLETE (v1.1.0)
+- [x] Create `HostMetrics` model
+- [x] Implement cross-platform metrics (CPU, RAM, storage)
+- [x] Add `thresh metrics` command
+- [x] JSON output for scripting
 
-**Deliverables:**
+**Deliverables:** ✅ Shipped
 ```bash
 thresh metrics
 thresh metrics --json
@@ -743,7 +743,13 @@ thresh metrics --json
 }
 ```
 
-**Binary:** 16.9 MB → 17.0 MB (+80 KB)
+**Enhanced in v1.4.0:**
+- IP address display
+- Load average monitoring
+- Docker/containerd storage information
+- `--format json` flag
+
+**Binary:** +80 KB (included in v1.1.0)
 
 #### Week 10: Agent Mode
 - [ ] Implement daemon/background mode
