@@ -63,13 +63,44 @@ dotnet publish -c Release -r win-x64 --self-contained     # Windows
 
 ### First Steps
 
+**1. Verify thresh installation:**
+
 ```bash
-# Verify installation
 thresh version
+```
 
-# Authenticate GitHub Copilot (required for AI features)
-gh auth login
+**2. Install GitHub Copilot CLI (required for AI features):**
 
+Learn more: https://github.com/github/copilot-cli
+
+```bash
+# Windows (WinGet)
+winget install GitHub.Copilot
+
+# macOS (Homebrew)
+brew install copilot-cli
+
+# Linux (Homebrew)
+brew install copilot-cli
+
+# Alternative: npm (all platforms)
+npm install -g @github/copilot
+
+# Alternative: Install script (macOS/Linux)
+curl -fsSL https://gh.io/copilot-install | bash
+```
+
+**3. Authenticate GitHub Copilot:**
+
+```bash
+# Launch Copilot CLI and use /login command
+copilot
+# Then type: /login
+```
+
+**4. Start using thresh:**
+
+```bash
 # List available blueprints
 thresh blueprint list
 

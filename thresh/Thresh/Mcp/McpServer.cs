@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Thresh.Mcp.Models;
 using Thresh.Services;
+using Thresh.Utilities;
 
 namespace Thresh.Mcp;
 
@@ -12,8 +13,11 @@ namespace Thresh.Mcp;
 /// </summary>
 public class McpServer
 {
+    private const string Version = "1.4.0";
     private readonly IContainerService _containerService;
     private readonly BlueprintService _blueprintService;
+    private readonly ConfigurationService _configService;
+    private readonly MetricsService _metricsService;
     private readonly HttpListener _listener;
     private readonly CancellationTokenSource _cts;
     private readonly int _port;
@@ -24,9 +28,10 @@ public class McpServer
         _port = port;
         _host = host;
         _containerService = ContainerServiceFactory.Create();
-        var configService = new ConfigurationService();
-        var rootfsRegistry = new RootfsRegistry(configService);
+        _configService = new ConfigurationService();
+        var rootfsRegistry = new RootfsRegistry(_configService);
         _blueprintService = new BlueprintService(_containerService, rootfsRegistry);
+        _metricsService = new MetricsService(_containerService);
         _listener = new HttpListener();
         _cts = new CancellationTokenSource();
     }
@@ -54,8 +59,13 @@ public class McpServer
             Console.WriteLine("  - provision_environment: Create new environment from blueprint");
             Console.WriteLine("  - list_blueprints: Show available blueprints");
             Console.WriteLine("  - get_blueprint: Get blueprint details");
+            Console.WriteLine("  - delete_blueprint: Delete a blueprint");
+            Console.WriteLine("  - generate_blueprint: Generate blueprint using AI");
+            Console.WriteLine("  - save_blueprint: Save blueprint to file");
             Console.WriteLine("  - destroy_environment: Remove an environment");
             Console.WriteLine("  - check_requirements: Verify system setup");
+            Console.WriteLine("  - get_version: Get version information");
+            Console.WriteLine("  - get_metrics: Get host system metrics");
             Console.WriteLine();
             Console.WriteLine("Press Ctrl+C to stop");
             Console.WriteLine();
@@ -217,8 +227,13 @@ public class McpServer
                     new() { Name = "provision_environment", Description = $"Provision a new {_containerService.RuntimeName} environment from a blueprint" },
                     new() { Name = "list_blueprints", Description = "List all available blueprints" },
                     new() { Name = "get_blueprint", Description = "Get details of a specific blueprint" },
+                    new() { Name = "delete_blueprint", Description = "Delete a blueprint file" },
+                    new() { Name = "generate_blueprint", Description = "Generate a blueprint from natural language using AI" },
+                    new() { Name = "save_blueprint", Description = "Save a blueprint to a file" },
                     new() { Name = "destroy_environment", Description = $"Destroy a {_containerService.RuntimeName} environment" },
-                    new() { Name = "check_requirements", Description = "Check system requirements for thresh" }
+                    new() { Name = "check_requirements", Description = "Check system requirements for thresh" },
+                    new() { Name = "get_version", Description = "Get version information" },
+                    new() { Name = "get_metrics", Description = "Get host system metrics (CPU, memory, storage, network)" }
                 }
             }
         };
@@ -246,8 +261,13 @@ public class McpServer
                 "provision_environment" => await ProvisionEnvironmentAsync(toolRequest),
                 "list_blueprints" => ListBlueprints(),
                 "get_blueprint" => await GetBlueprintAsync(toolRequest),
+                "delete_blueprint" => DeleteBlueprint(toolRequest),
+                "generate_blueprint" => await GenerateBlueprintAsync(toolRequest),
+                "save_blueprint" => SaveBlueprint(toolRequest),
                 "destroy_environment" => await DestroyEnvironmentAsync(toolRequest),
                 "check_requirements" => await CheckRequirementsAsync(),
+                "get_version" => await GetVersionAsync(),
+                "get_metrics" => await GetMetricsAsync(),
                 _ => ToolCallResponse.Error($"Unknown tool: {toolRequest.Name}")
             };
         }
@@ -448,6 +468,220 @@ public class McpServer
         catch (Exception ex)
         {
             return ToolCallResponse.Error($"Failed to check requirements: {ex.Message}");
+        }
+    }
+
+    private ToolCallResponse DeleteBlueprint(ToolCallRequest request)
+    {
+        var args = request.Arguments;
+        if (args == null || !args.TryGetValue("name", out var nameObj))
+        {
+            return ToolCallResponse.Error("Missing required argument: name");
+        }
+
+        var blueprintName = nameObj?.ToString();
+        if (string.IsNullOrEmpty(blueprintName))
+        {
+            return ToolCallResponse.Error("Invalid blueprint name");
+        }
+
+        try
+        {
+            var blueprintsDir = Path.Combine(AppContext.BaseDirectory, "blueprints");
+            
+            if (!Directory.Exists(blueprintsDir))
+            {
+                return ToolCallResponse.Error("No blueprints folder found");
+            }
+            
+            // Try to find the blueprint file (JSON, YAML, or YML)
+            var jsonPath = Path.Combine(blueprintsDir, $"{blueprintName}.json");
+            var yamlPath = Path.Combine(blueprintsDir, $"{blueprintName}.yaml");
+            var ymlPath = Path.Combine(blueprintsDir, $"{blueprintName}.yml");
+            
+            string? fileToDelete = null;
+            if (File.Exists(jsonPath))
+                fileToDelete = jsonPath;
+            else if (File.Exists(yamlPath))
+                fileToDelete = yamlPath;
+            else if (File.Exists(ymlPath))
+                fileToDelete = ymlPath;
+            
+            if (fileToDelete == null)
+            {
+                return ToolCallResponse.Error($"Blueprint not found: {blueprintName}");
+            }
+            
+            File.Delete(fileToDelete);
+            var filename = Path.GetFileName(fileToDelete);
+            return ToolCallResponse.Success($"Blueprint deleted: {filename}");
+        }
+        catch (Exception ex)
+        {
+            return ToolCallResponse.Error($"Failed to delete blueprint: {ex.Message}");
+        }
+    }
+
+    private async Task<ToolCallResponse> GenerateBlueprintAsync(ToolCallRequest request)
+    {
+        var args = request.Arguments;
+        if (args == null || !args.TryGetValue("prompt", out var promptObj))
+        {
+            return ToolCallResponse.Error("Missing required argument: prompt");
+        }
+
+        var prompt = promptObj?.ToString();
+        if (string.IsNullOrEmpty(prompt))
+        {
+            return ToolCallResponse.Error("Invalid prompt");
+        }
+
+        // Optional parameters
+        var model = args.TryGetValue("model", out var modelObj) ? modelObj?.ToString() : null;
+        var provider = args.TryGetValue("provider", out var providerObj) ? providerObj?.ToString() : null;
+
+        try
+        {
+            var factory = new AiProviderFactory(_configService);
+            var aiService = factory.CreateAIService(model, provider);
+            
+            var jsonContent = await aiService.GenerateBlueprintAsync(prompt, streaming: false);
+            
+            // Clean the output (remove markdown code blocks)
+            var cleanedJson = aiService switch
+            {
+                GitHubCopilotService copilot => copilot.CleanJsonOutput(jsonContent),
+                _ => CleanJsonOutput(jsonContent)
+            };
+            
+            return ToolCallResponse.Success(cleanedJson);
+        }
+        catch (Exception ex)
+        {
+            return ToolCallResponse.Error($"Failed to generate blueprint: {ex.Message}");
+        }
+    }
+
+    private ToolCallResponse SaveBlueprint(ToolCallRequest request)
+    {
+        var args = request.Arguments;
+        if (args == null || !args.TryGetValue("content", out var contentObj) || !args.TryGetValue("name", out var nameObj))
+        {
+            return ToolCallResponse.Error("Missing required arguments: content and name");
+        }
+
+        var content = contentObj?.ToString();
+        var name = nameObj?.ToString();
+
+        if (string.IsNullOrEmpty(content) || string.IsNullOrEmpty(name))
+        {
+            return ToolCallResponse.Error("Invalid content or name");
+        }
+
+        try
+        {
+            // Ensure .json extension
+            var filename = name.EndsWith(".json", StringComparison.OrdinalIgnoreCase) 
+                ? name 
+                : $"{name}.json";
+            
+            // Save to blueprints directory
+            var baseDir = AppContext.BaseDirectory;
+            var blueprintsDir = Path.Combine(baseDir, "blueprints");
+            
+            if (!Directory.Exists(blueprintsDir))
+            {
+                Directory.CreateDirectory(blueprintsDir);
+            }
+            
+            var fullPath = Path.Combine(blueprintsDir, filename);
+            File.WriteAllText(fullPath, content);
+            
+            var blueprintName = Path.GetFileNameWithoutExtension(filename);
+            var result = new StringBuilder();
+            result.AppendLine($"Blueprint saved: {filename}");
+            result.AppendLine($"Available in: thresh blueprint list");
+            result.AppendLine($"To provision: thresh up {blueprintName} --name my-env");
+            
+            return ToolCallResponse.Success(result.ToString());
+        }
+        catch (Exception ex)
+        {
+            return ToolCallResponse.Error($"Failed to save blueprint: {ex.Message}");
+        }
+    }
+
+    private async Task<ToolCallResponse> GetVersionAsync()
+    {
+        try
+        {
+            var result = new StringBuilder();
+            result.AppendLine($"thresh version {Version}");
+            result.AppendLine("GitHub Copilot SDK integrated");
+            result.AppendLine($".NET Runtime: {System.Environment.Version}");
+            result.AppendLine("Native AOT: Yes");
+            result.AppendLine();
+            
+            // Show runtime info
+            var runtimeInfo = await _containerService.GetRuntimeInfoAsync();
+            
+            if (runtimeInfo.IsAvailable)
+            {
+                result.AppendLine($"{_containerService.RuntimeName}: {runtimeInfo.Version}");
+                if (runtimeInfo.Details != null)
+                    result.AppendLine($"Details: {runtimeInfo.Details}");
+                result.AppendLine($"Environments: {runtimeInfo.ContainerCount}");
+            }
+            else
+            {
+                result.AppendLine($"{_containerService.RuntimeName}: Not available ({runtimeInfo.Version})");
+            }
+            
+            return ToolCallResponse.Success(result.ToString());
+        }
+        catch (Exception ex)
+        {
+            return ToolCallResponse.Error($"Failed to get version: {ex.Message}");
+        }
+    }
+
+    private static string CleanJsonOutput(string json)
+    {
+        var lines = json.Split('\n');
+        var cleanedLines = new List<string>();
+        var inCodeBlock = false;
+
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("```"))
+            {
+                inCodeBlock = !inCodeBlock;
+                continue;
+            }
+            if (!inCodeBlock || (!trimmed.StartsWith("```") && trimmed != "json"))
+            {
+                cleanedLines.Add(line);
+            }
+        }
+
+        return string.Join('\n', cleanedLines).Trim();
+    }
+
+    private async Task<ToolCallResponse> GetMetricsAsync()
+    {
+        try
+        {
+            var metrics = await _metricsService.CollectMetricsAsync();
+            
+            // Serialize metrics to JSON
+            var jsonText = JsonSerializer.Serialize(metrics, Thresh.Models.MetricsJsonContext.Default.HostMetrics);
+            
+            return ToolCallResponse.Success(jsonText);
+        }
+        catch (Exception ex)
+        {
+            return ToolCallResponse.Error($"Failed to collect metrics: {ex.Message}");
         }
     }
 }

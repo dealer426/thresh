@@ -7,6 +7,10 @@
 **/.next/
 **/node_modules/
 
+# Native binaries and executables (not directories)
+thresh/Thresh/thresh
+thresh/thresh
+
 # IDE files
 .vscode/
 .idea/

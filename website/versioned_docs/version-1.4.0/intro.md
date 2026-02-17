@@ -1,109 +1,188 @@
 ---
 sidebar_position: 1
-title: Getting Started
-description: Quick start guide to provision your first WSL environment in under 5 minutes
+title: Introduction
+description: Overview of thresh - AI-powered container environment manager for Windows, Linux, and macOS
 ---
 
-# Getting Started with thresh
+# Introduction to thresh
 
-**Quick start guide to provision your first WSL environment in under 5 minutes**
+**AI-powered container environment manager for Windows, Linux, and macOS**
+
+thresh is a **.NET 10 Native AOT** command-line tool that provisions container-based development environments using AI-generated blueprints. Create development environments in seconds with natural language prompts.
 
 ## Architecture Overview
 
-thresh provides isolated development environments using lightweight containers:
+thresh provides isolated development environments using lightweight containers across multiple platforms:
 
 ```mermaid
 graph TB
-    subgraph Host["Host System (Windows)"]
-        CLI[thresh CLI]
+    subgraph Platforms["Cross-Platform Support"]
+        direction LR
+        Win[🪟 Windows]
+        Lin[🐧 Linux]
+        Mac[🍎 macOS]
+    end
+    
+    subgraph CLI["thresh CLI"]
+        Commands[Commands]
         Blueprints[Blueprints]
         Config[Configuration]
+        AI[AI Assistant]
     end
     
     subgraph Runtime["Container Runtime"]
-        WSL[WSL 2]
+        WSL[WSL 2<br/>Windows]
+        Docker[Docker<br/>All Platforms]
+        Nerdctl[nerdctl<br/>Linux/macOS]
+        Containerd[containerd<br/>Linux/macOS]
     end
     
     subgraph Envs["Isolated Environments"]
         E1[python-dev]
         E2[node-dev]
-        E3[custom-env]
+        E3[alpine-minimal]
+        E4[ubuntu-dev]
     end
     
+    Platforms --> CLI
     CLI --> Runtime
-    Blueprints --> CLI
-    Config --> CLI
     Runtime --> Envs
+    Blueprints -.->|AI Generate| AI
     
     style CLI fill:#4CAF50,stroke:#2E7D32,color:#fff
     style Runtime fill:#2196F3,stroke:#1565C0,color:#fff
     style Envs fill:#FF9800,stroke:#E65100,color:#fff
+    style Platforms fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style AI fill:#E91E63,stroke:#C2185B,color:#fff
 ```
-
-## Prerequisites
-
-### Check if WSL is installed
-
-```powershell
-wsl --version
-```
-
-**Expected output:**
-```
-WSL version: 2.x.x.x
-Kernel version: 5.x.x.x
-```
-
-:::info WSL Installation
-If WSL is not installed, run:
-```powershell
-wsl --install
-```
-Then restart your computer.
-:::
 
 ---
 
-## Installation
+## Key Features
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+- 🌍 **Multi-Platform** - Windows/WSL2, Linux/Docker/nerdctl, macOS/containerd
+- 🤖 **AI-Powered** - GitHub Copilot CLI integration for intelligent blueprint generation
+- ⚡ **Parallel Creation** - Create multiple environments simultaneously (10x faster)
+- 📦 **Built-in Blueprints** - Alpine, Ubuntu, Debian, Python, Node.js, and more
+- 🗑️ **Blueprint Management** - List, generate, and delete blueprints
+- 💬 **Interactive AI Chat** - Streaming responses for blueprint assistance
+- 🚀 **Native Binary** - No .NET runtime required (5-13 MB)
+- 📊 **System Metrics** - Monitor CPU, memory, storage, and container usage
+- 🔧 **MCP Server** - Model Context Protocol for VS Code, Cursor, Windsurf
 
-<Tabs groupId="install">
-  <TabItem value="binary" label="Download Binary (Recommended)" default>
+---
 
-```powershell
-# Create installation directory
-New-Item -ItemType Directory -Force -Path C:\thresh
+## Getting Started by Platform
 
-# Download latest release
-Invoke-WebRequest -Uri "https://github.com/dealer426/thresh/releases/latest/download/thresh.exe" -OutFile "C:\thresh\thresh.exe"
+Choose your platform to get started:
 
-# Add to PATH for current session
-$env:Path += ";C:\thresh"
+<div class="cards">
 
-# Verify installation
-thresh --version
+### 🪟 [Windows](/docs/getting-started-windows)
+
+Get started with thresh on **Windows 11** using **WSL 2**
+
+**Requirements:**
+- Windows 11
+- WSL 2 enabled
+
+[Start on Windows →](/docs/getting-started-windows)
+
+---
+
+### 🐧 [Linux](/docs/getting-started-linux)
+
+Get started with thresh on **Linux** using **Docker** or **nerdctl**
+
+**Requirements:**
+- Docker or nerdctl/containerd
+
+[Start on Linux →](/docs/getting-started-linux)
+
+---
+
+### 🍎 [macOS](/docs/getting-started-macos)
+
+Get started with thresh on **macOS** (Apple Silicon) using **containerd**
+
+**Requirements:**
+- macOS (Apple Silicon M1/M2/M3)
+- containerd or Docker Desktop
+
+**Beta Support**
+
+[Start on macOS →](/docs/getting-started-macos)
+
+</div>
+
+---
+
+## Quick Example
+
+```bash
+# Install thresh (platform-specific, see guides above)
+
+# Authenticate with GitHub Copilot CLI
+copilot
+# Then: /login
+
+# List available blueprints
+thresh blueprint list
+
+# Create your first environment
+thresh up alpine-minimal
+
+# Generate custom blueprint with AI
+thresh blueprint generate "Python ML environment with Jupyter" --output python-ml
+
+# Start interactive chat
+thresh chat
 ```
 
-:::tip Permanent PATH Setup
-To add thresh to your PATH permanently:
-```powershell
-[Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\thresh", [EnvironmentVariableTarget]::User)
+---
+
+## Platform Support
+
+| Platform | Runtime | Binary Size | Compression | Status |
+|----------|---------|-------------|-------------|--------|
+| Windows 11 | WSL2 | ~5 MB | UPX | ✅ Supported |
+| Linux | Docker, nerdctl, containerd | ~5 MB | UPX | ✅ Supported |
+| macOS (M1/M2/M3) | containerd, Docker | ~13 MB | None* | ✅ Beta |
+
+*macOS binaries are uncompressed to preserve Apple code signing and notarization.
+
+---
+
+## What's New in v1.4.0
+
+### 🎯 Grouped Commands
+
+More intuitive command structure with `thresh blueprint` as the parent command for all blueprint operations.
+
+### ⚡ Parallel Creation (MCP)
+
+Create multiple environments simultaneously via Model Context Protocol.
+
+### 📊 Enhanced Metrics
+
+- IP address display
+- Load average monitoring
+- Docker/containerd storage information
+- JSON export support
+
+### 🌍 Multi-Platform Support
+
+Full support for Windows, Linux, and macOS with automatic runtime detection.
+
+### 🗑️ Blueprint Deletion
+
+Remove unwanted generated blueprints easily:
+
+```bash
+thresh blueprint delete my-old-blueprint
 ```
-:::
 
-  </TabItem>
-  <TabItem value="source" label="Build from Source">
-
-```powershell
-# Clone repository
-cd C:\Users\$env:USERNAME\source\repos
-git clone https://github.com/dealer426/thresh.git
-cd thresh\thresh\Thresh
-
-# Build Native AOT binary
-dotnet publish -c Release -r win-x64 --self-contained
+---
 
 # Copy binary to installation directory
 New-Item -ItemType Directory -Force -Path C:\thresh
@@ -121,397 +200,31 @@ thresh --version
 
 ---
 
-## Configuration
+## Documentation
 
-### Set up GitHub Copilot AI (Required for AI features)
-
-thresh uses the **GitHub Copilot SDK** for all AI features - no API keys needed! Just authenticate with GitHub CLI:
-
-```powershell
-# Install GitHub CLI if not already installed
-winget install GitHub.cli
-
-# Authenticate with GitHub
-gh auth login
-```
-
-:::info AI Model Support
-thresh supports 20+ AI models through GitHub Copilot SDK:
-- **GPT Models**: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo
-- **Reasoning Models**: o1-preview, o1-mini
-- **Claude Models**: claude-3.5-sonnet, claude-3.5-haiku, claude-3-opus
-- **Gemini Models**: gemini-1.5-pro, gemini-1.5-flash
-- **Open Source**: llama-3.1-405b, mistral-large, and more
-
-Set your preferred model:
-```powershell
-thresh config set default-model gpt-4o
-```
-:::
-
-### Verify Configuration
-
-```powershell
-thresh config status
-```
+- 📚 **[Windows Guide](/docs/getting-started-windows)** - Complete Windows setup
+- 🐧 **[Linux Guide](/docs/getting-started-linux)** - Complete Linux setup
+- 🍎 **[macOS Guide](/docs/getting-started-macos)** - Complete macOS setup (Beta)
+- 🔧 **[CLI Reference](/docs/cli-reference)** - Complete command documentation
+- 🤖 **[MCP Integration](/docs/mcp-integration)** - VS Code, Cursor, Windsurf setup
+- 📖 **[Tutorials](/docs/tutorials)** - Step-by-step guides
 
 ---
 
-## Your First Environment
+## Support
 
-### 1. List Available Distributions
-
-```powershell
-thresh distros
-```
-
-**Example output:**
-```
-Available distributions:
-
-NAME                      VERSION         SOURCE               PKG MANAGER
---------------------------------------------------------------------------------
-alpine-3.18               3.18            Vendor               Apk
-alpine-3.19               3.19            Vendor               Apk
-ubuntu-22.04              22.04           Vendor               Apt
-...
-```
-
-### 2. List Available Blueprints
-
-```bash
-thresh blueprint list
-```
-
-**Example output:**
-```
-Available blueprints:
-
-alpine-minimal    - Minimal Alpine environment
-ubuntu-dev        - Ubuntu development environment with common tools
-python-dev        - Python development environment
-node-dev          - Node.js development environment
-...
-```
-
-### 3. Provision Your First Environment
-
-**Quick start with Alpine (fastest):**
-```powershell
-thresh up alpine-minimal
-```
-
-**Python development environment:**
-```powershell
-thresh up python-dev
-```
-
-**Ubuntu development environment:**
-```powershell
-thresh up ubuntu-dev
-```
-
-**With verbose output to see progress:**
-```powershell
-thresh up alpine-minimal --verbose
-```
-
-:::tip Performance
-Alpine-based environments provision in **under 30 seconds** thanks to:
-- Native AOT compilation (~50ms startup)
-- UPX compression (3.8 MB binary)
-- Efficient package management
-:::
-
-### 4. List Your Environments
-
-```powershell
-# List thresh-managed environments
-thresh list
-
-# List all WSL distributions
-wsl -l -v
-```
-
-### 5. Access Your Environment
-
-```powershell
-wsl -d alpine-minimal
-```
-
-**Or open in Windows Terminal:**
-```powershell
-wt -d alpine-minimal
-```
-
-### 6. Remove Environment When Done
-
-```powershell
-thresh destroy alpine-minimal
-```
-
----
-
-## AI Features
-
-### Generate Custom Blueprint
-
-```bash
-# Generate a blueprint from natural language
-thresh blueprint generate "Python data science environment with Jupyter, pandas, and matplotlib"
-```
-
-**Generated blueprints are automatically saved** and available in `thresh blueprint list`.
-
-**Generate with custom name:**
-```bash
-thresh blueprint generate "Node.js 20 with TypeScript and PostgreSQL" --output custom-node
-```
-
-### Interactive AI Chat
-
-```powershell
-thresh chat
-```
-
-**Example session:**
-```
-Chat> I need a PHP development environment with nginx and MySQL
-AI: Here's a blueprint for PHP development...
-
-Chat> Add Redis to that
-AI: Updated blueprint with Redis...
-
-Chat> exit
-```
-
-:::info MCP Server Integration
-thresh includes a Model Context Protocol (MCP) server for integration with Claude Desktop and other MCP clients. See the MCP Integration guide for details.
-:::
-
----
-
-## Common Tasks
-
-### Add a Custom Distribution
-
-**With AI discovery:**
-```powershell
-thresh distro add arch --ai
-```
-
-**Manual configuration:**
-```powershell
-thresh distro add arch --url https://mirror.rackspace.com/archlinux/iso/latest/archbootstrap-x86_64.tar.gz --version latest --package-manager pacman
-```
-
-### List Custom Distributions
-
-```powershell
-thresh distro list
-```
-
-### Remove Custom Distribution
-
-```powershell
-thresh distro remove arch
-```
-
-### View Configuration
-
-```powershell
-# View specific setting
-thresh config get default-model
-
-# View all configuration
-thresh config status
-```
-
-### Reset Configuration
-
-```powershell
-thresh config reset
-```
-
----
-
-## Quick Reference Commands
-
-```powershell
-# Environment Management
-thresh up <blueprint>           # Provision environment
-thresh list                     # List environments  
-thresh list --all              # List all (including stopped)
-thresh destroy <name>           # Remove environment
-
-# Blueprint Management (v1.4.0+)
-thresh blueprint list          # List available blueprints
-thresh blueprint generate <prompt>  # Generate blueprint with AI
-thresh blueprint delete <name> # Delete generated blueprint
-
-# AI Features
-thresh chat                    # Interactive AI chat
-
-# Distributions
-thresh distros                 # List all available distros
-thresh distro add <name> --ai  # Add custom distro with AI
-thresh distro list             # List custom distros
-thresh distro remove <name>    # Remove custom distro
-
-# Configuration
-thresh config set <key> <val>  # Set config value
-thresh config get <key>        # Get config value
-thresh config status           # Show config status
-thresh config reset            # Reset all config
-
-# Information
-thresh --version               # Show version
-thresh metrics                 # Show performance metrics
-thresh --help                  # Show help
-```
-
----
-
-## Example Workflows
-
-### Workflow 1: Quick Python Dev Environment
-
-```powershell
-# Provision Python environment
-thresh up python-dev
-
-# Access environment
-wsl -d python-dev
-
-# Inside WSL:
-python3 --version
-pip3 --version
-
-# Exit WSL
-exit
-
-# Clean up when done
-thresh destroy python-dev
-```
-
-### Workflow 2: Generate Custom Environment with AI
-
-```bash
-# Generate blueprint
-thresh blueprint generate "Go development environment with Docker and PostgreSQL" --output go-dev
-
-# Verify it was saved
-thresh blueprint list | grep go-dev
-
-# Provision from custom blueprint
-thresh up go-dev
-
-# Access
-wsl -d go-dev
-```
-
-### Workflow 3: Create Multiple Test Environments
-
-```powershell
-# Create test environments
-thresh up alpine-minimal
-thresh up ubuntu-dev
-thresh up node-dev
-
-# List all
-thresh list
-
-# Work with specific one
-wsl -d alpine-minimal
-
-# Clean up all
-thresh destroy alpine-minimal
-thresh destroy ubuntu-dev
-thresh destroy node-dev
-```
-
----
-
-## Troubleshooting
-
-### "WSL not found"
-
-```powershell
-# Install WSL
-wsl --install
-
-# Restart computer
-shutdown /r /t 0
-```
-
-### GitHub CLI Authentication Issues
-
-```powershell
-# Check if authenticated
-gh auth status
-
-# Re-authenticate if needed
-gh auth login
-
-# Verify thresh can access AI
-thresh config status
-```
-
-### "Distribution download failed"
-
-```powershell
-# Check internet connection
-Test-NetConnection google.com
-
-# Try with verbose to see details
-thresh up alpine-minimal --verbose
-```
-
-### "Package installation failed"
-
-```powershell
-# Provision with verbose output
-thresh up ubuntu-dev --verbose
-
-# Check WSL status
-wsl -l -v
-
-# Try accessing the distribution manually
-wsl -d ubuntu-dev
-```
-
-:::warning Clear Cache to Start Fresh
-If you encounter persistent issues:
-```powershell
-# Remove cached rootfs files
-Remove-Item -Recurse -Force ~/.thresh/cache
-
-# Reset configuration
-thresh config reset
-
-# Try again
-thresh up alpine-minimal
-```
-:::
-
----
-
-## Where to Get Help
-
-- **Documentation**: [GitHub Repository](https://github.com/dealer426/thresh)
-- **CLI Reference**: See sidebar for detailed command documentation
 - **Issues**: [GitHub Issues](https://github.com/dealer426/thresh/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/dealer426/thresh/discussions)
+- **Repository**: [GitHub](https://github.com/dealer426/thresh)
 
 ---
 
 ## Next Steps
 
-1. ✅ Complete installation
-2. ✅ Set up GitHub Copilot authentication
-3. ✅ Provision your first environment
-4. 🎯 Try AI blueprint generation
-5. 🎯 Create custom distributions
-6. 🎯 Explore MCP server integration
+Choose your platform to get started:
+
+- 🪟 **[Windows 11 → Get Started](/docs/getting-started-windows)**
+- 🐧 **[Linux → Get Started](/docs/getting-started-linux)**
+- 🍎 **[macOS → Get Started](/docs/getting-started-macos)**
 
 **Happy provisioning!** 🚀
