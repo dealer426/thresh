@@ -639,31 +639,31 @@ Pulumi → vCenter
 └─ AlmaLinux VM (RHEL-like testing)
 ```
 
-#### Week 8: GitHub Actions Multi-Platform CI/CD
-- [ ] Take learnings from vCenter testing
-- [ ] Add Linux x64 build job to GitHub Actions
-  - [ ] Use `ubuntu-latest` runner
-  - [ ] Install .NET 10 SDK
-  - [ ] Build with Native AOT
-  - [ ] Test binary execution
-  - [ ] Generate SBOM
-- [ ] Add macOS x64 build job (Intel)
-  - [ ] Use `macos-13` runner (Intel)
-  - [ ] Native AOT compilation
-  - [ ] Test on macOS
-- [ ] Add macOS ARM64 build job (Apple Silicon)
-  - [ ] Use `macos-14` runner (M1/M2)
-  - [ ] ARM64 Native AOT
-  - [ ] Test on Apple Silicon
-- [ ] Implement build matrix strategy
-- [ ] Add UPX compression for all platforms
-- [ ] Platform-specific SBOM generation
-- [ ] Update release workflow for 4 artifacts
-- [ ] Add build status badges to README
-- [ ] Create platform-specific installation documentation
-- [ ] Keep vCenter VMs as ongoing dev test environment
+#### Week 8: GitHub Actions Multi-Platform CI/CD (COMPLETED ✅)
+- [x] Take learnings from vCenter testing
+- [x] Add Linux x64 build job to GitHub Actions
+  - [x] Use `ubuntu-latest` runner
+  - [x] Install .NET 10 SDK
+  - [x] Build with Native AOT
+  - [x] Test binary execution
+  - [x] Generate SBOM
+- [x] Add macOS x64 build job (Intel)
+  - [x] Use `macos-13` runner (Intel)
+  - [x] Native AOT compilation
+  - [x] Test on macOS
+- [x] Add macOS ARM64 build job (Apple Silicon)
+  - [x] Use `macos-14` runner (M1/M2)
+  - [x] ARM64 Native AOT
+  - [x] Test on Apple Silicon
+- [x] Implement build matrix strategy
+- [x] Add UPX compression for all platforms
+- [x] Platform-specific SBOM generation
+- [x] Update release workflow for 4 artifacts
+- [x] Add build status badges to README
+- [x] Create platform-specific installation documentation
+- [x] Keep vCenter VMs as ongoing dev test environment
 
-**Deliverables:**
+**Deliverables:** ✅ Completed
 ```yaml
 # GitHub Actions matrix build
 jobs:
@@ -682,13 +682,18 @@ jobs:
             rid: osx-arm64
 ```
 
-**Release Artifacts:**
+**Release Artifacts:** ✅ Delivered
 ```
 - thresh-win-x64.zip         (Windows, 3.8 MB compressed)
 - thresh-linux-x64.tar.gz    (Linux, ~4.0 MB compressed)
 - thresh-macos-x64.tar.gz    (macOS Intel, ~4.2 MB compressed)
 - thresh-macos-arm64.tar.gz  (macOS Apple Silicon, ~4.0 MB compressed)
 ```
+
+**Platform-Specific Documentation:** ✅ Created
+- getting-started-windows.md (Complete Windows/WSL2 setup)
+- getting-started-linux.md (Docker/containerd on Linux)
+- getting-started-macos.md (macOS containerd setup)
 
 **Phase 2.5 Success Metrics:**
 - ✅ Pulumi infrastructure provisions vCenter VMs successfully
