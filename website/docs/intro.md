@@ -1,46 +1,66 @@
 ---
 sidebar_position: 1
 title: Getting Started
-description: Quick start guide to provision your first WSL environment in under 5 minutes
+description: Quick start guide to provision your first container environment in under 5 minutes on Windows, Linux, or macOS
 ---
 
 # Getting Started with thresh
 
-**Quick start guide to provision your first WSL environment in under 5 minutes**
+**Quick start guide to provision your first container environment in under 5 minutes on Windows, Linux, or macOS**
 
 ## Architecture Overview
 
-thresh provides isolated development environments using lightweight containers:
+thresh provides isolated development environments using lightweight containers across multiple platforms:
 
 ```mermaid
 graph TB
-    subgraph Host["Host System (Windows)"]
-        CLI[thresh CLI]
+    subgraph Platforms["Cross-Platform Support"]
+        direction LR
+        Win[🪟 Windows]
+        Lin[🐧 Linux]
+        Mac[🍎 macOS]
+    end
+    
+    subgraph CLI["thresh CLI"]
+        Commands[Commands]
         Blueprints[Blueprints]
         Config[Configuration]
+        AI[AI Assistant]
     end
     
     subgraph Runtime["Container Runtime"]
-        WSL[WSL 2]
+        WSL[WSL 2<br/>Windows]
+        Docker[Docker<br/>All Platforms]
+        Nerdctl[nerdctl<br/>Linux/macOS]
+        Containerd[containerd<br/>Linux/macOS]
     end
     
     subgraph Envs["Isolated Environments"]
         E1[python-dev]
         E2[node-dev]
-        E3[custom-env]
+        E3[alpine-minimal]
+        E4[ubuntu-dev]
     end
     
+    Platforms --> CLI
     CLI --> Runtime
-    Blueprints --> CLI
-    Config --> CLI
     Runtime --> Envs
+    Blueprints -.->|AI Generate| AI
     
     style CLI fill:#4CAF50,stroke:#2E7D32,color:#fff
     style Runtime fill:#2196F3,stroke:#1565C0,color:#fff
     style Envs fill:#FF9800,stroke:#E65100,color:#fff
+    style Platforms fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style AI fill:#E91E63,stroke:#C2185B,color:#fff
 ```
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Prerequisites
+
+<Tabs groupId="platform">
+  <TabItem value="windows" label="Windows" default>
 
 ### Check if WSL is installed
 
@@ -62,12 +82,86 @@ wsl --install
 Then restart your computer.
 :::
 
+  </TabItem>
+  <TabItem value="linux" label="Linux">
+
+### Check if Docker or nerdctl is installed
+
+```bash
+# For Docker
+docker --version
+
+# Or for nerdctl
+nerdctl --version
+```
+
+**Expected output:**
+```
+Docker version 24.0.0 or higher
+# OR
+nerdctl version 1.0.0 or higher
+```
+
+:::info Container Runtime Installation
+If neither is installed:
+
+**Docker:**
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+```
+
+**nerdctl (with containerd):**
+```bash
+# Install containerd first, then nerdctl
+curl -LO https://github.com/containerd/nerdctl/releases/latest/download/nerdctl-full-<version>-linux-amd64.tar.gz
+sudo tar Cxzvf /usr/local nerdctl-full-<version>-linux-amd64.tar.gz
+```
+:::
+
+  </TabItem>
+  <TabItem value="macos" label="macOS (Beta)">
+
+### Check if containerd or Docker is installed
+
+```bash
+# For containerd/nerdctl
+nerdctl --version
+
+# Or for Docker
+docker --version
+```
+
+**Expected output:**
+```
+nerdctl version 1.0.0 or higher
+# OR
+Docker version 24.0.0 or higher
+```
+
+:::warning Beta Support
+macOS support is currently in beta. We recommend using containerd with nerdctl for best compatibility.
+:::
+
+:::info Container Runtime Installation
+**containerd with nerdctl (Recommended):**
+```bash
+brew install containerd
+brew install nerdctl
+```
+
+**Docker Desktop:**
+```bash
+brew install --cask docker
+```
+:::
+
+  </TabItem>
+</Tabs>
+
 ---
 
 ## Installation
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
 <Tabs groupId="install">
   <TabItem value="binary" label="Download Binary (Recommended)" default>
