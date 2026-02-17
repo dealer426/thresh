@@ -1,11 +1,13 @@
 using System.Text.Json;
 using Thresh.Models;
 using Thresh.Utilities;
+using YamlDotNet.Serialization;
 
 namespace Thresh.Services;
 
 /// <summary>
 /// Service for managing and provisioning blueprints
+/// Supports both JSON and YAML formats
 /// </summary>
 public class BlueprintService
 {
@@ -24,43 +26,92 @@ public class BlueprintService
     }
 
     /// <summary>
-    /// Load a blueprint from a file path
+    /// Load a blueprint from a file path (supports JSON and YAML)
     /// </summary>
     public Blueprint LoadBlueprint(string blueprintPath)
     {
         if (!File.Exists(blueprintPath))
             throw new FileNotFoundException($"Blueprint file not found: {blueprintPath}");
 
-        var json = File.ReadAllText(blueprintPath);
-        return JsonSerializer.Deserialize(json, BlueprintJsonContext.Default.Blueprint)
-            ?? throw new InvalidOperationException($"Failed to deserialize blueprint: {blueprintPath}");
+        var content = File.ReadAllText(blueprintPath);
+        var extension = Path.GetExtension(blueprintPath).ToLowerInvariant();
+
+        // If YAML, convert to JSON first (maintaining JSON source generation benefits)
+        if (extension == ".yaml" || extension == ".yml")
+        {
+            try
+            {
+                var deserializer = new DeserializerBuilder().Build();
+                var yamlObject = deserializer.Deserialize<object>(content);
+                
+                var serializer = new SerializerBuilder()
+                    .JsonCompatible()
+                    .Build();
+                var json = serializer.Serialize(yamlObject);
+                
+                return JsonSerializer.Deserialize(json, BlueprintJsonContext.Default.Blueprint)
+                    ?? throw new InvalidOperationException($"Failed to deserialize YAML blueprint: {blueprintPath}");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to parse YAML blueprint: {blueprintPath}. {ex.Message}", ex);
+            }
+        }
+
+        // Direct JSON parsing (fastest path)
+        return JsonSerializer.Deserialize(content, BlueprintJsonContext.Default.Blueprint)
+            ?? throw new InvalidOperationException($"Failed to deserialize JSON blueprint: {blueprintPath}");
     }
 
     /// <summary>
     /// Load a blueprint from the bundled blueprints directory
+    /// Tries .json, .yaml, and .yml extensions in order
     /// </summary>
     public Blueprint LoadBundledBlueprint(string blueprintName)
     {
-        var blueprintPath = Path.Combine("blueprints", $"{blueprintName}.json");
+        var blueprintsDir = Path.Combine(AppContext.BaseDirectory, "blueprints");
+        
+        // Try JSON first (fastest)
+        var jsonPath = Path.Combine(blueprintsDir, $"{blueprintName}.json");
+        if (File.Exists(jsonPath))
+            return LoadBlueprint(jsonPath);
+        
+        // Try YAML variants
+        var yamlPath = Path.Combine(blueprintsDir, $"{blueprintName}.yaml");
+        if (File.Exists(yamlPath))
+            return LoadBlueprint(yamlPath);
+        
+        var ymlPath = Path.Combine(blueprintsDir, $"{blueprintName}.yml");
+        if (File.Exists(ymlPath))
+            return LoadBlueprint(ymlPath);
 
-        if (!File.Exists(blueprintPath))
-            throw new FileNotFoundException($"Bundled blueprint not found: {blueprintName}");
-
-        return LoadBlueprint(blueprintPath);
+        throw new FileNotFoundException($"Bundled blueprint not found: {blueprintName} (tried .json, .yaml, .yml)");
     }
 
     /// <summary>
-    /// List available bundled blueprints
+    /// List available bundled blueprints (JSON and YAML)
     /// </summary>
     public List<string> ListBundledBlueprints()
     {
-        var blueprintsDir = "blueprints";
+        var blueprintsDir = Path.Combine(AppContext.BaseDirectory, "blueprints");
         if (!Directory.Exists(blueprintsDir))
             return new List<string>();
 
-        return Directory.GetFiles(blueprintsDir, "*.json")
-            .Select(f => Path.GetFileNameWithoutExtension(f))
-            .ToList();
+        var blueprints = new HashSet<string>();
+        
+        // Add JSON blueprints
+        foreach (var file in Directory.GetFiles(blueprintsDir, "*.json"))
+            blueprints.Add(Path.GetFileNameWithoutExtension(file)!);
+        
+        // Add YAML blueprints
+        foreach (var file in Directory.GetFiles(blueprintsDir, "*.yaml"))
+            blueprints.Add(Path.GetFileNameWithoutExtension(file)!);
+        
+        // Add YML blueprints
+        foreach (var file in Directory.GetFiles(blueprintsDir, "*.yml"))
+            blueprints.Add(Path.GetFileNameWithoutExtension(file)!);
+
+        return blueprints.OrderBy(b => b).ToList();
     }
 
     /// <summary>
@@ -72,7 +123,7 @@ public class BlueprintService
 
         // Step 1: Install base distribution
         Console.WriteLine($"[1/5] Installing base distribution: {blueprint.Base}");
-        await InstallBaseDistributionAsync(environmentName, blueprint.Base, verbose);
+        await InstallBaseDistributionAsync(environmentName, blueprint.Base, blueprint.Name, verbose);
 
         // Step 2: Install packages FIRST (before scripts that may depend on them)
         if (blueprint.Packages != null && blueprint.Packages.Count > 0)
@@ -169,7 +220,7 @@ public class BlueprintService
         }
     }
 
-    private async Task InstallBaseDistributionAsync(string environmentName, string baseDistro, bool verbose)
+    private async Task InstallBaseDistributionAsync(string environmentName, string baseDistro, string blueprintName, bool verbose)
     {
         var distroName = "thresh-" + environmentName;
 
@@ -193,17 +244,17 @@ public class BlueprintService
         // Handle Microsoft Store distributions differently
         if (distroInfo.Source == RootfsRegistry.DistributionSource.MicrosoftStore)
         {
-            await InstallMicrosoftStoreDistroAsync(distroName, distroInfo, verbose);
+            await InstallMicrosoftStoreDistroAsync(distroName, distroInfo, blueprintName, verbose);
         }
         else
         {
-            await InstallVendorDistroAsync(distroName, environmentName, distroInfo, verbose);
+            await InstallVendorDistroAsync(distroName, environmentName, distroInfo, blueprintName, verbose);
         }
 
         Console.WriteLine("  [OK] Base distribution installed");
     }
 
-    private async Task InstallMicrosoftStoreDistroAsync(string distroName, RootfsRegistry.DistributionInfo distroInfo, bool verbose)
+    private async Task InstallMicrosoftStoreDistroAsync(string distroName, RootfsRegistry.DistributionInfo distroInfo, string blueprintName, bool verbose)
     {
         if (string.IsNullOrEmpty(distroInfo.WslInstallName))
             throw new InvalidOperationException($"MS Store distribution {distroInfo.Name} is missing WslInstallName");
@@ -237,45 +288,74 @@ public class BlueprintService
         }
 
         var installPath = Path.Combine(homeDir, "AppData", "Local", "thresh", distroName);
-        await ImportDistroAsync(distroName, installPath, tempExport, verbose);
+        await ImportDistroAsync(distroName, installPath, tempExport, blueprintName, verbose);
 
         // Clean up temp export and original MS Store distro
         File.Delete(tempExport);
         await ProcessHelper.ExecuteAsync(60, "wsl", "--unregister", distroInfo.WslInstallName);
     }
 
-    private async Task InstallVendorDistroAsync(string distroName, string environmentName, RootfsRegistry.DistributionInfo distroInfo, bool verbose)
+    private async Task InstallVendorDistroAsync(string distroName, string environmentName, RootfsRegistry.DistributionInfo distroInfo, string blueprintName, bool verbose)
     {
-        // Setup cache directory
         var homeDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
-        var cacheDir = Path.Combine(homeDir, ".thresh", "rootfs-cache");
-        Directory.CreateDirectory(cacheDir);
-
-        var cacheFilename = _rootfsRegistry.GetCacheFilename(_rootfsRegistry.NormalizeDistributionKey(distroInfo.GetFullName()));
-        var cachedRootfs = Path.Combine(cacheDir, cacheFilename);
-
-        // Download rootfs if not cached
-        if (!File.Exists(cachedRootfs))
+        var installPath = Path.Combine(homeDir, "AppData", "Local", "thresh", environmentName);
+        
+        // Check if we should use Docker Hub image (Linux only)
+        var useDockerImage = _containerService.Platform != "Windows" 
+                             && !string.IsNullOrEmpty(distroInfo.DockerImage);
+        
+        if (useDockerImage)
         {
-            Console.WriteLine("  [CACHE MISS] Downloading rootfs (first time only)...");
-            await DownloadRootfsAsync(distroInfo.RootfsUrl, cachedRootfs, verbose);
-            Console.WriteLine($"  [OK] Rootfs cached at: {cachedRootfs}");
+            // LINUX PATH: Use Docker Hub for faster, smaller downloads
+            Console.WriteLine($"  Pulling from Docker Hub: {distroInfo.DockerImage}");
+            
+            var tool = _containerService.RuntimeName == "WSL" ? "docker" : _containerService.RuntimeName;
+            var pullResult = await ProcessHelper.ExecuteAsync(120, tool, "pull", distroInfo.DockerImage!);
+            
+            if (!pullResult.IsSuccess)
+            {
+                var error = pullResult.Error ?? pullResult.GetOutputAsString();
+                throw new Exception($"Failed to pull {distroInfo.DockerImage}: {error}");
+            }
+            
+            if (verbose)
+            {
+                Console.WriteLine($"  Successfully pulled Docker image");
+                Console.WriteLine($"  Importing as: {distroName}");
+            }
+            
+            // Pass Docker image name directly - ContainerdService will create container from it
+            await ImportDistroAsync(distroName, installPath, distroInfo.DockerImage!, blueprintName, verbose);
         }
         else
         {
-            Console.WriteLine("  [CACHE HIT] Using cached rootfs (fast!)");
+            // WINDOWS/WSL PATH: Use traditional rootfs download (unchanged)
+            var cacheDir = Path.Combine(homeDir, ".thresh", "rootfs-cache");
+            Directory.CreateDirectory(cacheDir);
+
+            var cacheFilename = _rootfsRegistry.GetCacheFilename(_rootfsRegistry.NormalizeDistributionKey(distroInfo.GetFullName()));
+            var cachedRootfs = Path.Combine(cacheDir, cacheFilename);
+
+            // Download rootfs if not cached
+            if (!File.Exists(cachedRootfs))
+            {
+                Console.WriteLine("  [CACHE MISS] Downloading rootfs (first time only)...");
+                await DownloadRootfsAsync(distroInfo.RootfsUrl, cachedRootfs, verbose);
+                Console.WriteLine($"  [OK] Rootfs cached at: {cachedRootfs}");
+            }
+            else
+            {
+                Console.WriteLine("  Using cached rootfs");
+            }
+
+            if (verbose)
+            {
+                Console.WriteLine($"  Importing as: {distroName}");
+                Console.WriteLine($"  Install path: {installPath}");
+            }
+
+            await ImportDistroAsync(distroName, installPath, cachedRootfs, blueprintName, verbose);
         }
-
-        // Import as our custom-named environment
-        var installPath = Path.Combine(homeDir, "AppData", "Local", "thresh", environmentName);
-
-        if (verbose)
-        {
-            Console.WriteLine($"  Importing as: {distroName}");
-            Console.WriteLine($"  Install path: {installPath}");
-        }
-
-        await ImportDistroAsync(distroName, installPath, cachedRootfs, verbose);
     }
 
     private async Task DownloadRootfsAsync(string url, string destinationPath, bool verbose)
@@ -310,27 +390,33 @@ public class BlueprintService
         }
     }
 
-    private async Task ImportDistroAsync(string distroName, string installPath, string tarballPath, bool verbose)
+    private async Task ImportDistroAsync(string distroName, string installPath, string tarballPath, string blueprintName, bool verbose)
     {
         // Create install directory
         Directory.CreateDirectory(installPath);
 
-        Console.WriteLine($"  Importing as {distroName} (this may take 2-3 minutes)...");
+        // Platform-specific import time estimates
+        var importMessage = _containerService.Platform == "Windows"
+            ? $"  Importing as {distroName} (this may take 2-3 minutes)..."
+            : $"  Importing as {distroName}...";
+        
+        Console.WriteLine(importMessage);
 
-        var result = await ProcessHelper.ExecuteAsync(300, "wsl", "--import", distroName, installPath, tarballPath);
+        // Use container service for platform-agnostic import
+        var success = await _containerService.ImportEnvironmentAsync(
+            distroName.Replace("thresh-", ""), 
+            tarballPath, 
+            installPath,
+            blueprintName);
 
-        if (!result.IsSuccess)
+        if (!success)
         {
-            var error = result.Error ?? result.GetOutputAsString();
-            throw new Exception($"Failed to import distribution: {error}");
+            throw new Exception($"Failed to import distribution via {_containerService.RuntimeName}");
         }
 
-        if (verbose && result.HasOutput())
+        if (verbose)
         {
-            foreach (var line in result.Output)
-            {
-                Console.WriteLine($"    {line}");
-            }
+            Console.WriteLine($"    Imported via {_containerService.RuntimeName}");
         }
 
         Console.WriteLine("  Import complete");
@@ -359,7 +445,8 @@ else
 echo 'ERROR: No supported package manager found'; exit 1; 
 fi";
 
-        await ExecuteInDistroAsync(distroName, detectCmd, verbose);
+        // Package installation can take longer, especially for apt-get update
+        await ExecuteInDistroAsync(distroName, detectCmd, verbose, timeoutSeconds: 300);
         Console.WriteLine("  [OK] Packages installed");
     }
 
@@ -403,12 +490,14 @@ fi";
         Console.WriteLine("  [OK] Environment configured");
     }
 
-    private async Task ExecuteInDistroAsync(string distroName, string command, bool verbose)
+    private async Task ExecuteInDistroAsync(string distroName, string command, bool verbose, int timeoutSeconds = 30)
     {
         // Normalize line endings to Unix format (LF only) to avoid sh interpretation issues
         var normalizedCommand = command.Replace("\r\n", "\n").Replace("\r", "\n");
         
-        var result = await ProcessHelper.ExecuteAsync(300, "wsl", "-d", distroName, "--", "sh", "-c", normalizedCommand);
+        // Use container service for platform-agnostic execution
+        var envName = distroName.Replace("thresh-", "");
+        var result = await _containerService.ExecuteCommandAsync(envName, normalizedCommand, timeoutSeconds);
 
         if (verbose && result.HasOutput())
         {

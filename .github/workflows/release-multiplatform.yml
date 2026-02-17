@@ -1,0 +1,329 @@
+name: Release thresh (Multi-Platform)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.4.0)'
+        required: true
+        type: string
+
+jobs:
+  build-multiplatform:
+    strategy:
+      fail-fast: false  # Don't cancel other jobs if one fails
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            artifact-name: thresh-windows-x64
+            binary: thresh.exe
+            archive: thresh-windows-x64.zip
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact-name: thresh-linux-x64
+            binary: thresh
+            archive: thresh-linux-x64.tar.gz
+          - os: macos-14
+            rid: osx-arm64
+            artifact-name: thresh-macos-arm64
+            binary: thresh
+            archive: thresh-macos-arm64.tar.gz
+    
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+        
+    - name: Get version
+      id: version
+      shell: bash
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          VERSION="${{ inputs.version }}"
+        else
+          VERSION="${{ github.ref_name }}"
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Release version: $VERSION"
+      
+    - name: Restore dependencies
+      run: dotnet restore thresh/Thresh/Thresh.csproj
+      
+    - name: Publish Native AOT
+      run: dotnet publish thresh/Thresh/Thresh.csproj -c Release -r ${{ matrix.rid }} --self-contained
+      
+    - name: Install UPX (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        wget https://github.com/upx/upx/releases/download/v5.1.0/upx-5.1.0-amd64_linux.tar.xz
+        tar -xf upx-5.1.0-amd64_linux.tar.xz
+        sudo mv upx-5.1.0-amd64_linux/upx /usr/local/bin/
+        upx --version
+        
+    - name: Install UPX (macOS Intel)
+      if: matrix.os == 'macos-13'
+      run: |
+        # UPX doesn't provide macOS binaries, use Homebrew instead
+        brew install upx
+        upx --version
+        
+    - name: Install UPX (macOS ARM)
+      if: matrix.os == 'macos-14'
+      run: |
+        # UPX doesn't provide macOS binaries, use Homebrew instead
+        brew install upx
+        upx --version
+        
+    - name: Install UPX (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v5.1.0/upx-5.1.0-win64.zip" -OutFile upx.zip
+        Expand-Archive upx.zip -DestinationPath .
+        Move-Item upx-5.1.0-win64/upx.exe $env:GITHUB_WORKSPACE
+        echo "$env:GITHUB_WORKSPACE" >> $env:GITHUB_PATH
+      
+    - name: Get uncompressed binary size (Unix)
+      if: matrix.os != 'windows-latest'
+      id: pre_upx_size_unix
+      run: |
+        BINARY="thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}"
+        SIZE=$(stat -f%z "$BINARY" 2>/dev/null || stat -c%s "$BINARY")
+        SIZE_MB=$(echo "scale=2; $SIZE / 1048576" | bc)
+        echo "SIZE_MB=$SIZE_MB" >> $GITHUB_OUTPUT
+        echo "Uncompressed binary size: $SIZE_MB MB"
+        
+    - name: Get uncompressed binary size (Windows)
+      if: matrix.os == 'windows-latest'
+      id: pre_upx_size_win
+      shell: pwsh
+      run: |
+        $BINARY = "thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}"
+        $size = (Get-Item $BINARY).Length
+        $sizeMB = [math]::Round($size / 1MB, 2)
+        echo "SIZE_MB=$sizeMB" >> $env:GITHUB_OUTPUT
+        echo "Uncompressed binary size: $sizeMB MB"
+      
+    - name: Compress with UPX (Linux only)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        BINARY="thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}"
+        upx --best --lzma $BINARY
+        echo "UPX compression complete"
+        
+    - name: Compress with UPX (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        $BINARY = "thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}"
+        upx --best --lzma $BINARY
+        echo "UPX compression complete"
+      
+    - name: Install SBOM tool
+      run: dotnet tool install --global Microsoft.Sbom.DotNetTool
+      
+    - name: Generate SBOM (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        sbom-tool generate -b thresh/Thresh -bc thresh/Thresh -pn thresh -pv ${{ steps.version.outputs.VERSION }} -ps "dealer426" -nsb https://github.com/dealer426/thresh
+        mv thresh/Thresh/_manifest/spdx_2.2/manifest.spdx.json sbom-${{ matrix.rid }}.json
+        rm -rf thresh/Thresh/_manifest
+        
+    - name: Generate SBOM (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        sbom-tool generate -b thresh/Thresh -bc thresh/Thresh -pn thresh -pv ${{ steps.version.outputs.VERSION }} -ps "dealer426" -nsb https://github.com/dealer426/thresh
+        Move-Item -Force thresh/Thresh/_manifest/spdx_2.2/manifest.spdx.json sbom-${{ matrix.rid }}.json
+        Remove-Item -Recurse -Force thresh/Thresh/_manifest
+      
+    - name: Get compressed binary info (Unix)
+      if: matrix.os != 'windows-latest'
+      id: binary_info_unix
+      run: |
+        BINARY="thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}"
+        SIZE=$(stat -f%z "$BINARY" 2>/dev/null || stat -c%s "$BINARY")
+        SIZE_MB=$(echo "scale=2; $SIZE / 1048576" | bc)
+        UNCOMPRESSED=${{ steps.pre_upx_size_unix.outputs.SIZE_MB }}
+        echo "SIZE_MB=$SIZE_MB" >> $GITHUB_OUTPUT
+        echo "UNCOMPRESSED_MB=$UNCOMPRESSED" >> $GITHUB_OUTPUT
+        if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+          REDUCTION=$(echo "scale=2; (1 - ($SIZE_MB / $UNCOMPRESSED)) * 100" | bc)
+          echo "REDUCTION=$REDUCTION" >> $GITHUB_OUTPUT
+          echo "Compressed binary size: $SIZE_MB MB (was $UNCOMPRESSED MB, $REDUCTION% reduction)"
+        else
+          echo "REDUCTION=0" >> $GITHUB_OUTPUT
+          echo "Binary size: $SIZE_MB MB (uncompressed - macOS code signing preserved)"
+        fi
+        
+    - name: Get compressed binary info (Windows)
+      if: matrix.os == 'windows-latest'
+      id: binary_info_win
+      shell: pwsh
+      run: |
+        $BINARY = "thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}"
+        $size = (Get-Item $BINARY).Length
+        $sizeMB = [math]::Round($size / 1MB, 2)
+        $uncompressed = [double]"${{ steps.pre_upx_size_win.outputs.SIZE_MB }}"
+        $reduction = [math]::Round((1 - ($sizeMB / $uncompressed)) * 100, 2)
+        echo "SIZE_MB=$sizeMB" >> $env:GITHUB_OUTPUT
+        echo "UNCOMPRESSED_MB=$uncompressed" >> $env:GITHUB_OUTPUT
+        echo "REDUCTION=$reduction" >> $env:GITHUB_OUTPUT
+        echo "Compressed binary size: $sizeMB MB (was $uncompressed MB, $reduction% reduction)"
+      
+    - name: Create release archive (Linux/macOS)
+      if: matrix.os != 'windows-latest'
+      run: |
+        cd thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish
+        tar -czf ${{ matrix.archive }} ${{ matrix.binary }}
+        mv ${{ matrix.archive }} $GITHUB_WORKSPACE/
+        
+    - name: Create release archive (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        cd thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish
+        Compress-Archive -Path ${{ matrix.binary }} -DestinationPath ${{ matrix.archive }}
+        Move-Item ${{ matrix.archive }} $env:GITHUB_WORKSPACE
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact-name }}
+        path: |
+          ${{ matrix.archive }}
+          thresh/Thresh/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.binary }}
+          sbom-${{ matrix.rid }}.json
+        retention-days: 30
+
+  create-release:
+    needs: build-multiplatform
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Get version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          VERSION="${{ inputs.version }}"
+        else
+          VERSION="${{ github.ref_name }}"
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Release version: $VERSION"
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        
+    - name: Generate release notes
+      run: |
+        cat > release_notes.md << 'EOF'
+        # thresh ${{ steps.version.outputs.VERSION }}
+        
+        ## 🚀 AI-Powered Cross-Platform Environment Manager
+        
+        **Native AOT binaries for Windows, Linux, and macOS (Apple Silicon)**
+        
+        ### Features
+        - ✅ Cross-platform support (Windows/WSL, Linux/Docker/nerdctl, macOS/containerd)
+        - ✅ Dual blueprint format (JSON + YAML)
+        - ✅ GitHub Copilot SDK integration for AI blueprint generation
+        - ✅ Platform-aware AI (generates Docker vs WSL blueprints)
+        - ✅ MCP server integration for VS Code, Cursor, and Windsurf
+        - ✅ nerdctl support (containerd-native Docker alternative)
+        - ✅ System metrics and monitoring with JSON export
+        - ✅ Interactive AI chat for environment creation
+        - ✅ Zero runtime dependencies
+        - ✅ UPX compressed for minimal size (~4MB per platform)
+        
+        ### Quick Start
+        
+        **Windows:**
+        ```bash
+        # Download thresh-windows-x64.zip
+        thresh up alpine-minimal
+        ```
+        
+        **Linux:**
+        ```bash
+        # Download thresh-linux-x64.tar.gz
+        tar -xzf thresh-linux-x64.tar.gz
+        chmod +x thresh
+        sudo ./thresh up alpine-minimal
+        ```
+        
+        **macOS (Apple Silicon):**
+        ```bash
+        # Download thresh-macos-arm64.tar.gz
+        tar -xzf thresh-macos-arm64.tar.gz
+        chmod +x thresh
+        ./thresh up alpine-minimal
+        ```
+        
+        ### Platform-Specific Notes
+        
+        **Windows**: Requires WSL2  
+        **Linux**: Requires Docker or nerdctl with containerd  
+        **macOS**: Requires containerd or Docker Desktop (Apple Silicon M1/M2/M3 only)  
+        
+        ### Commands
+        ```bash
+        thresh up <blueprint>       # Provision environment
+        thresh list                 # List environments
+        thresh destroy <name> -y    # Remove environment (no confirmation)
+        thresh generate <prompt>    # AI blueprint generation
+        thresh chat                 # Interactive AI
+        thresh metrics              # System metrics
+        thresh serve                # Start MCP server
+        thresh blueprints           # List blueprints
+        thresh config               # Configuration
+        ```
+        
+        ### Requirements
+        - GitHub CLI authenticated (for AI features): `gh auth login`
+        
+        ### What's Changed
+        See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
+        
+        ### Package Files
+        - `thresh-windows-x64.zip` - Windows x64 (~4MB compressed)
+        - `thresh-linux-x64.tar.gz` - Linux x64 (~4MB compressed)
+        - `thresh-macos-arm64.tar.gz` - macOS Apple Silicon M1/M2/M3 (~4MB compressed)
+        - `sbom-*.json` - Software Bill of Materials for each platform
+        
+        **Note:** macOS Intel builds currently unavailable due to GitHub Actions runner limitations. Apple Silicon (M1/M2/M3) Macs can run the ARM64 build natively.
+        EOF
+        
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        name: thresh ${{ steps.version.outputs.VERSION }}
+        body_path: release_notes.md
+        draft: false
+        prerelease: false
+        files: |
+          artifacts/thresh-windows-x64/*
+          artifacts/thresh-linux-x64/*
+          artifacts/thresh-macos-arm64/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

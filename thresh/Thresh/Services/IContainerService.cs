@@ -66,12 +66,16 @@ public interface IContainerService
     /// <param name="environmentName">Name for the new environment</param>
     /// <param name="sourcePath">Path to tar file or image name</param>
     /// <param name="installPath">Installation path (may be ignored by some runtimes)</param>
-    Task<bool> ImportEnvironmentAsync(string environmentName, string sourcePath, string installPath);
+    /// <param name="blueprintName">Optional blueprint name for metadata tracking</param>
+    Task<bool> ImportEnvironmentAsync(string environmentName, string sourcePath, string installPath, string? blueprintName = null);
 
     /// <summary>
     /// Execute a command in an environment
     /// </summary>
-    Task<ProcessHelper.ProcessResult> ExecuteCommandAsync(string environmentName, string command);
+    /// <param name="environmentName">Name of the environment</param>
+    /// <param name="command">Command to execute</param>
+    /// <param name="timeoutSeconds">Optional timeout in seconds (default: 30)</param>
+    Task<ProcessHelper.ProcessResult> ExecuteCommandAsync(string environmentName, string command, int timeoutSeconds = 30);
 
     /// <summary>
     /// Check if an environment exists

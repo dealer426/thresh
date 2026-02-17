@@ -1,0 +1,3 @@
+name: thresh-infra
+description: Pulumi infrastructure for thresh cross-platform testing on vCenter
+runtime: dotnet

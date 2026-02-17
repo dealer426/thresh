@@ -153,7 +153,7 @@ thresh config get default-model
 # claude-3.5-sonnet
 
 # Now all generate/chat commands use Claude
-thresh generate "Python environment"  # Uses Claude
+thresh blueprint generate "Python environment"  # Uses Claude
 ```
 
 ### Change Default Distribution
@@ -163,7 +163,7 @@ thresh generate "Python environment"  # Uses Claude
 thresh config set default-base alpine-3.19
 
 # Future blueprints will default to Alpine
-thresh generate "Node.js environment"  # Uses Alpine base
+thresh blueprint generate "Node.js environment"  # Uses Alpine base
 ```
 
 ### Disable Telemetry
@@ -226,9 +226,14 @@ gh auth status
 # Authenticate if needed
 gh auth login
 
+# Install GitHub Copilot CLI extension (required)
+gh extension install github/gh-copilot
+
 # Verify thresh can access AI
 thresh config status
 ```
+
+**More Info:** https://github.com/features/copilot/cli
 
 **Output:**
 ```
@@ -297,6 +302,6 @@ New-Item -ItemType Directory -Force -Path ~/.thresh
 
 ## See Also
 
-- [`thresh generate`](./generate) - Use configured AI model
+- [`thresh blueprint generate`](./generate) - Use configured AI model
 - [`thresh chat`](./chat) - Use configured AI model
-- `thresh serve` - MCP server settings
+- [`thresh serve`](./serve) - MCP server settings

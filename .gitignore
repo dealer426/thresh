@@ -7,6 +7,10 @@
 **/.next/
 **/node_modules/
 
+# Native binaries and executables (not directories)
+thresh/Thresh/thresh
+thresh/thresh
+
 # IDE files
 .vscode/
 .idea/
@@ -66,6 +70,9 @@ secrets.json
 *.exe
 *.msi
 
+# Runtimes (native binaries)
+**/runtimes/
+
 # Node.js
 node_modules/
 npm-debug.log*
@@ -109,6 +116,18 @@ Desktop.ini
 *.rar
 *.tar
 *.zip
+
+# VM images (large binary files)
+*.ova
+*.vmdk
+*.vdi
+*.qcow2
+
+# govc (VMware CLI tool)
+**/govc
+**/govc.exe
+govc
+govc.exe
 
 # Editor directories and files
 .vscode/*

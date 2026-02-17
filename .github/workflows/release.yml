@@ -12,8 +12,48 @@ on:
         type: string
 
 jobs:
-  build-and-release:
-    runs-on: windows-latest
+  build-multiplatform:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            artifact-name: thresh-windows-x64
+            binary: thresh.exe
+            archive: thresh-windows-x64.zip
+            upx-url: https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-win64.zip
+            upx-extract: upx-4.2.4-win64
+            upx-binary: upx.exe
+            shell: pwsh
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact-name: thresh-linux-x64
+            binary: thresh
+            archive: thresh-linux-x64.tar.gz
+            upx-url: https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz
+            upx-extract: upx-4.2.4-amd64_linux
+            upx-binary: upx
+            shell: bash
+          - os: macos-13
+            rid: osx-x64
+            artifact-name: thresh-macos-x64
+            binary: thresh
+            archive: thresh-macos-x64.tar.gz
+            upx-url: https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_macos.tar.xz
+            upx-extract: upx-4.2.4-amd64_macos
+            upx-binary: upx
+            shell: bash
+          - os: macos-14
+            rid: osx-arm64
+            artifact-name: thresh-macos-arm64
+            binary: thresh
+            archive: thresh-macos-arm64.tar.gz
+            upx-url: https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-arm64_macos.tar.xz
+            upx-extract: upx-4.2.4-arm64_macos
+            upx-binary: upx
+            shell: bash
+    
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: write
     

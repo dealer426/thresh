@@ -6,7 +6,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'thresh',
-  tagline: 'AI-Powered WSL Development Environments - Provision in <30 seconds with AI-generated blueprints',
+  tagline: 'Lightweight development environment orchestration with AI-powered blueprint generation. Cross-platform CLI for Windows, Linux, and macOS.',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -77,8 +77,8 @@ const config: Config = {
   ],
 
   themeConfig: {
-    // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
+    // Open Graph / Social media preview image
+    // image: 'img/thresh-social-card.jpg', // TODO: Create custom thresh social card
     colorMode: {
       respectPrefersColorScheme: true,
     },

@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
 
 PackageIdentifier: dealer426.thresh
-PackageVersion: 1.1.0
+PackageVersion: 1.4.0
 PackageLocale: en-US
 Publisher: dealer426
 PublisherUrl: https://github.com/dealer426

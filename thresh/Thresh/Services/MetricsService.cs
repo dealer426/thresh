@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using Thresh.Models;
 using Thresh.Utilities;
@@ -51,6 +53,23 @@ public class MetricsService
 
         // Collect uptime (platform-specific)
         metrics.UptimeSeconds = await GetUptimeSecondsAsync();
+
+        // Collect network/IP information
+        var (primaryIp, allIps) = GetIpAddresses();
+        metrics.IpAddress = primaryIp;
+        metrics.IpAddresses = allIps;
+        metrics.ExternalIp = await GetExternalIpAsync();
+
+        // Collect load average (Linux/macOS)
+        metrics.LoadAverage = await GetLoadAverageAsync();
+
+        // Collect Docker storage info
+        if (_containerService.RuntimeName == "docker")
+        {
+            var (storageDriver, rootDir) = await GetDockerStorageInfoAsync();
+            metrics.DockerStorageDriver = storageDriver;
+            metrics.DockerRootDir = rootDir;
+        }
 
         // Collect metadata
         metrics.Metadata = new Dictionary<string, string>
@@ -454,5 +473,163 @@ public class MetricsService
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Get IP addresses (primary and all)
+    /// </summary>
+    private (string? primary, List<string> all) GetIpAddresses()
+    {
+        var allIps = new List<string>();
+        string? primaryIp = null;
+
+        try
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            
+            foreach (var ip in host.AddressList)
+            {
+                // Filter out IPv6 link-local and loopback
+                if (ip.AddressFamily == AddressFamily.InterNetwork || 
+                    (ip.AddressFamily == AddressFamily.InterNetworkV6 && !ip.IsIPv6LinkLocal))
+                {
+                    var ipStr = ip.ToString();
+                    
+                    // Skip loopback
+                    if (ipStr != "127.0.0.1" && ipStr != "::1")
+                    {
+                        allIps.Add(ipStr);
+                        
+                        // First non-loopback IPv4 is primary
+                        if (primaryIp == null && ip.AddressFamily == AddressFamily.InterNetwork)
+                        {
+                            primaryIp = ipStr;
+                        }
+                    }
+                }
+            }
+
+            // If no primary found yet, use first IP
+            if (primaryIp == null && allIps.Count > 0)
+            {
+                primaryIp = allIps[0];
+            }
+        }
+        catch
+        {
+            // Ignore errors
+        }
+
+        return (primaryIp, allIps);
+    }
+
+    /// <summary>
+    /// Get external/public IP address
+    /// </summary>
+    private async Task<string?> GetExternalIpAsync()
+    {
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
+            var response = await client.GetStringAsync("https://api.ipify.org");
+            return response?.Trim();
+        }
+        catch
+        {
+            // External IP detection failed - not critical
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Get load average (Linux/macOS)
+    /// </summary>
+    private async Task<List<double>?> GetLoadAverageAsync()
+    {
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                if (File.Exists("/proc/loadavg"))
+                {
+                    var content = await File.ReadAllTextAsync("/proc/loadavg");
+                    var parts = content.Split(' ');
+                    
+                    if (parts.Length >= 3)
+                    {
+                        var loadAvg = new List<double>();
+                        for (int i = 0; i < 3; i++)
+                        {
+                            if (double.TryParse(parts[i], out var load))
+                            {
+                                loadAvg.Add(load);
+                            }
+                        }
+                        return loadAvg.Count == 3 ? loadAvg : null;
+                    }
+                }
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                var result = await ProcessHelper.ExecuteAsync("sysctl", "vm.loadavg");
+                if (result.IsSuccess && result.Output.Count > 0)
+                {
+                    // Parse: vm.loadavg: { 1.50 1.75 2.00 }
+                    var line = result.Output[0];
+                    var startIndex = line.IndexOf('{');
+                    var endIndex = line.IndexOf('}');
+                    
+                    if (startIndex >= 0 && endIndex > startIndex)
+                    {
+                        var values = line.Substring(startIndex + 1, endIndex - startIndex - 1).Trim();
+                        var parts = values.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        
+                        if (parts.Length >= 3)
+                        {
+                            var loadAvg = new List<double>();
+                            for (int i = 0; i < 3; i++)
+                            {
+                                if (double.TryParse(parts[i], out var load))
+                                {
+                                    loadAvg.Add(load);
+                                }
+                            }
+                            return loadAvg.Count == 3 ? loadAvg : null;
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Not critical
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Get Docker storage driver and root directory
+    /// </summary>
+    private async Task<(string? driver, string? rootDir)> GetDockerStorageInfoAsync()
+    {
+        try
+        {
+            var result = await ProcessHelper.ExecuteAsync("docker", "info", "--format", "{{.Driver}}|{{.DockerRootDir}}");
+            if (result.IsSuccess && result.Output.Count > 0)
+            {
+                var parts = result.Output[0].Split('|');
+                if (parts.Length == 2)
+                {
+                    return (parts[0].Trim(), parts[1].Trim());
+                }
+            }
+        }
+        catch
+        {
+            // Ignore
+        }
+
+        return (null, null);
     }
 }

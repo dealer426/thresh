@@ -1,0 +1,2 @@
+config:
+  vsphere:allowUnverifiedSsl: "true"

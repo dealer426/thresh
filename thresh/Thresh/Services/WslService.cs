@@ -317,20 +317,24 @@ public partial class WslService : IContainerService
     /// <summary>
     /// Import a new WSL distribution from a tar file
     /// </summary>
-    public async Task<bool> ImportEnvironmentAsync(string environmentName, string tarPath, string installPath)
+    public async Task<bool> ImportEnvironmentAsync(string environmentName, string tarPath, string installPath, string? blueprintName = null)
     {
         var distributionName = ThreshPrefix + environmentName;
         var result = await ProcessHelper.ExecuteAsync("wsl", "--import", distributionName, installPath, tarPath);
+        
+        // TODO: Store blueprint metadata for WSL (could use a .thresh-metadata file)
+        // For now, blueprint tracking is only supported on Docker/containerd via labels
+        
         return result.IsSuccess;
     }
 
     /// <summary>
     /// Execute a command in a WSL distribution
     /// </summary>
-    public async Task<ProcessHelper.ProcessResult> ExecuteCommandAsync(string environmentName, string command)
+    public async Task<ProcessHelper.ProcessResult> ExecuteCommandAsync(string environmentName, string command, int timeoutSeconds = 30)
     {
         var distributionName = ThreshPrefix + environmentName;
-        return await ProcessHelper.ExecuteAsync("wsl", "-d", distributionName, "sh", "-c", command);
+        return await ProcessHelper.ExecuteAsync(timeoutSeconds, "wsl", "-d", distributionName, "sh", "-c", command);
     }
 
     /// <summary>

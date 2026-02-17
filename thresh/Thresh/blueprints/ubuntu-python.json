@@ -11,8 +11,8 @@
     "vim"
   ],
   "scripts": {
-    "setup": "# Update package lists\napt-get update\n\n# Upgrade pip\npip3 install --upgrade pip\n\n# Create workspace\nmkdir -p /workspace\n",
-    "postInstall": "# Clean up\napt-get clean\napt-get autoremove -y\n\n# Show Python version\npython3 --version\n\necho \"Ubuntu Python environment ready!\"\n"
+    "setup": "# Create workspace\nmkdir -p /workspace\n",
+    "postInstall": "# Clean up\napt-get clean\napt-get autoremove -y\n\n# Show Python version\npython3 --version\npip3 --version\n\necho \"Ubuntu Python environment ready!\"\n"
   },
   "environment": {
     "PYTHONUNBUFFERED": "1",

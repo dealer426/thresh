@@ -98,6 +98,42 @@ public class HostMetrics
     public long? UptimeSeconds { get; set; }
 
     /// <summary>
+    /// Primary IP address (local network)
+    /// </summary>
+    [JsonPropertyName("ip_address")]
+    public string? IpAddress { get; set; }
+
+    /// <summary>
+    /// All network IP addresses
+    /// </summary>
+    [JsonPropertyName("ip_addresses")]
+    public List<string>? IpAddresses { get; set; }
+
+    /// <summary>
+    /// External/public IP address (if detectable)
+    /// </summary>
+    [JsonPropertyName("external_ip")]
+    public string? ExternalIp { get; set; }
+
+    /// <summary>
+    /// Load average (1 min, 5 min, 15 min) - Linux/macOS only
+    /// </summary>
+    [JsonPropertyName("load_average")]
+    public List<double>? LoadAverage { get; set; }
+
+    /// <summary>
+    /// Docker storage driver (overlay2, aufs, etc.)
+    /// </summary>
+    [JsonPropertyName("docker_storage_driver")]
+    public string? DockerStorageDriver { get; set; }
+
+    /// <summary>
+    /// Docker root directory
+    /// </summary>
+    [JsonPropertyName("docker_root_dir")]
+    public string? DockerRootDir { get; set; }
+
+    /// <summary>
     /// Additional metadata (OS version, architecture, etc.)
     /// </summary>
     [JsonPropertyName("metadata")]
