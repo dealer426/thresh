@@ -587,11 +587,11 @@ sudo ./thresh destroy alpine-minimal -y  # ✅ No confirmation prompt
 - [x] ~~Write Pulumi code for vCenter VM provisioning~~
 - [x] Testing completed through GitHub Actions and local environments
 - [x] Linux testing validated on Ubuntu 22.04
-- [x] macOS testing via local development and GitHub Actions runners
-  - [x] Install containerd/Docker
-  - [x] Install .NET 10 SDK
-  - [x] Clone thresh repository
-  - [x] Build thresh natively on Linux
+- [ ] macOS testing via local development and GitHub Actions runners
+  - [ ] Install containerd/Docker
+  - [ ] Install .NET 10 SDK
+  - [ ] Clone thresh repository
+  - [ ] Build thresh natively on Linux
 - [x] Manual testing on Linux:
   - [x] Test `thresh up python-dev`
   - [x] Test `thresh list`
