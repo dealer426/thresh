@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Fixed
+
+### Deprecated
+
+---
+
+## [1.4.0] - 2026-02-17
+
 ### ⚠️ Breaking Changes
 
 - **Command Structure Refactoring**: Migrated from flat command structure to grouped blueprint commands
@@ -18,24 +30,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Multi-Platform Support** 🎉:
+  - Full Linux Docker/nerdctl/containerd support
+  - macOS containerd support (Apple Silicon M1/M2/M3)
+  - Platform-aware AI blueprint generation
+  - Docker Hub image support for Linux environments
+  - Cross-platform builds via GitHub Actions (Windows, Linux, macOS)
+- **MCP Server Enhancements**:
+  - Extended from 6 to 11 MCP tools
+  - `delete_blueprint` - Remove generated blueprints
+  - `generate_blueprint` - AI-powered blueprint creation
+  - `save_blueprint` - Save custom blueprints
+  - `get_version` - Query thresh version
+  - `get_metrics` - Retrieve system metrics
+  - `create_environment` with parallel support (create multiple environments simultaneously)
 - **Blueprint Delete Command**: `thresh blueprint delete <name>` to remove generated blueprints
-- **Parallel Environment Creation**: Create multiple environments simultaneously via MCP
-  - New MCP tool: `create_environment` with `names` array parameter
-  - 10x faster when creating multiple environments
 - **Enhanced System Metrics**:
   - IP address display
   - Load average monitoring
   - Docker/containerd storage information
   - JSON export support (`--format json`)
-- **Multi-Platform Support**:
-  - Full Linux Docker/nerdctl/containerd support
-  - macOS containerd support (Apple Silicon M1/M2/M3)
-  - Platform-aware AI blueprint generation
-  - Docker Hub image support for Linux environments
+- **Platform-Specific Documentation**:
+  - Separate getting started guides for Windows, Linux, and macOS
+  - Platform-aware CLI help text
+  - Platform-specific access instructions after provisioning
 - **Auto-Save for AI Blueprints**: Generated blueprints automatically save to bundled `blueprints/` directory
 - **Blueprint Metadata Tracking**: Enhanced caching and metadata for all blueprints
-- **Platform-Aware Help Text**: CLI commands show platform-specific instructions
-- **Platform-Aware Access Instructions**: Post-provisioning instructions tailored to each platform
+- **GitHub Copilot CLI Integration**: Added installation instructions to README
 
 ### Changed
 
@@ -44,8 +65,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated to UPX v5.1.0 for Linux and Windows
   - macOS binaries uncompressed (~13MB) to preserve Apple code signing
   - Linux/Windows binaries UPX compressed (~5MB)
+- **Documentation Site**:
+  - Removed default Docusaurus branding from link previews
+  - Updated tagline for better social media sharing
+  - Versioned documentation (1.2.0, 1.3.0, 1.4.0)
+- **Repository Cleanup**: Removed ~75MB of temporary documentation and build artifacts
 - **Improved Cache Messaging**: Removed redundant `[CACHE HIT]` prefix from output
 - **Package Installation Timeout**: Increased from 30s to 300s for better reliability
+- **License**: Standardized on MIT License (removed duplicate Apache 2.0 license)
 
 ### Fixed
 
@@ -58,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Python Blueprints**: Remove pip upgrade for PEP 668 compliance
 - **GitHub Actions**: Remove macOS Intel builds due to runner deprecation
 - **Linux/macOS Messages**: Remove misleading "2-3 minutes" import time message
+- **Version Consistency**: Fixed version mismatch between Program.cs and project files
 
 ### Deprecated
 
