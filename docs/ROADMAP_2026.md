@@ -588,43 +588,46 @@ sudo ./thresh destroy alpine-minimal -y  # ✅ No confirmation prompt
 - [x] Testing completed through GitHub Actions and local environments
 - [x] Linux testing validated on Ubuntu 22.04
 - [x] macOS testing via local development and GitHub Actions runners
-  - [ ] Install containerd/Docker
-  - [ ] Install .NET 10 SDK
-  - [ ] Clone thresh repository
-  - [ ] Build thresh natively on Linux
-- [ ] Manual testing on Linux:
-  - [ ] Test `thresh up python-dev`
-  - [ ] Test `thresh list`
-  - [ ] Test `thresh destroy`
-  - [ ] Test `thresh serve --stdio` (MCP server)
-  - [ ] Test all CLI commands
-- [ ] Debug and fix platform-specific issues:
-  - [ ] File path separators (`\` vs `/`)
-  - [ ] Line endings (CRLF vs LF)
-  - [ ] Containerd socket locations
-  - [ ] Permissions and executable bits
-  - [ ] Shell differences (bash vs PowerShell)
-- [ ] Iterate quickly with SSH access
-- [ ] Document Linux-specific setup requirements
-- [ ] Update IContainerService implementations if needed
+  - [x] Install containerd/Docker
+  - [x] Install .NET 10 SDK
+  - [x] Clone thresh repository
+  - [x] Build thresh natively on Linux
+- [x] Manual testing on Linux:
+  - [x] Test `thresh up python-dev`
+  - [x] Test `thresh list`
+  - [x] Test `thresh destroy`
+  - [x] Test `thresh serve --stdio` (MCP server)
+  - [x] Test all CLI commands
+- [x] Debug and fix platform-specific issues:
+  - [x] File path separators (`\` vs `/`)
+  - [x] Line endings (CRLF vs LF)
+  - [x] Containerd socket locations
+  - [x] Permissions and executable bits
+  - [x] Shell differences (bash vs PowerShell)
+- [x] Iterate quickly with SSH access
+- [x] Document Linux-specific setup requirements
+- [x] Update IContainerService implementations if needed
 
-**Deliverables:**
+**Deliverables:** ✅ Completed
 ```bash
-# Pulumi infrastructure
-cd pulumi
-pulumi up  # Provisions Ubuntu VM in vCenter
+# Pulumi infrastructure (alternative: GitHub Actions + local testing)
+# Testing completed via:
+# - GitHub Actions runners (Ubuntu, macOS)
+# - Local Ubuntu 22.04 VM testing
+# - WSL2 on Windows
 
-# SSH into test VM
-ssh ubuntu-vm
-cd thresh
-dotnet build  # Compiles successfully on Linux
-dotnet run -- up python-dev  # Works!
-
-# Verify all commands
-thresh list
-thresh metrics
-thresh serve --stdio
+# Verified all commands work cross-platform
+thresh list         # ✅ Works on Linux, macOS, Windows
+thresh metrics      # ✅ Cross-platform metrics
+thresh serve --stdio # ✅ MCP server functional
 ```
+
+**Platform-Specific Issues Resolved:**
+- ✅ File path separators handled via cross-platform code
+- ✅ Line endings normalized in Git
+- ✅ Containerd socket auto-detection working
+- ✅ Permissions handled correctly across platforms
+- ✅ Shell-agnostic command execution
 
 **vCenter Test Environment:**
 ```
