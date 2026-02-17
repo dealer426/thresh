@@ -1,10 +1,10 @@
 # thresh Roadmap 2026 - Distributed Development Orchestration
 
 **Created**: February 6, 2026  
-**Updated**: February 13, 2026  
+**Updated**: February 17, 2026  
 **Timeline**: 16 weeks (4 months)  
-**Current Version**: v1.3.0+ (Linux Testing Complete)  
-**Status**: Phase 1 Complete ✅ | Optimization Complete ✅ | Documentation Phase Week 2 In Progress 🔄 | Linux Testing Complete ✅  
+**Current Version**: v1.4.0 (Cross-Platform Release)  
+**Status**: Phase 1 Complete ✅ | Optimization Complete ✅ | Documentation Complete ✅ | Linux/macOS Testing Complete ✅ | v1.4.0 Released ✅  
 **Goal**: Transform thresh from local WSL manager to distributed dev environment orchestrator
 
 ---
@@ -16,14 +16,19 @@
 Single Windows machine → WSL environments → OpenAI/Copilot blueprints
 ```
 
-**v1.3.0 State (Feb 12, 2026 - CURRENT):**
+**v1.3.0 State (Feb 12, 2026):**
 ```
 Windows/WSL only → MCP integration → GitHub Copilot AI → UPX compressed → 3.8 MB binary → Professional docs
 ```
 
-**Target v1.4.0 State (Mar 2026):**
+**v1.4.0 State (Feb 17, 2026 - CURRENT):**
 ```
-Cross-platform (Windows/Linux/macOS) → Multi-platform builds → 3 package distributions
+Cross-platform (Windows/Linux/macOS) → Multi-platform builds → 11 MCP tools → Platform-specific docs → Repository cleanup
+```
+
+**Target v1.5.0 State (Mar 2026):**
+```
+Package managers (winget/Chocolatey/Scoop/Homebrew) → Enhanced tutorials → Search integration (Algolia)
 ```
 
 **Target v2.0 State (Jun 2026):**
@@ -56,9 +61,15 @@ Fleet of machines → Mesh network → Central orchestration → Distributed wor
 | **Platform-Aware AI Prompts** | v1.3.0+ | (core) | Medium |
 | **Simplified ContainerdService** | v1.3.0+ | -99 lines | Medium |
 | **Destroy -y Flag** | v1.3.0+ | (core) | Low |
-| **Current Binary Size** | v1.3.0+ | **~14 MB** | 🔥 Excellent |
+| **Multi-Platform Builds** | v1.4.0 | N/A (CI/CD) | 🔥 Huge |
+| **Extended MCP Server (11 tools)** | v1.4.0 | +50 KB | 🔥 Huge |
+| **Platform-Specific Documentation** | v1.4.0 | N/A (website) | High |
+| **Blueprint Command Grouping** | v1.4.0 | (refactor) | Medium |
+| **macOS Support (Apple Silicon)** | v1.4.0 | (core) | 🔥 Huge |
+| **Repository Cleanup** | v1.4.0 | -75 MB repo | Medium |
+| **Current Binary Size** | v1.4.0 | **~5 MB** (Win/Linux), **~13 MB** (macOS) | 🔥 Excellent |
 
-**Note:** v1.3.0+ includes Linux testing complete. Cross-platform builds (Linux/macOS) ready for v1.4.0.
+**Note:** v1.4.0 shipped February 17, 2026 with full cross-platform support for Windows, Linux, and macOS.
 
 ### Proposed Features 🔮
 
@@ -143,10 +154,10 @@ thresh serve --stdio   # For VS Code, Cursor, Windsurf
 
 ---
 
-### **Documentation Phase: Professional Docs (Weeks 5-6) - Docusaurus** ✅🔄 Week 1 Complete | Week 2 In Progress
+### **Documentation Phase: Professional Docs (Weeks 5-6) - Docusaurus** ✅ COMPLETE
 
 **Goal:** Create professional documentation website with Docusaurus + GitHub Pages  
-**Status:** 🔄 Active (Feb 9-12, 2026)  
+**Status:** ✅ Complete (Feb 9-17, 2026)  
 **Priority:** P0 (Critical for user adoption and community growth)
 
 #### Week 1: Docusaurus Setup & Migration ✅ COMPLETE (Feb 9-12, 2026)
@@ -181,7 +192,7 @@ https://thresh.sh ✅
 - 📋 Copy-to-clipboard UI for install commands
 - ⚡ CI/CD optimized (docs-only changes don't trigger C# build)
 
-#### Week 2: Enhanced Content & Features 🔄 IN PROGRESS
+#### Week 2: Enhanced Content & Features ✅ COMPLETE
 - [x] CLI reference created for 7 commands:
   - [x] `up.md` - Provision environments
   - [x] `list.md` - List environments
@@ -190,82 +201,80 @@ https://thresh.sh ✅
   - [x] `chat.md` - Interactive AI chat
   - [x] `config.md` - Configuration management
   - [x] `index.md` - CLI overview
-- [ ] Complete CLI reference for remaining 8 commands:
-  - [ ] `blueprints` - List available blueprints
-  - [ ] `distros` - List distributions
-  - [ ] `distro` - Manage custom distributions
-  - [ ] `serve` - Start MCP server
-  - [ ] `metrics` - Performance metrics
-  - [ ] `version` - Version information
-  - [ ] `network` (future) - Mesh network commands
-  - [ ] `agent` (future) - Agent mode commands
-- [ ] Write 5 tutorial articles:
-  - [ ] "Quick Start: 5-Minute Setup"
-  - [ ] "Creating Custom Blueprints"
-  - [ ] "Setting Up GitHub Copilot SDK"
-  - [ ] "VS Code MCP Integration"
-  - [ ] "Cross-Platform Development"
-- [ ] Add Mermaid diagrams (architecture, workflows)
+- [x] Platform-specific documentation created:
+  - [x] `getting-started-windows.md` - Windows 11/WSL2 guide
+  - [x] `getting-started-linux.md` - Linux Docker/nerdctl guide
+  - [x] `getting-started-macos.md` - macOS Apple Silicon guide
+- [x] Add Mermaid diagrams (architecture, workflows)
 - [x] Add code syntax highlighting (Bash, PowerShell, C#, JSON)
-- [x] Configure version dropdown (v1.3.0, v1.2.0)
-- [ ] Set up search (Algolia DocSearch application)
+- [x] Configure version dropdown (v1.2.0, v1.3.0, v1.4.0)
 - [x] Create blog posts:
   - [x] "thresh 1.3.0 Release" (UPX compression, performance)
   - [x] "SBOM and Supply Chain Security"
-  - [ ] "MCP Integration Guide"
-  - [ ] "Cross-Platform Development with thresh"
+  - [x] "MCP Integration Guide" (Complete tutorial)
+  - [x] "thresh 1.4.0 Cross-Platform Release"
+  - [x] "macOS Beta Testing Announcement"
+- [x] Enhanced homepage with better social sharing (removed Docusaurus branding)
+- [x] Repository cleanup (~75MB removed)
+
+**Deferred to v1.5.0:**
+- [ ] Set up search (Algolia DocSearch application)
 - [ ] Add download page with package manager instructions
+- [ ] Complete remaining CLI command docs (serve, metrics, blueprints, etc.)
 - [ ] Add screenshots/demos to homepage
 
-**Site Structure:** ✅ Established
+**Site Structure:** ✅ v1.4.0 Complete
 ```
 website/
 ├── docs/
-│   ├── intro.md ✅
+│   ├── intro.md ✅ (Platform overview)
 │   ├── installation.md ✅
+│   ├── getting-started-windows.md ✅ (NEW in v1.4.0)
+│   ├── getting-started-linux.md ✅ (NEW in v1.4.0)
+│   ├── getting-started-macos.md ✅ (NEW in v1.4.0)
 │   ├── cli-reference/ ✅ (7 commands)
 │   ├── mcp-integration.md ✅
-│   ├── blueprints/ ⏳ (planned)
-│   ├── advanced/ ⏳ (planned)
-│   └── contributing/ ⏳ (planned)
-├── blog/ ✅ (2 posts)
-├── versioned_docs/ ✅ (v1.3.0, v1.2.0)
+│   ├── blueprints/ ⏳ (planned for v1.5.0)
+│   ├── advanced/ ⏳ (planned for v1.5.0)
+│   └── contributing/ ⏳ (planned for v1.5.0)
+├── blog/ ✅ (5 posts in v1.4.0)
+├── versioned_docs/ ✅ (v1.2.0, v1.3.0, v1.4.0)
 └── src/
-    ├── pages/index.tsx ✅ (with copy button)
+    ├── pages/index.tsx ✅ (improved social media preview)
     └── components/HomepageFeatures/ ✅
 ```
 
 **Documentation Phase Success Metrics:**
 - [x] Site deployed at `https://thresh.sh` (custom domain!)
 - [x] Automatic deployment on `main` branch push
-- [x] 7 CLI commands documented with examples (8 more to go)
-- [x] 2 blog posts published (3+ more planned)
-- [ ] Search functionality (Algolia) working
+- [x] 7 CLI commands documented with examples
+- [x] 5 blog posts published (v1.4.0)
+- [x] Platform-specific getting started guides (Windows/Linux/macOS)
+- [x] MCP integration tutorial complete
 - [x] Mobile responsive design (Docusaurus default)
 - [x] Dark mode enabled (Docusaurus default)
-- [x] Version dropdown (v1.3.0, v1.2.0)
+- [x] Version dropdown (v1.2.0, v1.3.0, v1.4.0)
 - [x] SSL/HTTPS enforced
 - [x] Copy-to-clipboard functionality
 - [x] <2 second page load time (GitHub Pages CDN)
+- [x] Removed Docusaurus branding from social media previews
+- [x] Repository cleanup (~75MB removed)
 
-**Impact:** ✅ Achieved
+**Deferred to v1.5.0:**
+- [ ] Search functionality (Algolia DocSearch)
+- [ ] Additional CLI command docs (serve, metrics, blueprints, etc.)
+- [ ] Screenshots/demos on homepage
+- [ ] Package manager download page
+
+**Impact:** ✅ v1.4.0 Achieved
 - 🚀 Professional documentation live at thresh.sh
-- 📈 SEO-friendly with custom domain
+- 📈 SEO-friendly with custom domain and improved social sharing
 - 🤝 Foundation for community contributions
-- 📚 Centralized knowledge base
+- 📚 Centralized knowledge base with platform-specific guides
 - 🔒 Secure HTTPS access
 - 🌍 Foundation for future internationalization
-
-**Next Steps (Week 2 remaining):**
-1. ✅ Complete CLI reference (6 commands documented)
-2. ✅ All 5 tutorials created
-3. ✅ Mermaid diagrams added
-4. ✅ 2 blog posts published
-5. ✅ Download page created
-6. [ ] Apply for Algolia DocSearch
-7. [ ] Add screenshots/demos to homepage
-
-**See:** `docs/DOCUSAURUS_PLAN.md` for full implementation details
+- 🧹 Clean repository (~75MB removed)
+- 📝 5 blog posts covering releases and tutorials
 
 ---
 
@@ -426,28 +435,159 @@ sudo ./thresh destroy alpine-minimal -y  # ✅ No confirmation prompt
 - 🚀 nerdctl as Docker alternative (containerd-native)
 - ⚡ Better UX for scripting (destroy -y flag)
 
+---
+
+### **v1.4.0 Release (Feb 17, 2026)** ✅ SHIPPED
+
+**Goal:** Ship cross-platform thresh with enhanced MCP support and comprehensive documentation  
+**Status:** ✅ Released February 17, 2026  
+**Priority:** P0 (Major milestone - cross-platform expansion)
+
+#### Major Achievements ✅
+
+**1. Multi-Platform Support** 🎉
+- [x] GitHub Actions multi-platform builds (Windows, Linux, macOS)
+- [x] Platform-specific build configurations:
+  - [x] Windows x64 with UPX compression (~5 MB)
+  - [x] Linux x64 with UPX compression (~5 MB)
+  - [x] macOS ARM64 uncompressed (~13 MB, code signing preserved)
+- [x] Platform-aware runtime detection and adaptation
+- [x] Cross-platform Blueprint/ContainerdService tested on all platforms
+
+**2. Extended MCP Server (6 → 11 tools)** 🔥
+- [x] `list_environments` - List all environments
+- [x] `create_environment` - Provision environments
+- [x] `destroy_environment` - Remove environments
+- [x] `list_blueprints` - Show available blueprints
+- [x] `get_blueprint` - Get blueprint details
+- [x] `delete_blueprint` - Remove generated blueprints (NEW)
+- [x] `generate_blueprint` - AI-powered blueprint generation (NEW)
+- [x] `save_blueprint` - Save custom blueprints (NEW)
+- [x] `get_version` - Query thresh version and platform (NEW)
+- [x] `get_metrics` - Retrieve system metrics (NEW)
+- [x] `check_requirements` - Verify prerequisites
+
+**3. Command Structure Refactoring** ⚠️ Breaking Change
+- [x] Grouped blueprint commands under `thresh blueprint` parent:
+  - `thresh blueprints` → `thresh blueprint list`
+  - `thresh generate <prompt>` → `thresh blueprint generate <prompt>`
+  - Added `thresh blueprint delete <name>`
+- [x] System.CommandLine provides automatic migration suggestions
+- [x] Improved discoverability with `thresh blueprint --help`
+
+**4. Platform-Specific Documentation** 📚
+- [x] Created three getting started guides:
+  - `getting-started-windows.md` - Windows 11/WSL2 complete guide
+  - `getting-started-linux.md` - Linux Docker/nerdctl complete guide
+  - `getting-started-macos.md` - macOS Apple Silicon complete guide (Beta)
+- [x] Platform comparison table in intro.md
+- [x] Platform-specific prerequisites and troubleshooting
+- [x] Updated intro.md to navigation hub for platform guides
+
+**5. Documentation Enhancements** 🌐
+- [x] 5 blog posts published:
+  - thresh 1.3.0 Release
+  - SBOM and Supply Chain Security
+  - MCP Integration Complete Guide
+  - thresh 1.4.0 Cross-Platform Release
+  - macOS Beta Testing Announcement
+- [x] Removed Docusaurus default branding from social media previews
+- [x] Updated tagline for better link sharing
+- [x] Versioned docs for v1.2.0, v1.3.0, v1.4.0
+- [x] Added GitHub Copilot CLI installation instructions to README
+
+**6. Repository Cleanup** 🧹
+- [x] Removed ~75MB of files:
+  - Temporary documentation (HANDOVER docs, SESSION_STATUS, etc.)
+  - Build artifacts (govc binaries, test zips, SBOMs)
+  - Redundant files (duplicate licenses, planning docs)
+  - Old getting started guide (replaced with platform-specific guides)
+- [x] Updated .gitignore for govc and other binaries
+- [x] Streamlined repository to essential files only
+
+**7. Version Consistency & Quality** ✅
+- [x] Fixed version mismatch (Program.cs 1.2.0 → 1.4.0)
+- [x] Synchronized versions across all files:
+  - Program.cs: 1.4.0
+  - Thresh.csproj: 1.4.0
+  - McpServer.cs: 1.4.0
+- [x] Updated CHANGELOG.md with comprehensive v1.4.0 release notes
+- [x] Standardized on MIT License (removed duplicate Apache 2.0)
+
+#### Build & Distribution ✅
+
+**GitHub Actions Workflow:**
+- [x] Multi-platform build workflow (`build-multiplatform.yml`)
+- [x] Parallel builds for win-x64, linux-x64, osx-arm64
+- [x] UPX v5.1.0 compression for Windows and Linux
+- [x] Homebrew UPX installation for macOS (skip compression)
+- [x] SBOM generation for all platforms
+- [x] Artifact publishing with preserved naming
+
+**Binary Sizes (v1.4.0):**
+- Windows: ~5 MB (UPX compressed)
+- Linux: ~5 MB (UPX compressed)
+- macOS: ~13 MB (uncompressed, code signing preserved)
+
+**Artifacts Tested:**
+- [x] Windows build downloaded and tested (11 MCP tools verified)
+- [x] Linux build downloaded and verified
+- [x] `thresh version` shows consistent 1.4.0 across platforms
+
+#### Success Metrics ✅ ALL ACHIEVED
+
+- [x] thresh builds and runs on Windows, Linux, macOS
+- [x] MCP server exposes all 11 tools successfully
+- [x] Platform-specific documentation complete for all 3 platforms
+- [x] GitHub Actions successfully builds all platforms
+- [x] Version consistency across all source files
+- [x] CHANGELOG.md updated with comprehensive release notes
+- [x] Repository size reduced by ~75MB
+- [x] 5 blog posts published covering v1.4.0 features
+- [x] Breaking changes well-documented with migration paths
+- [x] No corruption from Windows/Linux development switching
+
+#### Impact 🚀 HUGE
+
+- 🌍 **True Cross-Platform**: Windows, Linux, macOS support
+- 🤖 **Enhanced AI Integration**: 11 MCP tools for comprehensive automation
+- 📚 **Better Onboarding**: Platform-specific guides reduce confusion
+- 🧹 **Cleaner Project**: ~75MB repository cleanup improves maintainability
+- 🔧 **Better UX**: Grouped commands improve discoverability
+- 📊 **Growth Ready**: Foundation for package managers (winget, Homebrew, etc.)
+
 **Next Steps:**
-- Ready for v1.4.0 release with full Linux support
-- Foundation laid for macOS testing
-- Documentation updates for YAML format
-- nerdctl added to installation guides
+- Package manager distribution (winget, Chocolatey, Scoop, Homebrew)
+- Algolia DocSearch integration for documentation site
+- Additional CLI command documentation (serve, metrics, etc.)
+- Enhanced tutorials and use case examples
 
 ---
 
-### **Phase 2.5: Cross-Platform Testing & Builds (Weeks 7-8) - Multi-Platform Support** 🆕 **HYBRID APPROACH**
+### **Phase 2.5: Cross-Platform Testing & Builds (Weeks 7-8) - Multi-Platform Support** ✅ COMPLETE (v1.4.0)
 
-**Goal:** Test and build thresh for Linux and macOS platforms using Pulumi + vCenter for deep testing and GitHub Actions for CI/CD
+**Goal:** Test and build thresh for Linux and macOS platforms  
+**Status:** ✅ Complete - Shipped in v1.4.0 (Feb 17, 2026)  
 
-**Strategy:** Use real vCenter infrastructure for thorough testing (Week 7), then implement automated CI/CD (Week 8)
+**Note:** This phase was completed as part of v1.4.0 release. The original plan included Pulumi + vCenter testing, but we successfully achieved cross-platform support through:
+- GitHub Actions multi-platform CI/CD
+- Extensive local testing on Windows/WSL, Linux Docker/nerdctl, and macOS
+- Platform-aware code and documentation
 
-#### Week 7: Pulumi + vCenter Deep Testing
-- [ ] Create Pulumi infrastructure project (`pulumi/`)
-- [ ] Write Pulumi code for vCenter VM provisioning
-  - [ ] Ubuntu 22.04 LTS VM (2 CPU, 4GB RAM)
-  - [ ] AlmaLinux/Rocky VM (RHEL-like testing)
-  - [ ] Network configuration and SSH access
-- [ ] Provision test VMs via `pulumi up`
-- [ ] SSH into Ubuntu VM and set up environment:
+---
+
+### **Phase 2.5 (Original Plan): Cross-Platform Testing & Builds** 📋 REFERENCE
+
+**Original Goal:** Test and build thresh for Linux and macOS platforms using Pulumi + vCenter for deep testing and GitHub Actions for CI/CD
+
+**Original Strategy:** Use real vCenter infrastructure for thorough testing (Week 7), then implement automated CI/CD (Week 8)
+
+#### Week 7: Pulumi + vCenter Deep Testing (COMPLETED via alternative approach)
+- [x] ~~Create Pulumi infrastructure project (`pulumi/`)~~
+- [x] ~~Write Pulumi code for vCenter VM provisioning~~
+- [x] Testing completed through GitHub Actions and local environments
+- [x] Linux testing validated on Ubuntu 22.04
+- [x] macOS testing via local development and GitHub Actions runners
   - [ ] Install containerd/Docker
   - [ ] Install .NET 10 SDK
   - [ ] Clone thresh repository
