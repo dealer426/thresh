@@ -138,3 +138,11 @@ govc.exe
 *.njsproj
 *.sln
 *.sw?
+
+# AI workstation build documentation (personal hardware guides)
+docs/AI_DEVELOPMENT_WORKSTATION_GUIDE.md
+docs/DUAL_GPU_BUILD_SHOPPING_LIST.md
+docs/FLAGSHIP_BUILD_SHOPPING_GUIDE.md
+docs/FLAGSHIP_BUILD_UBUNTU.md
+docs/ORDER_NOW.md
+docs/QWEN_CODING_AGENT_SETUP.md
