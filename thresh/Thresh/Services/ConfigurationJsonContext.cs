@@ -20,7 +20,11 @@ internal partial class ConfigurationJsonContext : JsonSerializerContext
 /// </summary>
 [JsonSerializable(typeof(Blueprint))]
 [JsonSerializable(typeof(BlueprintScripts))]
+[JsonSerializable(typeof(BlueprintVolume))]
+[JsonSerializable(typeof(BlueprintBindMount))]
 [JsonSerializable(typeof(List<string>))]
+[JsonSerializable(typeof(List<BlueprintVolume>))]
+[JsonSerializable(typeof(List<BlueprintBindMount>))]
 [JsonSerializable(typeof(EnvironmentMetadata))]
 [JsonSerializable(typeof(CustomDistribution))]
 [JsonSerializable(typeof(JsonDocument))]

@@ -285,7 +285,7 @@ public class ContainerdService : IContainerService
     /// <summary>
     /// Import/create a new environment from an image or rootfs tarball
     /// </summary>
-    public async Task<bool> ImportEnvironmentAsync(string environmentName, string sourcePath, string installPath, string? blueprintName = null)
+    public async Task<bool> ImportEnvironmentAsync(string environmentName, string sourcePath, string installPath, string? blueprintName = null, Blueprint? blueprint = null)
     {
         var containerName = ThreshPrefix + environmentName;
         var tool = await GetAvailableToolAsync();
@@ -317,6 +317,9 @@ public class ContainerdService : IContainerService
                 createArgs.AddRange(new[] { "--label", $"thresh.blueprint={blueprintName}" });
             }
             
+            // Add networking configuration from blueprint
+            AddNetworkingArgs(createArgs, blueprint);
+            
             createArgs.AddRange(new[] { imageName, "/bin/sh" });
             result = await ProcessHelper.ExecuteAsync(createArgs.ToArray());
         }
@@ -332,6 +335,9 @@ public class ContainerdService : IContainerService
                 createArgs.AddRange(new[] { "--label", $"thresh.blueprint={blueprintName}" });
             }
             
+            // Add networking configuration from blueprint
+            AddNetworkingArgs(createArgs, blueprint);
+            
             // Add image name and shell command
             // Use /bin/sh for compatibility (works on Alpine, Ubuntu, Debian, etc.)
             createArgs.AddRange(new[] { sourcePath, "/bin/sh" });
@@ -339,6 +345,44 @@ public class ContainerdService : IContainerService
         }
         
         return result.IsSuccess;
+    }
+    
+    /// <summary>
+    /// Add networking arguments to container create command from blueprint
+    /// </summary>
+    private void AddNetworkingArgs(List<string> args, Blueprint? blueprint)
+    {
+        if (blueprint == null) return;
+        
+        // Add port mappings (-p HOST:CONTAINER)
+        if (blueprint.Ports != null && blueprint.Ports.Count > 0)
+        {
+            foreach (var port in blueprint.Ports)
+            {
+                args.AddRange(new[] { "-p", port });
+            }
+        }
+        
+        // Add exposed ports (--expose CONTAINER)
+        if (blueprint.Expose != null && blueprint.Expose.Count > 0)
+        {
+            foreach (var port in blueprint.Expose)
+            {
+                args.AddRange(new[] { "--expose", port });
+            }
+        }
+        
+        // Add network name (--network NAME)
+        if (!string.IsNullOrEmpty(blueprint.Network))
+        {
+            args.AddRange(new[] { "--network", blueprint.Network });
+        }
+        
+        // Add hostname (--hostname NAME)
+        if (!string.IsNullOrEmpty(blueprint.Hostname))
+        {
+            args.AddRange(new[] { "--hostname", blueprint.Hostname });
+        }
     }
 
     /// <summary>

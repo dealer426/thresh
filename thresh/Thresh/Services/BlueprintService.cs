@@ -123,7 +123,7 @@ public class BlueprintService
 
         // Step 1: Install base distribution
         Console.WriteLine($"[1/5] Installing base distribution: {blueprint.Base}");
-        await InstallBaseDistributionAsync(environmentName, blueprint.Base, blueprint.Name, verbose);
+        await InstallBaseDistributionAsync(environmentName, blueprint.Base, blueprint.Name, verbose, blueprint);
 
         // Step 2: Install packages FIRST (before scripts that may depend on them)
         if (blueprint.Packages != null && blueprint.Packages.Count > 0)
@@ -192,7 +192,18 @@ public class BlueprintService
             Created = DateTime.UtcNow,
             Base = blueprint.Base,
             Description = blueprint.Description,
-            DistributionSource = distroInfo?.Source.ToString()
+            DistributionSource = distroInfo?.Source.ToString(),
+            
+            // Networking configuration
+            Ports = blueprint.Ports,
+            Expose = blueprint.Expose,
+            Network = blueprint.Network,
+            Hostname = blueprint.Hostname,
+            
+            // Storage configuration
+            Volumes = blueprint.Volumes,
+            BindMounts = blueprint.BindMounts,
+            Tmpfs = blueprint.Tmpfs
         };
         
         var json = JsonSerializer.Serialize(metadata, BlueprintJsonContext.Default.EnvironmentMetadata);
@@ -220,7 +231,7 @@ public class BlueprintService
         }
     }
 
-    private async Task InstallBaseDistributionAsync(string environmentName, string baseDistro, string blueprintName, bool verbose)
+    private async Task InstallBaseDistributionAsync(string environmentName, string baseDistro, string blueprintName, bool verbose, Blueprint? blueprint = null)
     {
         var distroName = "thresh-" + environmentName;
 
@@ -244,17 +255,17 @@ public class BlueprintService
         // Handle Microsoft Store distributions differently
         if (distroInfo.Source == RootfsRegistry.DistributionSource.MicrosoftStore)
         {
-            await InstallMicrosoftStoreDistroAsync(distroName, distroInfo, blueprintName, verbose);
+            await InstallMicrosoftStoreDistroAsync(distroName, distroInfo, blueprintName, verbose, blueprint);
         }
         else
         {
-            await InstallVendorDistroAsync(distroName, environmentName, distroInfo, blueprintName, verbose);
+            await InstallVendorDistroAsync(distroName, environmentName, distroInfo, blueprintName, verbose, blueprint);
         }
 
         Console.WriteLine("  [OK] Base distribution installed");
     }
 
-    private async Task InstallMicrosoftStoreDistroAsync(string distroName, RootfsRegistry.DistributionInfo distroInfo, string blueprintName, bool verbose)
+    private async Task InstallMicrosoftStoreDistroAsync(string distroName, RootfsRegistry.DistributionInfo distroInfo, string blueprintName, bool verbose, Blueprint? blueprint = null)
     {
         if (string.IsNullOrEmpty(distroInfo.WslInstallName))
             throw new InvalidOperationException($"MS Store distribution {distroInfo.Name} is missing WslInstallName");
@@ -288,14 +299,14 @@ public class BlueprintService
         }
 
         var installPath = Path.Combine(homeDir, "AppData", "Local", "thresh", distroName);
-        await ImportDistroAsync(distroName, installPath, tempExport, blueprintName, verbose);
+        await ImportDistroAsync(distroName, installPath, tempExport, blueprintName, verbose, blueprint);
 
         // Clean up temp export and original MS Store distro
         File.Delete(tempExport);
         await ProcessHelper.ExecuteAsync(60, "wsl", "--unregister", distroInfo.WslInstallName);
     }
 
-    private async Task InstallVendorDistroAsync(string distroName, string environmentName, RootfsRegistry.DistributionInfo distroInfo, string blueprintName, bool verbose)
+    private async Task InstallVendorDistroAsync(string distroName, string environmentName, RootfsRegistry.DistributionInfo distroInfo, string blueprintName, bool verbose, Blueprint? blueprint = null)
     {
         var homeDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
         var installPath = Path.Combine(homeDir, "AppData", "Local", "thresh", environmentName);
@@ -325,7 +336,7 @@ public class BlueprintService
             }
             
             // Pass Docker image name directly - ContainerdService will create container from it
-            await ImportDistroAsync(distroName, installPath, distroInfo.DockerImage!, blueprintName, verbose);
+            await ImportDistroAsync(distroName, installPath, distroInfo.DockerImage!, blueprintName, verbose, blueprint);
         }
         else
         {
@@ -354,7 +365,7 @@ public class BlueprintService
                 Console.WriteLine($"  Install path: {installPath}");
             }
 
-            await ImportDistroAsync(distroName, installPath, cachedRootfs, blueprintName, verbose);
+            await ImportDistroAsync(distroName, installPath, cachedRootfs, blueprintName, verbose, blueprint);
         }
     }
 
@@ -390,7 +401,7 @@ public class BlueprintService
         }
     }
 
-    private async Task ImportDistroAsync(string distroName, string installPath, string tarballPath, string blueprintName, bool verbose)
+    private async Task ImportDistroAsync(string distroName, string installPath, string tarballPath, string blueprintName, bool verbose, Blueprint? blueprint = null)
     {
         // Create install directory
         Directory.CreateDirectory(installPath);
@@ -407,7 +418,8 @@ public class BlueprintService
             distroName.Replace("thresh-", ""), 
             tarballPath, 
             installPath,
-            blueprintName);
+            blueprintName,
+            blueprint);
 
         if (!success)
         {
