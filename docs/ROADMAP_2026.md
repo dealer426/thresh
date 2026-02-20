@@ -28,6 +28,11 @@ Cross-platform (Windows/Linux/macOS) → Multi-platform builds → 11 MCP tools 
 
 **Target v1.5.0 State (Mar 2026):**
 ```
+Port mapping → Persistent volumes → Networking configuration → Storage mounting → Blueprint networking/storage support
+```
+
+**Target v1.6.0 State (Mar-Apr 2026):**
+```
 Package managers (winget/Chocolatey/Scoop/Homebrew) → Enhanced tutorials → Search integration (Algolia)
 ```
 
@@ -75,7 +80,10 @@ Fleet of machines → Mesh network → Central orchestration → Distributed wor
 
 | Feature | Effort | Size Impact | Value | Priority |
 |---------|--------|-------------|-------|----------|
-| **Docusaurus Documentation** | 1-2 weeks | N/A (website) | 🔥 Huge | **P0** |
+| **Port Mapping & Networking** | 1 week | +40 KB | 🔥 Huge | **P0** |
+| **Persistent Volumes** | 1 week | +30 KB | 🔥 Huge | **P0** |
+| **Network Configuration** | 3 days | +20 KB | High | **P0** |
+| **Docusaurus Documentation** | 1-2 weeks | N/A (website) | 🔥 Huge | **P1** |
 | **Agent Mode (Daemon)** | 1 week | +60 KB | High | **P1** |
 | **Mesh Network (Tailscale/Netmaker)** | 2 weeks | +120 KB | High | **P1** |
 | **Central Hub** | 2 weeks | Separate (~8 MB) | High | **P2** |
@@ -557,10 +565,217 @@ sudo ./thresh destroy alpine-minimal -y  # ✅ No confirmation prompt
 - 📊 **Growth Ready**: Foundation for package managers (winget, Homebrew, etc.)
 
 **Next Steps:**
-- Package manager distribution (winget, Chocolatey, Scoop, Homebrew)
+- Container networking and storage (port mapping, volumes) - v1.5.0
+- Package manager distribution (winget, Chocolatey, Scoop, Homebrew) - v1.6.0
 - Algolia DocSearch integration for documentation site
 - Additional CLI command documentation (serve, metrics, etc.)
 - Enhanced tutorials and use case examples
+
+---
+
+### **Phase 1.5: Container Networking & Storage (Weeks 7-8) - v1.5.0** 🆕 NEXT
+
+**Goal:** Add production-ready container features for networking and persistent storage  
+**Status:** 📋 Planned for v1.5.0 (Mar 2026)  
+**Priority:** P0 (Critical for real-world container deployments)
+
+#### Week 1: Port Mapping & Network Configuration (3-4 days)
+- [ ] Extend Blueprint model with networking configuration
+  - [ ] `ports` array for port mappings
+  - [ ] `expose` list for container-only exposed ports
+  - [ ] `network` string for custom network names
+  - [ ] `hostname` for container hostname
+- [ ] Update WslService for WSL port forwarding
+  - [ ] Windows `netsh interface portproxy` integration
+  - [ ] Automatic port proxy creation/deletion
+  - [ ] Port conflict detection
+- [ ] Update ContainerdService for Docker/nerdctl port mapping
+  - [ ] `-p` flag support for docker/nerdctl
+  - [ ] `--expose` flag for non-mapped ports
+  - [ ] `--network` flag for network selection
+- [ ] Add validation for port ranges and conflicts
+- [ ] Update MCP tools to support networking configuration
+
+**Blueprint Example:**
+```yaml
+name: web-server
+base: ubuntu:22.04
+packages:
+  - nginx
+  - curl
+ports:
+  - "8080:80"      # host:container
+  - "8443:443"
+  - "3000:3000"
+expose:
+  - "9090"         # Container-only, not mapped to host
+network: "bridge"
+hostname: "web-dev"
+```
+
+**CLI Usage:**
+```bash
+# Port mapping automatically configured
+thresh up web-server
+
+# Verify ports
+thresh list --format json | jq '.[] | .ports'
+
+# Access from host
+curl http://localhost:8080
+```
+
+**Deliverables:**
+```bash
+# Blueprints with port mappings work
+thresh up web-api     # Maps ports 3000:3000, 5000:5000
+
+# Windows WSL: netsh port proxy created automatically
+# Linux/macOS: docker/nerdctl -p flags used
+
+# List shows ports
+thresh list
+# Output: web-api    Running   WSL2   Ports: 3000:3000, 5000:5000
+```
+
+**Binary Impact:** +40 KB (port mapping logic, netsh integration)
+
+---
+
+#### Week 1-2: Persistent Volumes & Storage Mounting (3-4 days)
+- [ ] Extend Blueprint model with volume configuration
+  - [ ] `volumes` array for persistent storage
+  - [ ] `bind_mounts` for host directory mounts
+  - [ ] `tmpfs` for temporary filesystems
+- [ ] Implement volume management for WSL
+  - [ ] Windows host directory binding to WSL
+  - [ ] \\\\wsl$\\distro path resolution
+  - [ ] Permission handling
+- [ ] Implement volume management for Docker/nerdctl
+  - [ ] `-v` flag for volume mounts
+  - [ ] `--mount` flag for bind mounts
+  - [ ] Named volume creation and management
+- [ ] Add `thresh volume` subcommands
+  - [ ] `thresh volume list` - Show all volumes
+  - [ ] `thresh volume create <name>` - Create named volume
+  - [ ] `thresh volume delete <name>` - Remove volume
+  - [ ] `thresh volume inspect <name>` - Show volume details
+- [ ] Update environment lifecycle
+  - [ ] Volumes persist after `thresh destroy`
+  - [ ] Optional `--remove-volumes` flag
+
+**Blueprint Example:**
+```yaml
+name: database-dev
+base: ubuntu:22.04
+packages:
+  - postgresql-14
+volumes:
+  - name: postgres-data
+    mount: /var/lib/postgresql/data
+  - name: postgres-backups
+    mount: /backups
+bind_mounts:
+  - host: /c/Users/burns/code/db-scripts
+    container: /opt/scripts
+    readonly: true
+tmpfs:
+  - /tmp
+  - /run
+```
+
+**CLI Usage:**
+```bash
+# Create environment with volumes
+thresh up database-dev
+
+# Volumes persist after destroy
+thresh destroy database-dev
+thresh volume list
+# Output: postgres-data (10GB), postgres-backups (5GB)
+
+# Clean up volumes
+thresh destroy database-dev --remove-volumes
+
+# Manage volumes independently
+thresh volume create shared-cache
+thresh volume inspect shared-cache
+```
+
+**Deliverables:**
+```bash
+# Named volumes work
+thresh up postgres-dev   # Creates postgres-data volume
+
+# Volumes survive destroy
+thresh destroy postgres-dev
+thresh up postgres-dev   # Data still there!
+
+# Bind mounts from Windows to WSL work
+thresh up node-dev       # Mounts C:\code to /workspace
+
+# Volume management commands
+thresh volume list
+thresh volume delete old-cache
+```
+
+**Binary Impact:** +30 KB (volume management, mount logic)
+
+---
+
+#### Week 2: Network & Storage Documentation (2-3 days)
+- [ ] Add networking examples to docs
+  - [ ] Web server with port mapping
+  - [ ] Multi-container communication
+  - [ ] Port conflict resolution
+- [ ] Add storage examples to docs
+  - [ ] Database with persistent volume
+  - [ ] Shared code directory mount
+  - [ ] Development workflow with volumes
+- [ ] Update MCP integration guide
+  - [ ] AI can generate blueprints with ports/volumes
+  - [ ] Network-aware environment provisioning
+- [ ] Create migration guide from v1.4.0
+- [ ] Add troubleshooting section
+  - [ ] Port conflicts
+  - [ ] Permission issues with mounts
+  - [ ] WSL port forwarding issues
+
+**Deliverables:**
+- Complete networking documentation at thresh.sh/docs/networking
+- Complete storage documentation at thresh.sh/docs/storage
+- Blueprint examples repository with 10+ network/storage configs
+- Updated getting started guides with port/volume examples
+
+---
+
+#### Phase 1.5 Success Metrics:
+- [ ] Port mapping works on Windows (WSL), Linux, macOS
+- [ ] Persistent volumes survive environment destroy/recreate
+- [ ] Bind mounts work cross-platform (Windows paths → WSL)
+- [ ] Port conflicts detected and reported clearly
+- [ ] Volume lifecycle independent of environment lifecycle
+- [ ] MCP tools can create environments with ports/volumes
+- [ ] Documentation includes 10+ real-world examples
+- [ ] Binary size < 5.2 MB (Win/Linux compressed)
+
+---
+
+#### Impact 🔥 HUGE
+
+- 🌐 **Production-Ready Containers**: Port mapping enables web services
+- 💾 **Data Persistence**: Volumes enable databases and stateful apps
+- 🔄 **Development Workflow**: Bind mounts enable live code editing
+- 🐳 **Docker Parity**: thresh now covers 80% of Docker use cases
+- 🤖 **AI-Powered Networking**: MCP can configure ports/volumes
+- 📊 **Real Workloads**: Move from demos to production services
+
+**Use Cases Unlocked:**
+- Web servers (nginx, Apache, Node.js apps)
+- Databases (PostgreSQL, MySQL, MongoDB)
+- Development environments with live code reload
+- Data science with persistent notebook state
+- CI/CD agents with shared cache volumes
 
 ---
 
@@ -962,16 +1177,22 @@ yum install thresh       # RHEL/Fedora
 
 | Milestone | Size | Growth | Features |
 |-----------|------|--------|----------|
-| v1.0 (current) | 16.6 MB | - | WSL, Dual AI |
-| + Cross-platform | 16.8 MB | +200 KB | containerd support |
-| + MCP | 16.9 MB | +100 KB | MCP server |
-| + Metrics | 17.0 MB | +80 KB | Host monitoring |
-| + Agent | 17.06 MB | +60 KB | Background mode |
-| + Mesh | 17.18 MB | +120 KB | Tailscale + Netmaker |
-| + Orchestration | 17.28 MB | +100 KB | Remote provisioning |
-| **v2.0 (final)** | **17.3 MB** | **+4.2%** | **8x functionality** |
+| v1.0 (initial) | 16.6 MB | - | WSL, Dual AI |
+| v1.1 (cross-platform) | 16.8 MB | +200 KB | containerd support |
+| v1.2 (Native AOT) | 13.5 MB | -3.3 MB | Native AOT compilation |
+| v1.2 (UPX) | 3.8 MB | -9.7 MB | UPX compression |
+| v1.3 (docs) | 3.8 MB | - | Documentation site |
+| v1.4 (multi-platform) | 5.0 MB | +1.2 MB | 11 MCP tools, macOS support |
+| **v1.5 (networking/storage)** | **5.1 MB** | **+100 KB** | **Port mapping, volumes** |
+| v1.6 (packages) | 5.1 MB | - | Package managers |
+| v1.7 (metrics) | 5.18 MB | +80 KB | Host monitoring |
+| v1.8 (agent) | 5.24 MB | +60 KB | Background mode |
+| v1.9 (mesh) | 5.36 MB | +120 KB | Tailscale + Netmaker |
+| **v2.0 (orchestration)** | **5.46 MB** | **+100 KB** | **Remote provisioning** |
 
-**Exceptional efficiency:** <1 MB growth for fleet orchestration capabilities
+**Total growth v1.4 → v2.0:** +460 KB (+9%)  
+**Value delivered:** Port mapping, volumes, fleet orchestration, mesh networking  
+**Exceptional efficiency:** <500 KB growth for production container features + distributed orchestration
 
 ---
 
