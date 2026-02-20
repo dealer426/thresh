@@ -372,11 +372,15 @@ public partial class WslService : IContainerService
         var distributionName = ThreshPrefix + environmentName;
         var result = await ProcessHelper.ExecuteAsync("wsl", "-d", distributionName, "hostname", "-I");
         
-        if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.Output))
+        if (!result.IsSuccess || !result.HasOutput())
+            return null;
+        
+        var output = result.GetOutputAsString();
+        if (string.IsNullOrWhiteSpace(output))
             return null;
         
         // hostname -I can return multiple IPs, take the first one
-        var ips = result.Output.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var ips = output.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return ips.Length > 0 ? ips[0] : null;
     }
 
