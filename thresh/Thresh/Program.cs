@@ -26,6 +26,8 @@ class Program
         // Add commands
         AddUpCommand(rootCommand);
         AddListCommand(rootCommand);
+        AddStartCommand(rootCommand);
+        AddStopCommand(rootCommand);
         AddDestroyCommand(rootCommand);
         AddBlueprintCommand(rootCommand);
         AddChatCommand(rootCommand);
@@ -273,7 +275,81 @@ class Program
         
         rootCommand.AddCommand(listCommand);
     }
-    
+
+    private static void AddStartCommand(RootCommand rootCommand)
+    {
+        var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+        var envType = isWindows ? "WSL environment" : "container environment";
+        
+        var startCommand = new Command("start", $"Start a {envType}");
+        var nameArg = new Argument<string>("name", "Environment name to start");
+        
+        startCommand.AddArgument(nameArg);
+        
+        startCommand.SetHandler(async (string name) =>
+        {
+            var containerService = Services.ContainerServiceFactory.Create();
+            
+            // Check if runtime is available
+            if (!await containerService.IsAvailableAsync())
+            {
+                Console.WriteLine($"❌ {containerService.RuntimeName} is not available on this system");
+                return;
+            }
+
+            Console.WriteLine($"Starting environment '{name}'...");
+            var success = await containerService.StartEnvironmentAsync(name);
+            
+            if (success)
+            {
+                Console.WriteLine($"✅ Environment '{name}' started successfully");
+            }
+            else
+            {
+                Console.WriteLine($"❌ Failed to start environment '{name}'");
+            }
+        }, nameArg);
+        
+        rootCommand.AddCommand(startCommand);
+    }
+
+    private static void AddStopCommand(RootCommand rootCommand)
+    {
+        var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+        var envType = isWindows ? "WSL environment" : "container environment";
+        
+        var stopCommand = new Command("stop", $"Stop a {envType}");
+        var nameArg = new Argument<string>("name", "Environment name to stop");
+        
+        stopCommand.AddArgument(nameArg);
+        
+        stopCommand.SetHandler(async (string name) =>
+        {
+            var containerService = Services.ContainerServiceFactory.Create();
+            
+            // Check if runtime is available
+            if (!await containerService.IsAvailableAsync())
+            {
+                Console.WriteLine($"❌ {containerService.RuntimeName} is not available on this system");
+                return;
+            }
+
+            Console.WriteLine($"Stopping environment '{name}'...");
+            var success = await containerService.StopEnvironmentAsync(name);
+            
+            if (success)
+            {
+                Console.WriteLine($"✅ Environment '{name}' stopped successfully");
+            }
+            else
+            {
+                Console.WriteLine($"❌ Failed to stop environment '{name}'");
+            }
+        }, nameArg);
+        
+        rootCommand.AddCommand(stopCommand);
+    }
+
     private static void AddDestroyCommand(RootCommand rootCommand)
     {
         var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
