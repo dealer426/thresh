@@ -1,13 +1,12 @@
 using System.Text.Json;
 using Thresh.Models;
 using Thresh.Utilities;
-using YamlDotNet.Serialization;
 
 namespace Thresh.Services;
 
 /// <summary>
 /// Service for managing and provisioning blueprints
-/// Supports both JSON and YAML formats
+/// Supports JSON format for Native AOT compatibility
 /// </summary>
 public class BlueprintService
 {
@@ -34,62 +33,29 @@ public class BlueprintService
             throw new FileNotFoundException($"Blueprint file not found: {blueprintPath}");
 
         var content = File.ReadAllText(blueprintPath);
-        var extension = Path.GetExtension(blueprintPath).ToLowerInvariant();
-
-        // If YAML, convert to JSON first (maintaining JSON source generation benefits)
-        if (extension == ".yaml" || extension == ".yml")
-        {
-            try
-            {
-                var deserializer = new DeserializerBuilder().Build();
-                var yamlObject = deserializer.Deserialize<object>(content);
-                
-                var serializer = new SerializerBuilder()
-                    .JsonCompatible()
-                    .Build();
-                var json = serializer.Serialize(yamlObject);
-                
-                return JsonSerializer.Deserialize(json, BlueprintJsonContext.Default.Blueprint)
-                    ?? throw new InvalidOperationException($"Failed to deserialize YAML blueprint: {blueprintPath}");
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to parse YAML blueprint: {blueprintPath}. {ex.Message}", ex);
-            }
-        }
-
-        // Direct JSON parsing (fastest path)
+        
+        // Direct JSON parsing with source generation for Native AOT compatibility
         return JsonSerializer.Deserialize(content, BlueprintJsonContext.Default.Blueprint)
             ?? throw new InvalidOperationException($"Failed to deserialize JSON blueprint: {blueprintPath}");
     }
 
     /// <summary>
     /// Load a blueprint from the bundled blueprints directory
-    /// Tries .json, .yaml, and .yml extensions in order
+    /// Loads .json blueprints only for Native AOT compatibility
     /// </summary>
     public Blueprint LoadBundledBlueprint(string blueprintName)
     {
         var blueprintsDir = Path.Combine(AppContext.BaseDirectory, "blueprints");
-        
-        // Try JSON first (fastest)
         var jsonPath = Path.Combine(blueprintsDir, $"{blueprintName}.json");
+        
         if (File.Exists(jsonPath))
             return LoadBlueprint(jsonPath);
-        
-        // Try YAML variants
-        var yamlPath = Path.Combine(blueprintsDir, $"{blueprintName}.yaml");
-        if (File.Exists(yamlPath))
-            return LoadBlueprint(yamlPath);
-        
-        var ymlPath = Path.Combine(blueprintsDir, $"{blueprintName}.yml");
-        if (File.Exists(ymlPath))
-            return LoadBlueprint(ymlPath);
 
-        throw new FileNotFoundException($"Bundled blueprint not found: {blueprintName} (tried .json, .yaml, .yml)");
+        throw new FileNotFoundException($"Bundled blueprint not found: {blueprintName}.json");
     }
 
     /// <summary>
-    /// List available bundled blueprints (JSON and YAML)
+    /// List available bundled blueprints (JSON only)
     /// </summary>
     public List<string> ListBundledBlueprints()
     {
@@ -97,18 +63,10 @@ public class BlueprintService
         if (!Directory.Exists(blueprintsDir))
             return new List<string>();
 
-        var blueprints = new HashSet<string>();
+        var blueprints = new List<string>();
         
-        // Add JSON blueprints
+        // Add JSON blueprints only (Native AOT compatible)
         foreach (var file in Directory.GetFiles(blueprintsDir, "*.json"))
-            blueprints.Add(Path.GetFileNameWithoutExtension(file)!);
-        
-        // Add YAML blueprints
-        foreach (var file in Directory.GetFiles(blueprintsDir, "*.yaml"))
-            blueprints.Add(Path.GetFileNameWithoutExtension(file)!);
-        
-        // Add YML blueprints
-        foreach (var file in Directory.GetFiles(blueprintsDir, "*.yml"))
             blueprints.Add(Path.GetFileNameWithoutExtension(file)!);
 
         return blueprints.OrderBy(b => b).ToList();
