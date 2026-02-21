@@ -292,17 +292,8 @@ public partial class WslService : IContainerService
         var distributionName = ThreshPrefix + environmentName;
         var result = await ProcessHelper.ExecuteAsync("wsl", "-d", distributionName, "echo", "started");
         
-        if (!result.IsSuccess)
-            return false;
-        
-        // Apply port forwarding if configured
-        var metadata = LoadMetadata(environmentName);
-        if (metadata?.Ports != null && metadata.Ports.Count > 0)
-        {
-            await ApplyPortForwardingAsync(environmentName, metadata.Ports);
-        }
-        
-        return true;
+        // WSL2 automatically forwards ports to Windows localhost - no netsh needed!
+        return result.IsSuccess;
     }
 
     /// <summary>
@@ -310,13 +301,7 @@ public partial class WslService : IContainerService
     /// </summary>
     public async Task<bool> StopEnvironmentAsync(string environmentName)
     {
-        // Remove port forwarding before stopping
-        var metadata = LoadMetadata(environmentName);
-        if (metadata?.Ports != null && metadata.Ports.Count > 0)
-        {
-            await RemovePortForwardingAsync(metadata.Ports);
-        }
-        
+        // WSL2 automatically forwards ports - nothing to clean up
         var distributionName = ThreshPrefix + environmentName;
         var result = await ProcessHelper.ExecuteAsync("wsl", "--terminate", distributionName);
         return result.IsSuccess;
@@ -362,140 +347,5 @@ public partial class WslService : IContainerService
     {
         var env = await FindEnvironmentAsync(environmentName);
         return env != null;
-    }
-
-    /// <summary>
-    /// Get the IP address of a WSL distribution
-    /// </summary>
-    private async Task<string?> GetWslIpAddressAsync(string environmentName)
-    {
-        var distributionName = ThreshPrefix + environmentName;
-        var result = await ProcessHelper.ExecuteAsync("wsl", "-d", distributionName, "hostname", "-I");
-        
-        if (!result.IsSuccess || !result.HasOutput())
-            return null;
-        
-        var output = result.GetOutputAsString();
-        if (string.IsNullOrWhiteSpace(output))
-            return null;
-        
-        // hostname -I can return multiple IPs, take the first one
-        var ips = output.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return ips.Length > 0 ? ips[0] : null;
-    }
-
-    /// <summary>
-    /// Apply port forwarding for an environment using netsh
-    /// </summary>
-    public async Task<bool> ApplyPortForwardingAsync(string environmentName, List<string> ports)
-    {
-        if (ports == null || ports.Count == 0)
-            return true;
-
-        // Get WSL IP address
-        var wslIp = await GetWslIpAddressAsync(environmentName);
-        if (string.IsNullOrEmpty(wslIp))
-        {
-            Console.WriteLine($"[WARN] Failed to get WSL IP for {environmentName}, skipping port forwarding");
-            return false;
-        }
-
-        Console.WriteLine($"[INFO] Setting up port forwarding to WSL IP: {wslIp}");
-
-        foreach (var portMapping in ports)
-        {
-            // Parse port mapping (e.g., "8080:80" or "8080")
-            var parts = portMapping.Split(':');
-            var hostPort = parts[0].Trim();
-            var containerPort = parts.Length > 1 ? parts[1].Trim() : hostPort;
-
-            try
-            {
-                // Add netsh port proxy rule
-                // netsh interface portproxy add v4tov4 listenport=8080 listenaddress=0.0.0.0 connectport=80 connectaddress=<WSL_IP>
-                var result = await ProcessHelper.ExecuteAsync(
-                    "netsh", "interface", "portproxy", "add", "v4tov4",
-                    $"listenport={hostPort}",
-                    "listenaddress=0.0.0.0",
-                    $"connectport={containerPort}",
-                    $"connectaddress={wslIp}"
-                );
-
-                if (result.IsSuccess)
-                {
-                    Console.WriteLine($"[OK] Port forwarding: localhost:{hostPort} -> {wslIp}:{containerPort}");
-                }
-                else
-                {
-                    Console.WriteLine($"[WARN] Failed to set up port forwarding for {hostPort}:{containerPort}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[ERROR] Exception setting up port {portMapping}: {ex.Message}");
-            }
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Remove port forwarding for an environment
-    /// </summary>
-    public async Task<bool> RemovePortForwardingAsync(List<string> ports)
-    {
-        if (ports == null || ports.Count == 0)
-            return true;
-
-        foreach (var portMapping in ports)
-        {
-            // Parse port mapping to get host port
-            var parts = portMapping.Split(':');
-            var hostPort = parts[0].Trim();
-
-            try
-            {
-                // Remove netsh port proxy rule
-                // netsh interface portproxy delete v4tov4 listenport=8080 listenaddress=0.0.0.0
-                var result = await ProcessHelper.ExecuteAsync(
-                    "netsh", "interface", "portproxy", "delete", "v4tov4",
-                    $"listenport={hostPort}",
-                    "listenaddress=0.0.0.0"
-                );
-
-                if (result.IsSuccess)
-                {
-                    Console.WriteLine($"[OK] Removed port forwarding for port {hostPort}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[WARN] Failed to remove port forwarding for {hostPort}: {ex.Message}");
-            }
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Load environment metadata from disk
-    /// </summary>
-    private EnvironmentMetadata? LoadMetadata(string environmentName)
-    {
-        try
-        {
-            var homeDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
-            var metadataFile = Path.Combine(homeDir, ".thresh", "metadata", $"{environmentName}.json");
-            
-            if (!File.Exists(metadataFile))
-                return null;
-            
-            var json = File.ReadAllText(metadataFile);
-            return System.Text.Json.JsonSerializer.Deserialize(json, BlueprintJsonContext.Default.EnvironmentMetadata);
-        }
-        catch
-        {
-            return null;
-        }
     }
 }
