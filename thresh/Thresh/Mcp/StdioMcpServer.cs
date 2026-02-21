@@ -211,6 +211,40 @@ public class StdioMcpServer
             },
             new Tool
             {
+                Name = "start_environment",
+                Description = "Start a stopped WSL development environment",
+                InputSchema = new JsonSchema
+                {
+                    Properties = new Dictionary<string, JsonSchemaProperty>
+                    {
+                        ["name"] = new JsonSchemaProperty
+                        {
+                            Type = "string",
+                            Description = "Name of the environment to start"
+                        }
+                    },
+                    Required = new List<string> { "name" }
+                }
+            },
+            new Tool
+            {
+                Name = "stop_environment",
+                Description = "Stop a running WSL development environment",
+                InputSchema = new JsonSchema
+                {
+                    Properties = new Dictionary<string, JsonSchemaProperty>
+                    {
+                        ["name"] = new JsonSchemaProperty
+                        {
+                            Type = "string",
+                            Description = "Name of the environment to stop"
+                        }
+                    },
+                    Required = new List<string> { "name" }
+                }
+            },
+            new Tool
+            {
                 Name = "destroy_environment",
                 Description = "Destroy/remove a development environment by name, or destroy all environments with all=true. Either 'name' or 'all' must be provided.",
                 InputSchema = new JsonSchema
@@ -365,6 +399,8 @@ public class StdioMcpServer
             {
                 "list_environments" => await ListEnvironmentsAsync(arguments),
                 "create_environment" => await CreateEnvironmentAsync(arguments),
+                "start_environment" => await StartEnvironmentAsync(arguments),
+                "stop_environment" => await StopEnvironmentAsync(arguments),
                 "destroy_environment" => await DestroyEnvironmentAsync(arguments),
                 "list_blueprints" => ListBlueprints(),
                 "get_blueprint" => GetBlueprint(arguments),
@@ -633,6 +669,50 @@ public class StdioMcpServer
                 PostInstall = "#!/bin/bash\necho \"Installation complete!\""
             }
         };
+    }
+
+    private async Task<object> StartEnvironmentAsync(JsonElement? args)
+    {
+        if (!args.HasValue)
+            return CreateToolError("Missing arguments");
+
+        var name = args.Value.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
+
+        if (string.IsNullOrEmpty(name))
+            return CreateToolError("Missing required argument: name");
+
+        if (!await _containerService.EnvironmentExistsAsync(name))
+            return CreateToolError($"Environment '{name}' not found");
+
+        var success = await _containerService.StartEnvironmentAsync(name);
+        
+        var message = success 
+            ? $"✅ Environment '{name}' started successfully"
+            : $"❌ Failed to start environment '{name}'";
+
+        return ToolCallResponse.Success(message);
+    }
+
+    private async Task<object> StopEnvironmentAsync(JsonElement? args)
+    {
+        if (!args.HasValue)
+            return CreateToolError("Missing arguments");
+
+        var name = args.Value.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
+
+        if (string.IsNullOrEmpty(name))
+            return CreateToolError("Missing required argument: name");
+
+        if (!await _containerService.EnvironmentExistsAsync(name))
+            return CreateToolError($"Environment '{name}' not found");
+
+        var success = await _containerService.StopEnvironmentAsync(name);
+        
+        var message = success 
+            ? $"✅ Environment '{name}' stopped successfully"
+            : $"❌ Failed to stop environment '{name}'";
+
+        return ToolCallResponse.Success(message);
     }
 
     private async Task<object> DestroyEnvironmentAsync(JsonElement? args)
@@ -1046,6 +1126,8 @@ rustc --version";
         sb.AppendLine("🌍 Environment Management:");
         sb.AppendLine("  • list_environments     - List all development environments");
         sb.AppendLine("  • create_environment    - Create a new environment from a blueprint");
+        sb.AppendLine("  • start_environment     - Start a stopped environment");
+        sb.AppendLine("  • stop_environment      - Stop a running environment");
         sb.AppendLine("  • destroy_environment   - Remove an environment (or all with all=true)");
         sb.AppendLine();
         sb.AppendLine("📋 Blueprint Operations:");
