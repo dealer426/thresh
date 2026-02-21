@@ -466,7 +466,7 @@ public class StdioMcpServer
                 {
                     // Check if environment exists
                     if (await _containerService.EnvironmentExistsAsync(envName))
-                        return new { Name = envName, Success = false, Error = "already exists" };
+                        return new { Name = envName, Success = false, Error = (string?)"already exists" };
 
                     // Determine blueprint
                     Blueprint bp;
@@ -485,7 +485,7 @@ public class StdioMcpServer
                 }
                 catch (Exception ex)
                 {
-                    return new { Name = envName, Success = false, Error = ex.Message };
+                    return new { Name = envName, Success = false, Error = (string?)ex.Message };
                 }
             }).ToList();
 
