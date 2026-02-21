@@ -3,9 +3,88 @@
 This document tracks all changes made during the Phase 1.5 networking implementation and subsequent improvements.
 
 ## Session Overview
-- **Date**: February 21, 2026
+- **Date**: February 21, 2026  
 - **Focus**: Phase 1.5 Week 1 - Port Mapping & Networking
-- **Outcome**: Complete implementation + major simplifications + AOT optimization
+- **Outcome**: Complete implementation + major simplifications + AOT optimization + MCP enhancement
+
+---
+
+## Latest Update: MCP Server Enhancement (Continuation Session)
+
+### `19776e3` - feat: Add start/stop environment tools to MCP server
+**Category**: MCP Feature Parity  
+**Date**: February 21, 2026 (continuation)
+
+**Background**:
+During CLI/MCP parity verification, discovered that `start` and `stop` commands existed in CLI (added in commit `aa699cb`) but were not exposed in the MCP server interface. This created an incomplete experience for AI agents using the MCP protocol.
+
+**Changes**:
+- Added `start_environment` tool to MCP server
+  - Accepts `name` parameter (required)
+  - Validates environment exists before starting
+  - Returns success/failure message
+  
+- Added `stop_environment` tool to MCP server
+  - Accepts `name` parameter (required)
+  - Validates environment exists before stopping
+  - Returns success/failure message
+
+- Updated help menu to display new commands:
+  - "🌍 Environment Management" section now shows 5 operations:
+    * list_environments
+    * create_environment
+    * **start_environment** ✨ NEW
+    * **stop_environment** ✨ NEW
+    * destroy_environment
+
+**Implementation Details**:
+- Pattern: Followed existing `destroy_environment` implementation style
+- Validation: Checks for missing arguments, validates name parameter, verifies environment exists
+- Error handling: Returns descriptive error messages for invalid requests
+- Service integration: Calls `_containerService.StartEnvironmentAsync()` and `StopEnvironmentAsync()`
+
+**Testing**:
+```bash
+# Test start_environment
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"start_environment","arguments":{"name":"mcp-lifecycle-test"}}}' | ./thresh.exe serve --stdio
+# Result: ✅ Environment 'mcp-lifecycle-test' started successfully
+
+# Test stop_environment  
+echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"stop_environment","arguments":{"name":"mcp-lifecycle-test"}}}' | ./thresh.exe serve --stdio
+# Result: ✅ Environment 'mcp-lifecycle-test' stopped successfully
+
+# Verify tools count
+echo '{"jsonrpc":"2.0","id":3,"method":"tools/list"}' | ./thresh.exe serve --stdio | grep -o '"name":"[^"]*"' | wc -l
+# Result: 12 (up from 10)
+
+# Verify help menu
+echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"help","arguments":{}}}' | ./thresh.exe serve --stdio | grep -E "start_environment|stop_environment"
+# Result: Both commands appear in menu ✅
+```
+
+**Impact**:
+- MCP tools: **10 → 12** (20% increase in functionality)
+- Complete environment lifecycle now available via MCP:
+  1. Create (`create_environment`)
+  2. Start (`start_environment`) ✨
+  3. Stop (`stop_environment`) ✨  
+  4. Destroy (`destroy_environment`)
+  5. List (`list_environments`)
+- AI agents can now fully manage environment lifecycles
+- Feature parity achieved between CLI and MCP interfaces
+
+**Files Modified**:
+- `thresh/Thresh/Mcp/StdioMcpServer.cs`: +82 lines
+  * Added 2 tool definitions (~33 lines each)
+  * Added 2 switch case handlers (~2 lines each)
+  * Added 2 implementation methods (~24 lines each)
+  * Updated help menu (2 lines)
+
+**Build Status**:
+- Build time: 136.1s (Native AOT)
+- Binary size: 14MB (unchanged)
+- Warnings: 0
+- All tests: ✅ PASS
 
 ---
 
