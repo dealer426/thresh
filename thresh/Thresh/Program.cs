@@ -33,7 +33,6 @@ class Program
         AddChatCommand(rootCommand);
         AddConfigCommand(rootCommand);
         AddDistroCommand(rootCommand);
-        AddDistrosCommand(rootCommand);
         AddMetricsCommand(rootCommand);
         AddServeCommand(rootCommand);
         AddVersionCommand(rootCommand);
@@ -890,29 +889,93 @@ class Program
         }, nameArg, urlOption, versionOption, packageManagerOption, aiOption);
         
         // distro list subcommand
-        var listCommand = new Command("list", "List custom distributions");
-        listCommand.SetHandler(() =>
+        var listCommand = new Command("list", "List all available distributions");
+        var customOnlyOption = new Option<bool>("--custom-only", "Show only custom distributions");
+        listCommand.AddOption(customOnlyOption);
+        
+        listCommand.SetHandler((bool customOnly) =>
         {
             var configService = new Services.ConfigurationService();
             var settings = configService.Load();
             
-            if (settings.CustomDistributions.Count == 0)
+            if (customOnly)
             {
-                Console.WriteLine("No custom distributions configured.");
-                Console.WriteLine("\nAdd one with:");
-                Console.WriteLine("  thresh distro add rocky --ai");
-                Console.WriteLine("  thresh distro add mylinux --url https://... --version 1.0 --package-manager dnf");
-                return;
+                // Show only custom distributions
+                if (settings.CustomDistributions.Count == 0)
+                {
+                    Console.WriteLine("No custom distributions configured.");
+                    Console.WriteLine("\nAdd one with:");
+                    Console.WriteLine("  thresh distro add rocky --ai");
+                    Console.WriteLine("  thresh distro add mylinux --url https://... --version 1.0 --package-manager dnf");
+                    return;
+                }
+                
+                Console.WriteLine("Custom distributions:\n");
+                foreach (var (key, distro) in settings.CustomDistributions)
+                {
+                    Console.WriteLine($"  {key,-20} - {distro.Name} {distro.Version} ({distro.PackageManager})");
+                    if (!string.IsNullOrEmpty(distro.Description))
+                        Console.WriteLine($"    {distro.Description}");
+                }
             }
-            
-            Console.WriteLine("Custom distributions:\n");
-            foreach (var (key, distro) in settings.CustomDistributions)
+            else
             {
-                Console.WriteLine($"  {key,-20} - {distro.Name} {distro.Version} ({distro.PackageManager})");
-                if (!string.IsNullOrEmpty(distro.Description))
-                    Console.WriteLine($"    {distro.Description}");
+                // Show all distributions
+                var registry = new Services.RootfsRegistry(configService);
+                var allDistroKeys = registry.GetSupportedDistributions();
+                
+                Console.WriteLine("Available distributions:\n");
+                Console.WriteLine($"{"NAME",-25} {"VERSION",-15} {"SOURCE",-20} {"PKG MANAGER",-15}");
+                Console.WriteLine(new string('-', 80));
+                
+                // Build list with full info
+                var distroInfoList = new List<(string Key, Services.RootfsRegistry.DistributionInfo Info)>();
+                foreach (var key in allDistroKeys)
+                {
+                    var info = registry.GetDistribution(key);
+                    if (info != null)
+                    {
+                        distroInfoList.Add((key, info));
+                    }
+                }
+                
+                // Group by source for better readability
+                var vendorDistros = distroInfoList.Where(d => d.Info.Source == Services.RootfsRegistry.DistributionSource.Vendor).OrderBy(d => d.Key);
+                var msStoreDistros = distroInfoList.Where(d => d.Info.Source == Services.RootfsRegistry.DistributionSource.MicrosoftStore).OrderBy(d => d.Key);
+                
+                // Vendor distributions
+                if (vendorDistros.Any())
+                {
+                    foreach (var (key, info) in vendorDistros)
+                    {
+                        Console.WriteLine($"{key,-25} {info.Version,-15} {"Vendor",-20} {info.PackageManager,-15}");
+                    }
+                }
+                
+                // Microsoft Store distributions
+                if (msStoreDistros.Any())
+                {
+                    Console.WriteLine(); // Separator
+                    foreach (var (key, info) in msStoreDistros)
+                    {
+                        Console.WriteLine($"{key,-25} {info.Version,-15} {"Microsoft Store",-20} {info.PackageManager,-15}");
+                    }
+                }
+                
+                // Custom distributions
+                if (settings.CustomDistributions.Count > 0)
+                {
+                    Console.WriteLine(); // Separator
+                    foreach (var (key, distro) in settings.CustomDistributions.OrderBy(d => d.Key))
+                    {
+                        Console.WriteLine($"{key,-25} {distro.Version,-15} {"Custom",-20} {distro.PackageManager,-15}");
+                    }
+                }
+                
+                Console.WriteLine();
+                Console.WriteLine($"Total: {allDistroKeys.Length} built-in + {settings.CustomDistributions.Count} custom");
             }
-        });
+        }, customOnlyOption);
         
         // distro remove subcommand
         var removeCommand = new Command("remove", "Remove a custom distribution");
@@ -938,72 +1001,6 @@ class Program
         distroCommand.AddCommand(listCommand);
         distroCommand.AddCommand(removeCommand);
         rootCommand.AddCommand(distroCommand);
-    }
-
-    private static void AddDistrosCommand(RootCommand rootCommand)
-    {
-        var distrosCommand = new Command("distros", "List all available distributions");
-        
-        distrosCommand.SetHandler(() =>
-        {
-            var registry = new Services.RootfsRegistry(new Services.ConfigurationService());
-            var allDistroKeys = registry.GetSupportedDistributions();
-            
-            Console.WriteLine("Available distributions:\n");
-            Console.WriteLine($"{"NAME",-25} {"VERSION",-15} {"SOURCE",-20} {"PKG MANAGER",-15}");
-            Console.WriteLine(new string('-', 80));
-            
-            // Build list with full info
-            var distroInfoList = new List<(string Key, Services.RootfsRegistry.DistributionInfo Info)>();
-            foreach (var key in allDistroKeys)
-            {
-                var info = registry.GetDistribution(key);
-                if (info != null)
-                {
-                    distroInfoList.Add((key, info));
-                }
-            }
-            
-            // Group by source for better readability
-            var vendorDistros = distroInfoList.Where(d => d.Info.Source == Services.RootfsRegistry.DistributionSource.Vendor).OrderBy(d => d.Key);
-            var msStoreDistros = distroInfoList.Where(d => d.Info.Source == Services.RootfsRegistry.DistributionSource.MicrosoftStore).OrderBy(d => d.Key);
-            
-            // Vendor distributions
-            if (vendorDistros.Any())
-            {
-                foreach (var (key, info) in vendorDistros)
-                {
-                    Console.WriteLine($"{key,-25} {info.Version,-15} {"Vendor",-20} {info.PackageManager,-15}");
-                }
-            }
-            
-            // Microsoft Store distributions
-            if (msStoreDistros.Any())
-            {
-                Console.WriteLine(); // Separator
-                foreach (var (key, info) in msStoreDistros)
-                {
-                    Console.WriteLine($"{key,-25} {info.Version,-15} {"Microsoft Store",-20} {info.PackageManager,-15}");
-                }
-            }
-            
-            // Custom distributions
-            var configService = new Services.ConfigurationService();
-            var settings = configService.Load();
-            if (settings.CustomDistributions.Count > 0)
-            {
-                Console.WriteLine(); // Separator
-                foreach (var (key, distro) in settings.CustomDistributions.OrderBy(d => d.Key))
-                {
-                    Console.WriteLine($"{key,-25} {distro.Version,-15} {"Custom",-20} {distro.PackageManager,-15}");
-                }
-            }
-            
-            Console.WriteLine();
-            Console.WriteLine($"Total: {allDistroKeys.Length} built-in + {settings.CustomDistributions.Count} custom");
-        });
-        
-        rootCommand.AddCommand(distrosCommand);
     }
     
     private static void AddServeCommand(RootCommand rootCommand)
