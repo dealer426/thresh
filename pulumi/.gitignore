@@ -16,3 +16,6 @@ obj/
 # OS
 .DS_Store
 Thumbs.db
+credentials.pkrvars.hcl
+packer_cache/
+.env
