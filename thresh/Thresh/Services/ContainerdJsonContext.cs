@@ -10,6 +10,8 @@ namespace Thresh.Services;
 [JsonSerializable(typeof(NerdctlContainer))]
 [JsonSerializable(typeof(ClientVersion))]
 [JsonSerializable(typeof(ServerVersion))]
+[JsonSerializable(typeof(List<DockerVolumeInspect>))]
+[JsonSerializable(typeof(DockerVolumeInspect))]
 internal partial class ContainerdJsonContext : JsonSerializerContext
 {
 }
@@ -67,4 +69,27 @@ internal class NerdctlContainer
         
         return null;
     }
+}
+/// <summary>
+/// Docker volume inspect JSON structure
+/// </summary>
+internal class DockerVolumeInspect
+{
+    [JsonPropertyName("Name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("Driver")]
+    public string? Driver { get; set; }
+
+    [JsonPropertyName("Mountpoint")]
+    public string? Mountpoint { get; set; }
+
+    [JsonPropertyName("CreatedAt")]
+    public string? CreatedAt { get; set; }
+
+    [JsonPropertyName("Scope")]
+    public string? Scope { get; set; }
+
+    [JsonPropertyName("Labels")]
+    public Dictionary<string, string>? Labels { get; set; }
 }

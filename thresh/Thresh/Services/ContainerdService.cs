@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Thresh.Models;
 using Thresh.Utilities;
 
@@ -318,7 +319,7 @@ public class ContainerdService : IContainerService
             }
             
             // Add networking configuration from blueprint
-            AddNetworkingArgs(createArgs, blueprint);
+            AddContainerArgs(createArgs, blueprint);
             
             createArgs.AddRange(new[] { imageName, "/bin/sh" });
             result = await ProcessHelper.ExecuteAsync(createArgs.ToArray());
@@ -336,7 +337,7 @@ public class ContainerdService : IContainerService
             }
             
             // Add networking configuration from blueprint
-            AddNetworkingArgs(createArgs, blueprint);
+            AddContainerArgs(createArgs, blueprint);
             
             // Add image name and shell command
             // Use /bin/sh for compatibility (works on Alpine, Ubuntu, Debian, etc.)
@@ -350,7 +351,10 @@ public class ContainerdService : IContainerService
     /// <summary>
     /// Add networking arguments to container create command from blueprint
     /// </summary>
-    private void AddNetworkingArgs(List<string> args, Blueprint? blueprint)
+    /// <summary>
+    /// Add container configuration arguments from blueprint (networking, volumes, storage, etc.)
+    /// </summary>
+    private void AddContainerArgs(List<string> args, Blueprint? blueprint)
     {
         if (blueprint == null) return;
         
@@ -382,6 +386,36 @@ public class ContainerdService : IContainerService
         if (!string.IsNullOrEmpty(blueprint.Hostname))
         {
             args.AddRange(new[] { "--hostname", blueprint.Hostname });
+        }
+        
+        // Add volumes (-v VOLUME:MOUNT_PATH)
+        if (blueprint.Volumes != null && blueprint.Volumes.Count > 0)
+        {
+            foreach (var volume in blueprint.Volumes)
+            {
+                args.AddRange(new[] { "-v", $"{volume.Name}:{volume.Mount}" });
+            }
+        }
+        
+        // Add bind mounts (-v HOST_PATH:CONTAINER_PATH[:ro])
+        if (blueprint.BindMounts != null && blueprint.BindMounts.Count > 0)
+        {
+            foreach (var bindMount in blueprint.BindMounts)
+            {
+                var mountSpec = bindMount.ReadOnly 
+                    ? $"{bindMount.Host}:{bindMount.Container}:ro"
+                    : $"{bindMount.Host}:{bindMount.Container}";
+                args.AddRange(new[] { "-v", mountSpec });
+            }
+        }
+        
+        // Add tmpfs mounts (--tmpfs PATH)
+        if (blueprint.Tmpfs != null && blueprint.Tmpfs.Count > 0)
+        {
+            foreach (var tmpfs in blueprint.Tmpfs)
+            {
+                args.AddRange(new[] { "--tmpfs", tmpfs });
+            }
         }
     }
 
@@ -462,5 +496,95 @@ public class ContainerdService : IContainerService
             "paused" => EnvironmentStatus.Stopped,
             _ => EnvironmentStatus.Unknown
         };
+    }
+
+    /// <summary>
+    /// List all volumes managed by the runtime
+    /// </summary>
+    public async Task<List<VolumeInfo>> ListVolumesAsync()
+    {
+        var volumes = new List<VolumeInfo>();
+        var tool = await GetAvailableToolAsync();
+
+        var result = await ProcessHelper.ExecuteAsync(tool, "volume", "ls", "--format", "{{.Name}}");
+        if (!result.IsSuccess)
+            return volumes;
+
+        foreach (var line in result.Output)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+
+            var volumeName = line.Trim();
+            var volumeInfo = await InspectVolumeAsync(volumeName);
+            if (volumeInfo != null)
+            {
+                volumes.Add(volumeInfo);
+            }
+        }
+
+        return volumes;
+    }
+
+    /// <summary>
+    /// Create a named volume
+    /// </summary>
+    public async Task<bool> CreateVolumeAsync(string volumeName)
+    {
+        var tool = await GetAvailableToolAsync();
+        var result = await ProcessHelper.ExecuteAsync(tool, "volume", "create", volumeName);
+        return result.IsSuccess;
+    }
+
+    /// <summary>
+    /// Delete a volume
+    /// </summary>
+    public async Task<bool> DeleteVolumeAsync(string volumeName)
+    {
+        var tool = await GetAvailableToolAsync();
+        var result = await ProcessHelper.ExecuteAsync(tool, "volume", "rm", volumeName);
+        return result.IsSuccess;
+    }
+
+    /// <summary>
+    /// Get detailed information about a volume
+    /// </summary>
+    public async Task<VolumeInfo?> InspectVolumeAsync(string volumeName)
+    {
+        var tool = await GetAvailableToolAsync();
+        var result = await ProcessHelper.ExecuteAsync(tool, "volume", "inspect", volumeName);
+        
+        if (!result.IsSuccess)
+            return null;
+
+        try
+        {
+            var jsonOutput = string.Join("", result.Output);
+            var volumeArray = JsonSerializer.Deserialize(jsonOutput, ContainerdJsonContext.Default.ListDockerVolumeInspect);
+            
+            if (volumeArray == null || volumeArray.Count == 0)
+                return null;
+
+            var dockerVolume = volumeArray[0];
+            return new VolumeInfo
+            {
+                Name = dockerVolume.Name ?? volumeName,
+                Driver = dockerVolume.Driver ?? "local",
+                Mountpoint = dockerVolume.Mountpoint ?? "",
+                CreatedAt = DateTime.TryParse(dockerVolume.CreatedAt, out var created) ? created : DateTime.MinValue,
+                Scope = dockerVolume.Scope ?? "local",
+                Labels = dockerVolume.Labels
+            };
+        }
+        catch (JsonException)
+        {
+            // Fallback to basic info
+            return new VolumeInfo
+            {
+                Name = volumeName,
+                Driver = "local",
+                Scope = "local"
+            };
+        }
     }
 }

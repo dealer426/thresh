@@ -30,6 +30,7 @@ class Program
         AddStopCommand(rootCommand);
         AddDestroyCommand(rootCommand);
         AddBlueprintCommand(rootCommand);
+        AddVolumeCommand(rootCommand);
         AddChatCommand(rootCommand);
         AddConfigCommand(rootCommand);
         AddDistroCommand(rootCommand);
@@ -63,6 +64,7 @@ class Program
         Console.WriteLine($"  list        List {envTypePlural}");
         Console.WriteLine($"  destroy     Remove a {envType}");
         Console.WriteLine("  blueprint   Manage blueprints (list, generate, delete)");
+        Console.WriteLine("  volume      Manage volumes (list, create, delete, inspect)");
         Console.WriteLine("  chat        Interactive AI chat mode for blueprint help");
         Console.WriteLine("  config      Manage configuration");
         Console.WriteLine("  distro      Manage custom distributions");
@@ -700,6 +702,168 @@ class Program
         rootCommand.AddCommand(chatCommand);
     }
     
+    private static void AddVolumeCommand(RootCommand rootCommand)
+    {
+        var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+        
+        if (isWindows)
+        {
+            // Volume commands not meaningful for WSL
+            return;
+        }
+        
+        var volumeCommand = new Command("volume", "Manage container volumes");
+        
+        // volume list
+        var listCommand = new Command("list", "List all volumes");
+        listCommand.SetHandler(async () =>
+        {
+            try
+            {
+                var containerService = Services.ContainerServiceFactory.Create();
+                
+                var volumes = await containerService.ListVolumesAsync();
+                
+                if (volumes.Count == 0)
+                {
+                    Console.WriteLine("No volumes found.");
+                    return;
+                }
+                
+                Console.WriteLine($"{"VOLUME NAME",-30} {"DRIVER",-10} {"MOUNTPOINT"}");
+                Console.WriteLine(new string('-', 80));
+                
+                foreach (var volume in volumes)
+                {
+                    Console.WriteLine($"{volume.Name,-30} {volume.Driver,-10} {volume.Mountpoint}");
+                }
+                
+                Console.WriteLine();
+                Console.WriteLine($"Total: {volumes.Count} volume(s)");
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"❌ Failed to list volumes: {ex.Message}");
+                Console.ResetColor();
+            }
+        });
+        volumeCommand.AddCommand(listCommand);
+        
+        // volume create
+        var createCommand = new Command("create", "Create a named volume");
+        var createNameArg = new Argument<string>("name", "Volume name");
+        createCommand.AddArgument(createNameArg);
+        createCommand.SetHandler(async (string name) =>
+        {
+            try
+            {
+                var containerService = Services.ContainerServiceFactory.Create();
+                
+                var success = await containerService.CreateVolumeAsync(name);
+                
+                if (success)
+                {
+                    Console.WriteLine($"✅ Volume '{name}' created successfully");
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"❌ Failed to create volume '{name}'");
+                    Console.ResetColor();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"❌ Failed to create volume: {ex.Message}");
+                Console.ResetColor();
+            }
+        }, createNameArg);
+        volumeCommand.AddCommand(createCommand);
+        
+        // volume delete
+        var deleteCommand = new Command("delete", "Delete a volume");
+        var deleteNameArg = new Argument<string>("name", "Volume name");
+        deleteCommand.AddArgument(deleteNameArg);
+        deleteCommand.SetHandler(async (string name) =>
+        {
+            try
+            {
+                var containerService = Services.ContainerServiceFactory.Create();
+                
+                var success = await containerService.DeleteVolumeAsync(name);
+                
+                if (success)
+                {
+                    Console.WriteLine($"✅ Volume '{name}' deleted successfully");
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"❌ Failed to delete volume '{name}'");
+                    Console.WriteLine("   Make sure no containers are using this volume");
+                    Console.ResetColor();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"❌ Failed to delete volume: {ex.Message}");
+                Console.ResetColor();
+            }
+        }, deleteNameArg);
+        volumeCommand.AddCommand(deleteCommand);
+        
+        // volume inspect
+        var inspectCommand = new Command("inspect", "Show detailed volume information");
+        var inspectNameArg = new Argument<string>("name", "Volume name");
+        inspectCommand.AddArgument(inspectNameArg);
+        inspectCommand.SetHandler(async (string name) =>
+        {
+            try
+            {
+                var containerService = Services.ContainerServiceFactory.Create();
+                
+                var volume = await containerService.InspectVolumeAsync(name);
+                
+                if (volume == null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"❌ Volume '{name}' not found");
+                    Console.ResetColor();
+                    return;
+                }
+                
+                Console.WriteLine($"Volume: {volume.Name}");
+                Console.WriteLine($"Driver: {volume.Driver}");
+                Console.WriteLine($"Mountpoint: {volume.Mountpoint}");
+                Console.WriteLine($"Scope: {volume.Scope}");
+                if (volume.CreatedAt != DateTime.MinValue)
+                {
+                    Console.WriteLine($"Created: {volume.CreatedAt:yyyy-MM-dd HH:mm:ss}");
+                }
+                if (volume.Labels != null && volume.Labels.Count > 0)
+                {
+                    Console.WriteLine("Labels:");
+                    foreach (var label in volume.Labels)
+                    {
+                        Console.WriteLine($"  {label.Key}: {label.Value}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"❌ Failed to inspect volume: {ex.Message}");
+                Console.ResetColor();
+            }
+        }, inspectNameArg);
+        volumeCommand.AddCommand(inspectCommand);
+        
+        rootCommand.AddCommand(volumeCommand);
+    }
+
     private static void AddConfigCommand(RootCommand rootCommand)
     {
         var configCommand = new Command("config", "Manage configuration");

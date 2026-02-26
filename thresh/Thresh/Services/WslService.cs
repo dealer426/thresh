@@ -348,4 +348,40 @@ public partial class WslService : IContainerService
         var env = await FindEnvironmentAsync(environmentName);
         return env != null;
     }
+
+    /// <summary>
+    /// List all volumes (not supported in WSL)
+    /// </summary>
+    public Task<List<VolumeInfo>> ListVolumesAsync()
+    {
+        // WSL doesn't have native volume management like Docker
+        return Task.FromResult(new List<VolumeInfo>());
+    }
+
+    /// <summary>
+    /// Create a volume (not supported in WSL)
+    /// </summary>
+    public Task<bool> CreateVolumeAsync(string volumeName)
+    {
+        Console.WriteLine("Volume management is not supported for WSL environments.");
+        Console.WriteLine("WSL environments use native Windows file system for storage.");
+        return Task.FromResult(false);
+    }
+
+    /// <summary>
+    /// Delete a volume (not supported in WSL)
+    /// </summary>
+    public Task<bool> DeleteVolumeAsync(string volumeName)
+    {
+        Console.WriteLine("Volume management is not supported for WSL environments.");
+        return Task.FromResult(false);
+    }
+
+    /// <summary>
+    /// Inspect a volume (not supported in WSL)
+    /// </summary>
+    public Task<VolumeInfo?> InspectVolumeAsync(string volumeName)
+    {
+        return Task.FromResult<VolumeInfo?>(null);
+    }
 }

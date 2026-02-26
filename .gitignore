@@ -42,6 +42,12 @@ appsettings.Development.json
 appsettings.local.json
 secrets.json
 
+# Packer credentials and sensitive scripts
+**/credentials.pkrvars.hcl
+**/deploy-test-vm.sh
+*.pkrvars.hcl
+!*.pkrvars.hcl.example
+
 # Database
 *.db
 *.sqlite

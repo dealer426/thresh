@@ -82,4 +82,24 @@ public interface IContainerService
     /// Check if an environment exists
     /// </summary>
     Task<bool> EnvironmentExistsAsync(string environmentName);
+
+    /// <summary>
+    /// List all volumes managed by the runtime
+    /// </summary>
+    Task<List<VolumeInfo>> ListVolumesAsync();
+
+    /// <summary>
+    /// Create a named volume
+    /// </summary>
+    Task<bool> CreateVolumeAsync(string volumeName);
+
+    /// <summary>
+    /// Delete a volume
+    /// </summary>
+    Task<bool> DeleteVolumeAsync(string volumeName);
+
+    /// <summary>
+    /// Get detailed information about a volume
+    /// </summary>
+    Task<VolumeInfo?> InspectVolumeAsync(string volumeName);
 }
