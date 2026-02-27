@@ -2,7 +2,7 @@
 
 **Cross-platform CLI for provisioning development environments with AI**
 
-[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/dealer426/thresh/releases)
+[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/dealer426/thresh/releases)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![Native AOT](https://img.shields.io/badge/Native%20AOT-Yes-green.svg)](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -17,6 +17,10 @@
 **✨ Key Features:**
 - 🌍 **Multi-Platform** - Windows/WSL2, Linux/Docker/nerdctl, macOS/containerd
 - 🤖 **AI-Powered** - GitHub Copilot SDK integration for intelligent blueprint generation
+- 🌐 **Full Networking** - Port mapping, network modes, hostnames, automatic WSL2 forwarding
+- 💾 **Persistent Storage** - Named volumes, bind mounts, tmpfs for data persistence
+- ⚙️ **WSL Configuration** - 6 built-in profiles to fix database permissions and optimize environments
+- 🔄 **Lifecycle Management** - Start and stop environments without losing data
 - ⚡ **Parallel Creation** - Create multiple environments simultaneously (10x faster)
 - 📦 **Built-in Blueprints** - Alpine, Ubuntu, Debian, Python, Node.js, and more
 - 🗑️ **Blueprint Management** - List, generate, and delete blueprints
@@ -185,14 +189,94 @@ thresh up alpine-minimal
 # Create with custom name
 thresh up python-dev --name ml-project
 
+# Create with networking and storage (v1.5.0+)
+thresh up webserver --name api-server
+
 # List all environments
 thresh list
+
+# Start stopped environment (v1.5.0+)
+thresh start api-server
+
+# Stop running environment without data loss (v1.5.0+)
+thresh stop api-server
 
 # Destroy environment (with confirmation)
 thresh destroy alpine-minimal
 
 # Destroy without confirmation
 thresh destroy alpine-minimal -y
+```
+
+### Networking & Ports (v1.5.0+)
+
+```bash
+# Port mapping is configured in blueprints:
+{
+  "ports": ["8080:80", "5432:5432", "127.0.0.1:3000:3000"],
+  "expose": ["9090"],        // Inter-container communication
+  "network": "bridge",       // Network mode
+  "hostname": "api.local"    // Custom hostname
+}
+
+# Windows (WSL2): Automatic port forwarding to localhost
+# Linux/macOS: Explicit port mapping with -p flags
+```
+
+### Persistent Storage (v1.5.0+)
+
+```bash
+# List all volumes
+thresh volume list
+
+# Create named volume
+thresh volume create app-data
+
+# Inspect volume details
+thresh volume inspect app-data
+
+# Delete volume
+thresh volume delete app-data
+
+# Configure in blueprints:
+{
+  "volumes": [
+    {"name": "db-data", "mount": "/var/lib/postgresql/data"}
+  ],
+  "bind_mounts": [
+    {"host": "C:/projects/myapp", "container": "/app"}
+  ],
+  "tmpfs": ["/tmp", "/cache"]
+}
+```
+
+### WSL Configuration (v1.5.0+, Windows only)
+
+```bash
+# List available profiles
+thresh wslconf list
+
+# Show profile content
+thresh wslconf show database
+
+# Show all configuration options
+thresh wslconf options
+
+# Validate custom profile
+thresh wslconf validate my-profile.wslconf
+
+# Built-in profiles:
+# - database    (fixes PostgreSQL/MySQL/MongoDB permissions)
+# - docker      (enables systemd for Docker)
+# - web-server  (optimized for nginx/Apache)
+# - systemd     (basic systemd support)
+# - minimal     (maximum isolation)
+# - development (balanced for general dev work)
+
+# Use in blueprints:
+{
+  "wslConfig": "database"  // Apply built-in profile
+}
 ```
 
 ### System Metrics
@@ -361,24 +445,45 @@ Blueprints are JSON files that define environments:
 
 ```json
 {
-  \"name\": \"python-ml\",
-  \"description\": \"Python machine learning environment\",
-  \"base\": \"ubuntu-22.04\",
-  \"packages\": [
-    \"python3\",
-    \"python3-pip\",
-    \"python3-venv\",
-    \"build-essential\"
+  "name": "python-ml",
+  "description": "Python machine learning environment",
+  "base": "ubuntu-22.04",
+  "packages": [
+    "python3",
+    "python3-pip",
+    "python3-venv",
+    "build-essential"
   ],
-  \"environment\": {
-    \"PYTHONUNBUFFERED\": \"1\"
+  "environment": {
+    "PYTHONUNBUFFERED": "1"
   },
-  \"scripts\": {
-    \"setup\": \"pip3 install --upgrade pip\",
-    \"postInstall\": \"pip3 install jupyter pandas numpy scikit-learn\"
-  }
+  "scripts": {
+    "setup": "pip3 install --upgrade pip",
+    "postInstall": "pip3 install jupyter pandas numpy scikit-learn"
+  },
+  "ports": ["8888:8888", "5000:5000"],
+  "volumes": [
+    {"name": "jupyter-data", "mount": "/home/jupyter"}
+  ],
+  "bind_mounts": [
+    {"host": "C:/projects/notebooks", "container": "/notebooks"}
+  ],
+  "tmpfs": ["/tmp"],
+  "network": "bridge",
+  "hostname": "ml-workstation",
+  "wslConfig": "development"
 }
 ```
+
+**New in v1.5.0:**
+- **ports** - Port mappings (host:container or IP:host:container)
+- **expose** - Exposed ports for inter-container communication
+- **network** - Network mode (bridge, host, none)
+- **hostname** - Custom hostname
+- **volumes** - Named persistent volumes
+- **bind_mounts** - Host directory mounts
+- **tmpfs** - In-memory temporary filesystems
+- **wslConfig** - WSL configuration profile (Windows only)
 
 **Supported Base Images:**
 - Ubuntu: 20.04, 22.04, 24.04
@@ -393,6 +498,9 @@ Blueprints are JSON files that define environments:
 - 📚 **[Getting Started Guide](GETTING_STARTED.md)** - Detailed setup and usage
 - 📖 **[Full Documentation](https://dealer426.github.io/thresh/)** - Docusaurus site with tutorials
 - 🔧 **[CLI Reference](website/docs/cli-reference/)** - Complete command documentation
+- 🌐 **[Networking Tutorial](website/docs/tutorials/networking.md)** - Port mapping and network configuration (v1.5.0)
+- 📦 **[Volumes Tutorial](website/docs/tutorials/volumes.md)** - Persistent storage guide (v1.5.0)
+- ⚙️ **[WSL Configuration Guide](website/docs/wsl-configuration.md)** - Database optimization profiles (v1.5.0)
 - 🤖 **[MCP Integration Guide](docs/MCP_INTEGRATION.md)** - VS Code, Cursor, Windsurf setup
 - 🗺️ **[Roadmap](docs/ROADMAP_2026.md)** - Future plans and features
 - 📝 **[Changelog](CHANGELOG.md)** - Version history and changes
@@ -445,42 +553,149 @@ thresh/
 
 ---
 
-## What's New in v1.4.0
+## What's New in v1.5.0
 
-### 🎯 Grouped Commands
+### 🌐 Full Networking Support
 
-More intuitive command structure with `thresh blueprint` as the parent command for all blueprint operations.
-
-### ⚡ Parallel Creation (MCP)
-
-Create multiple environments simultaneously via Model Context Protocol:
-
-```javascript
-// Create 5 test environments in parallel
+**Port Mapping:**
+```json
 {
-  \"names\": [\"test-1\", \"test-2\", \"test-3\", \"test-4\", \"test-5\"],
-  \"blueprint\": \"alpine-minimal\"
+  "ports": ["8080:80", "5432:5432", "127.0.0.1:3000:3000"]
 }
 ```
 
-### 📊 Enhanced Metrics
+- Flexible port mapping syntax (host:container, IP:host:container)
+- **Windows (WSL2)**: Automatic port forwarding to localhost
+- **Linux/macOS**: Explicit port mapping with container runtime
+- Protocol support (TCP/UDP)
 
-- IP address display
-- Load average monitoring
-- Docker/containerd storage information
-- JSON export support
-
-### 🌍 Multi-Platform Support
-
-Full support for Windows, Linux, and macOS with automatic runtime detection.
-
-### 🗑️ Blueprint Deletion
-
-Remove unwanted generated blueprints easily:
-
-```bash
-thresh blueprint delete my-old-blueprint
+**Advanced Networking:**
+```json
+{
+  "expose": ["9090"],      // Inter-container communication
+  "network": "bridge",     // Network modes: bridge, host, none
+  "hostname": "api.local"  // Custom hostname
+}
 ```
+
+### 💾 Persistent Storage
+
+**Named Volumes:**
+```json
+{
+  "volumes": [
+    {"name": "postgres-data", "mount": "/var/lib/postgresql/data"},
+    {"name": "app-logs", "mount": "/var/log/app"}
+  ]
+}
+```
+
+- Data survives environment recreation
+- Platform-specific: directory-based (Windows) or containerd-managed (Linux)
+- CLI management: `thresh volume list|create|inspect|delete`
+
+**Bind Mounts:**
+```json
+{
+  "bind_mounts": [
+    {"host": "C:/projects/myapp", "container": "/app", "readonly": false}
+  ]
+}
+```
+
+- Direct host filesystem access
+- Perfect for live code editing
+
+**Tmpfs (In-Memory):**
+```json
+{
+  "tmpfs": ["/tmp", "/cache", "/run"]
+}
+```
+
+### ⚙️ WSL Configuration Profiles (Windows)
+
+**Fix database permission issues and optimize environments:**
+
+```json
+{
+  "wslConfig": "database"  // Fixes Plan9 filesystem issues
+}
+```
+
+**Built-in Profiles:**
+- **database** - Fixes PostgreSQL/MySQL/MongoDB permissions
+- **docker** - Enables systemd for Docker daemon
+- **web-server** - Optimized for nginx/Apache
+- **systemd** - Basic systemd support
+- **minimal** - Maximum isolation
+- **development** - Balanced for general work
+
+**Custom Profiles:**
+```bash
+thresh wslconf list
+thresh wslconf show database
+thresh wslconf validate my-profile.wslconf
+```
+
+### 🔄 Lifecycle Management
+
+**Start/Stop Commands:**
+```bash
+# Stop environment without losing data
+thresh stop postgres-server
+
+# Start again - all volumes and config preserved
+thresh start postgres-server
+```
+
+- Graceful shutdown and restart
+- Preserves all volumes and configuration
+- Metadata tracking for environment restoration
+
+### 📊 Volume Management
+
+**Complete volume lifecycle:**
+```bash
+thresh volume list                  # List all volumes
+thresh volume create app-data       # Pre-create volume
+thresh volume inspect postgres-data # View details
+thresh volume delete old-data       # Remove unused
+```
+
+### 📝 Complete v1.5.0 Example
+
+```json
+{
+  "name": "fullstack-app",
+  "description": "Full-stack application with database",
+  "base": "ubuntu-22.04",
+  "packages": ["nodejs", "npm", "postgresql-14"],
+  "ports": ["3000:3000", "8080:8080", "5432:5432"],
+  "volumes": [
+    {"name": "postgres-data", "mount": "/var/lib/postgresql/data"},
+    {"name": "app-logs", "mount": "/var/log/app"}
+  ],
+  "bind_mounts": [
+    {"host": "C:/projects/myapp", "container": "/app"}
+  ],
+  "tmpfs": ["/tmp"],
+  "network": "bridge",
+  "hostname": "app.local",
+  "wslConfig": "database",
+  "environment": {
+    "NODE_ENV": "development",
+    "DATABASE_URL": "postgresql://localhost:5432/myapp"
+  }
+}
+```
+
+**Access your application:**
+- Frontend: http://localhost:3000
+- API: http://localhost:8080
+- Database: localhost:5432
+- All data persists in named volumes
+- Live code editing via bind mount
 
 ---
 
