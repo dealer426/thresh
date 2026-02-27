@@ -89,64 +89,6 @@ thresh blueprint generate "Rust development with cargo and rustfmt" --output rus
 thresh up rust-dev
 ```
 
-### With Port Mapping (v1.5.0)
-
-```powershell
-# Create blueprint with port mapping
-{
-  "name": "webserver",
-  "base": "ubuntu-22.04",
-  "ports": ["8080:80", "8443:443"],
-  "packages": ["nginx"]
-}
-
-# Provision with automatic port forwarding
-thresh up webserver
-
-# Access from Windows
-curl http://localhost:8080
-```
-
-### With Persistent Volumes (v1.5.0)
-
-```powershell
-# Create blueprint with persistent storage
-{
-  "name": "postgres-persistent",
-  "base": "ubuntu-22.04",
-  "volumes": [
-    {
-      "name": "pgdata",
-      "mountPath": "/var/lib/postgresql/data"
-    }
-  ],
-  "wslConfig": "database",
-  "packages": ["postgresql"]
-}
-
-# Provision with persistent volumes
-thresh up postgres-persistent
-
-# Data persists even after destruction and recreation
-```
-
-### With WSL Configuration (v1.5.0)
-
-```powershell
-# Create blueprint with WSL profile for database optimization
-{
-  "name": "mysql-dev",
-  "base": "ubuntu-22.04",
-  "wslConfig": "database",
-  "packages": ["mysql-server"]
-}
-
-# Provision with automatic WSL configuration
-thresh up mysql-dev
-
-# No Plan9 filesystem permission errors!
-```
-
 ## Built-in Blueprints
 
 See `thresh blueprint list` for the full list of available blueprints:

@@ -16,12 +16,7 @@ Thresh v1.5.0 introduces **networking and storage features**:
 - WSL configuration profiles for database optimization
 :::
 
-:::info New in v1.4.0
-Thresh v1.4.0 introduces **grouped blueprint commands** for better organization:
-- `thresh blueprints` → `thresh blueprint list`
-- `thresh generate` → `thresh blueprint generate`
-- New: `thresh blueprint delete` to remove generated blueprints
-:::
+
 
 ## Quick Overview
 

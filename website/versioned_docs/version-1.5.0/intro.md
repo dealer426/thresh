@@ -62,9 +62,6 @@ graph TB
 
 - 🌍 **Multi-Platform** - Windows/WSL2, Linux/Docker/nerdctl, macOS/containerd
 - 🤖 **AI-Powered** - GitHub Copilot CLI integration for intelligent blueprint generation
-- 🌐 **Port Mapping** - Automatic port forwarding for network services (v1.5.0)
-- 📦 **Persistent Volumes** - Data persistence across environment lifecycle (v1.5.0)
-- 🗄️ **Database Optimization** - WSL configuration profiles fix Plan9 filesystem issues (v1.5.0)
 - ⚡ **Parallel Creation** - Create multiple environments simultaneously (10x faster)
 - 📦 **Built-in Blueprints** - Alpine, Ubuntu, Debian, Python, Node.js, and more
 - 🗑️ **Blueprint Management** - List, generate, and delete blueprints
@@ -132,101 +129,14 @@ copilot
 # List available blueprints
 thresh blueprint list
 
-# Create environment with networking and storage (v1.5.0)
-thresh blueprint generate "PostgreSQL with persistent volumes and port mapping"
-
-# Provision with automatic configuration
-thresh up postgres-dev
-
-# Access from host
-psql -h localhost -p 5432 -U postgres
+# Create your first environment
+thresh up alpine-minimal
 
 # Generate custom blueprint with AI
 thresh blueprint generate "Python ML environment with Jupyter" --output python-ml
 
 # Start interactive chat
 thresh chat
-```
-
----
-
-## What's New in v1.5.0
-
-### 🌐 Port Mapping & Networking
-
-Map host ports to container services with automatic forwarding:
-
-```json
-{
-  "ports": ["8080:80", "5432:5432"],
-  "network": "bridge",
-  "hostname": "webapp.local"
-}
-```
-
-**Features:**
-- Automatic port forwarding on Windows (netsh)
-- Multiple port mappings
-- IP binding and protocol selection
-- Exposed ports for inter-container communication
-
-[Learn more →](/docs/tutorials/networking)
-
-### 📦 Persistent Volumes
-
-Never lose data with three types of storage:
-
-```json
-{
-  "volumes": [
-    {"name": "pgdata", "mountPath": "/var/lib/postgresql/data"}
-  ],
-  "bindMounts": [
-    {"source": "C:\\projects", "target": "/app"}
-  ],
-  "tmpfs": [
-    {"mountPath": "/tmp", "size": "512m"}
-  ]
-}
-```
-
-**Features:**
-- Named volumes persist across recreation
-- Bind mounts for live code editing
-- Tmpfs for fast temporary storage
-
-[Learn more →](/docs/tutorials/volumes)
-
-### 🗄️ WSL Configuration Profiles
-
-Fix database permission errors with built-in profiles:
-
-```json
-{
-  "wslConfig": "database"  // Fixes Plan9 filesystem issues
-}
-```
-
-**Built-in profiles:**
-- `database` - PostgreSQL, MySQL, MongoDB, Redis
-- `docker` - Docker daemon auto-start
-- `web-server` - Nginx/Apache auto-start
-- `systemd` - Basic systemd enablement
-- `minimal` - Maximum isolation
-- `development` - Full development features
-
-[Learn more →](/docs/wsl-configuration)
-
-### 🔄 Lifecycle Management
-
-Start and stop environments with networking:
-
-```powershell
-# Start with automatic port forwarding
-thresh start webserver
-
-# Stop and cleanup
-thresh stop webserver
 ```
 
 ---
