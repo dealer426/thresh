@@ -1,0 +1,12 @@
+# Web Server Profile
+# Optimized for web servers (Nginx, Apache, Node.js)
+# Auto-starts web server service on boot
+
+[boot]
+systemd=true
+command=service nginx start
+
+[network]
+hostname=dev-server
+generateHosts=true
+generateResolvConf=true

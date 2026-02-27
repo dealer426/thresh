@@ -47,10 +47,20 @@ public class Blueprint
     
     [JsonPropertyName("tmpfs")]
     public List<string>? Tmpfs { get; set; }
+    
+    // WSL Configuration (Windows only)
+    [JsonPropertyName("wslConfig")]
+    public string? WslConfig { get; set; }
+    
+    [JsonPropertyName("wslConfigFile")]
+    public string? WslConfigFile { get; set; }
+    
+    [JsonPropertyName("wslConfigCustom")]
+    public string? WslConfigCustom { get; set; }
 
     public override string ToString()
     {
-        return $"Blueprint{{Name='{Name}', Base='{Base}', Packages={Packages?.Count ?? 0}, Ports={Ports?.Count ?? 0}, Volumes={Volumes?.Count ?? 0}}}";
+        return $"Blueprint{{Name='{Name}', Base='{Base}', Packages={Packages?.Count ?? 0}, Ports={Ports?.Count ?? 0}, Volumes={Volumes?.Count ?? 0}, WslConfig='{WslConfig}'}}";
     }
 }
 

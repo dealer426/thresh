@@ -89,20 +89,15 @@ cd C:\code\thresh\build-output\win-x64
 # Test ports from Windows host
 curl http://localhost:8080
 # Should connect (may see error if nginx not configured, but port should be accessible)
-
-# Check Windows port forwarding (should be automatic via WSL)
-netsh interface portproxy show v4tov4
 ```
 
 **Expected Results:**
 - ✅ Environment provisions successfully
 - ✅ Ports appear in `thresh list` output
-- ✅ Windows can access localhost:8080 and localhost:8443
+- ✅ Windows can access localhost:8080 and localhost:8443 (WSL2 auto-forwards to Windows)
 - ✅ Port 9090 is exposed but not accessible from Windows (container-only)
 
 **Known Issues to Check:**
-- Does `netsh` port forwarding need manual setup?
-- Are WSL2 ports automatically forwarded to Windows?
 - Any port conflicts with existing services?
 
 ---
@@ -281,17 +276,14 @@ wsl docker ps
 
 **Debug Steps:**
 ```powershell
-# Check WSL2 IP
-wsl hostname -I
-
-# Check netsh port proxy
-netsh interface portproxy show v4tov4
-
-# Test from within WSL
+# Test from within WSL first
 wsl curl localhost:8080
+
+# Check if service is actually running
+wsl docker ps
 ```
 
-**Fix:** May need to add `netsh` port proxy setup in WslService.cs
+**Fix:** Likely a service configuration issue, not port forwarding (WSL2 auto-forwards ports)
 
 ---
 
@@ -328,8 +320,7 @@ Copy this to `PHASE_1.5_TESTING.md` after testing:
 
 ### Port Mapping ✅/❌
 - [ ] Port mapping creates successfully
-- [ ] Ports accessible from Windows host
-- [ ] netsh port proxy configured
+- [ ] Ports accessible from Windows host (WSL2 auto-forwards)
 - [ ] Multiple ports work simultaneously
 - [ ] Exposed ports not accessible from host
 
@@ -402,7 +393,6 @@ The WslService currently has stub implementations for volume commands. They need
 1. Translate volume operations to WSL docker commands
 2. Handle Windows path to WSL path conversion
 3. Manage WSL distro lifecycle
-4. Handle port forwarding via netsh (if not automatic)
 
 ### No Rebuild Required for Blueprints
 Users can edit blueprints directly in `build-output\win-x64\blueprints\` without rebuilding. Blueprints are loaded from the filesystem at runtime!

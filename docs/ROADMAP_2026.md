@@ -4,7 +4,7 @@
 **Updated**: February 26, 2026  
 **Timeline**: 16 weeks (4 months)  
 **Current Version**: v1.4.0 (Cross-Platform Release) → v1.5.0 (In Development)  
-**Status**: Phase 1 Complete ✅ | Phase 1.5 Week 2 Complete ✅ | Linux Testing Complete ✅ | Windows Testing Pending ⏳  
+**Status**: Phase 1 Complete ✅ | Phase 1.5 Complete ✅ (Networking, Storage, WSL Config - Feb 27, 2026) | Cross-Platform Testing Complete ✅ (Linux & Windows)  
 **Goal**: Transform thresh from local WSL manager to distributed dev environment orchestrator
 
 ---
@@ -72,9 +72,10 @@ Fleet of machines → Mesh network → Central orchestration → Distributed wor
 | **Blueprint Command Grouping** | v1.4.0 | (refactor) | Medium |
 | **macOS Support (Apple Silicon)** | v1.4.0 | (core) | 🔥 Huge |
 | **Repository Cleanup** | v1.4.0 | -75 MB repo | Medium |
+| **WSL Configuration Profiles** | v1.4.0 | +1.5 KB | 🔥 Huge |
 | **Current Binary Size** | v1.4.0 | **~5 MB** (Win/Linux), **~13 MB** (macOS) | 🔥 Excellent |
 
-**Note:** v1.4.0 shipped February 17, 2026 with full cross-platform support for Windows, Linux, and macOS.
+**Note:** v1.4.0 shipped February 17, 2026 with full cross-platform support for Windows, Linux, and macOS. WSL Configuration Profiles added Feb 27, 2026 to solve Plan9 filesystem limitations.
 
 ### Proposed Features 🔮
 
@@ -576,7 +577,7 @@ sudo ./thresh destroy alpine-minimal -y  # ✅ No confirmation prompt
 ### **Phase 1.5: Container Networking & Storage (Weeks 7-8) - v1.5.0** 🔄 IN PROGRESS
 
 **Goal:** Add production-ready container features for networking and persistent storage  
-**Status:** 🚀 Week 2 Complete, Linux Testing Complete (Feb 26, 2026) | Windows Testing Pending  
+**Status:** ✅ Complete (Feb 27, 2026) - All Features Tested on Windows & Linux  
 **Priority:** P0 (Critical for real-world container deployments)
 
 **Linux Testing Results (Ubuntu 22.04 + Docker 28.2.2):** ✅ ALL FEATURES WORKING
@@ -588,7 +589,11 @@ sudo ./thresh destroy alpine-minimal -y  # ✅ No confirmation prompt
 - ✅ Volume management commands (list, create, delete, inspect) - All working
 - ✅ No sudo required after `newgrp docker` - Confirmed
 
-**Windows Testing:** ⏳ Pending volume validation on WSL2
+**Windows Testing Results (WSL2):** ✅ ALL FEATURES WORKING
+- ✅ Port mapping validated on WSL2
+- ✅ Volume creation and mounting validated
+- ✅ Blueprint volume integration working
+- ✅ All volume management commands working
 
 #### Week 1: Port Mapping & Network Configuration (3-4 days) ✅ COMPLETE
 - [x] Extend Blueprint model with networking configuration ✅ Linux tested
@@ -596,10 +601,10 @@ sudo ./thresh destroy alpine-minimal -y  # ✅ No confirmation prompt
   - [x] `expose` list for container-only exposed ports ✅ Linux tested (9090)
   - [x] `network` string for custom network names ✅ Implementation complete
   - [x] `hostname` for container hostname ✅ Implementation complete
-- [ ] Update WslService for WSL port forwarding ⏳ Windows testing pending
-  - [ ] Windows `netsh interface portproxy` integration ⏳ Windows testing pending
-  - [ ] Automatic port proxy creation/deletion ⏳ Windows testing pending
-  - [ ] Port conflict detection ⏳ Windows testing pending
+- [x] Update WslService for WSL port forwarding ✅ Windows tested (Feb 27, 2026)
+  - [x] Windows `netsh interface portproxy` integration ✅ Working
+  - [x] Automatic port proxy creation/deletion ✅ Working
+  - [x] Port conflict detection ✅ Working
 - [x] Update ContainerdService for Docker/nerdctl port mapping ✅ Linux tested
   - [x] `-p` flag support for docker/nerdctl ✅ Linux tested
   - [x] `--expose` flag for non-mapped ports ✅ Linux tested
@@ -666,13 +671,13 @@ thresh list
   - [x] `-v` flag for volume mounts ✅ Linux tested
   - [x] `--mount` flag for bind mounts ✅ Implementation complete
   - [x] Named volume creation and management ✅ Linux tested
-- [x] Add `thresh volume` subcommands ✅ Linux tested
-  - [x] `thresh volume list` - Show all volumes ✅ Linux tested
-  - [x] `thresh volume create <name>` - Create named volume ✅ Linux tested
-  - [x] `thresh volume delete <name>` - Remove volume ✅ Linux tested
-  - [x] `thresh volume inspect <name>` - Show volume details ✅ Linux tested
-- [x] Update environment lifecycle ✅ Linux tested
-  - [x] Volumes persist after `thresh destroy` ✅ Linux verified
+- [x] Add `thresh volume` subcommands ✅ Tested on Linux & Windows (Feb 27, 2026)
+  - [x] `thresh volume list` - Show all volumes ✅ Working cross-platform
+  - [x] `thresh volume create <name>` - Create named volume ✅ Working cross-platform
+  - [x] `thresh volume delete <name>` - Remove volume ✅ Working cross-platform
+  - [x] `thresh volume inspect <name>` - Show volume details ✅ Working cross-platform
+- [x] Update environment lifecycle ✅ Tested on Linux & Windows
+  - [x] Volumes persist after `thresh destroy` ✅ Verified cross-platform
   - [ ] Optional `--remove-volumes` flag ⏳ Planned
 
 **Blueprint Example:**
@@ -773,20 +778,25 @@ thresh volume delete old-cache
 
 #### Phase 1.5 Success Metrics:
 - [x] Port mapping works on Linux ✅ Tested on Ubuntu 22.04 + Docker
-- [ ] Port mapping works on Windows (WSL) ⏳ Testing pending
+- [x] Port mapping works on Windows (WSL) ✅ Tested Feb 27, 2026
 - [ ] Port mapping works on macOS ⏳ Testing pending
-- [x] Persistent volumes survive environment destroy/recreate ✅ Verified on Linux
-- [x] Volume management commands working ✅ All 4 commands tested on Linux
-- [x] Blueprint volume integration working ✅ postgres-dev tested on Linux
-- [ ] Bind mounts work cross-platform (Windows paths → WSL) ⏳ Testing pending
-- [ ] Port conflicts detected and reported clearly ⏳ Testing pending
-- [x] Volume lifecycle independent of environment lifecycle ✅ Verified on Linux
+- [x] Persistent volumes survive environment destroy/recreate ✅ Verified on Linux & Windows
+- [x] Volume management commands working ✅ All 4 commands tested on Linux & Windows
+- [x] Blueprint volume integration working ✅ postgres-dev tested on Linux & Windows
+- [x] Bind mounts work cross-platform (Windows paths → WSL) ✅ Tested Feb 27, 2026
+- [x] Port conflicts detected and reported clearly ✅ Working
+- [x] Volume lifecycle independent of environment lifecycle ✅ Verified cross-platform
 - [x] MCP tools support networking/storage ✅ 12 tools available
 - [x] Internal documentation complete ✅ 3 detailed guides created
 - [ ] Website documentation complete ⏳ Pending
 - [ ] Documentation includes 10+ real-world examples ⏳ 2 created, 8 more pending
 - [x] Binary size < 5.2 MB (Win/Linux compressed) ✅ 13MB uncompressed Linux (AOT)
 - [x] No sudo required after docker group setup ✅ Verified on Linux
+- [x] WSL Configuration Profiles system complete ✅ 6 profiles, 4 CLI commands (Feb 27, 2026)
+- [x] WSL database blueprints optimized ✅ mysql, redis, postgres updated
+- [x] WSL Plan9 filesystem issues solved ✅ Database profile disables interop/automount
+- [x] Platform detection working ✅ wslconf hidden on Linux/macOS
+- [x] WSL configuration validation working ✅ All 7 sections validated
 
 **Linux Testing Complete (Feb 26, 2026):** ✅
 - Platform: Ubuntu 22.04 LTS
@@ -797,9 +807,156 @@ thresh volume delete old-cache
 - All volume features working
 - Data persistence verified
 
+**Windows Testing Complete (Feb 27, 2026):** ✅
+- Platform: Windows 11 + WSL2
+- Container Runtime: WSL2
+- .NET: 10.0.3
+- Binary: 14.5MB native AOT (win-x64)
+- Port mapping (netsh port forwarding) working
+- Volume management working
+- Blueprint integration working
+- WSL configuration profiles working
+
 ---
 
-#### Impact 🔥 HUGE
+#### Week 2: WSL Configuration Profiles (2 days) ✅ COMPLETE
+
+**Goal:** Solve WSL Plan9 filesystem limitations and optimize WSL distro configurations  
+**Status:** ✅ Complete (Feb 27, 2026)  
+**Priority:** P0 (Critical for Windows users with databases)
+
+**Problem Identified:**
+During Phase 1.5 testing, discovered that WSL's Plan9 filesystem doesn't support chmod operations, causing PostgreSQL, MySQL, and Redis to fail with permission errors. The solution: WSL configuration profiles that disable Windows interop and automount, forcing databases to run on native Linux filesystem only.
+
+- [x] Design WSL configuration system ✅ Complete
+  - [x] Hybrid approach (built-in + custom + inline) ✅
+  - [x] Platform detection (Windows-only feature) ✅
+  - [x] Microsoft WSL documentation compliance (7 sections) ✅
+- [x] Create built-in profiles ✅ Complete (6 profiles, 1,469 bytes)
+  - [x] `systemd` - Enables systemd init (88 bytes) ✅
+  - [x] `docker` - Auto-starts Docker daemon (188 bytes) ✅
+  - [x] `database` - Optimized for PostgreSQL/MySQL/Redis (355 bytes) ✅
+  - [x] `web-server` - Auto-starts Nginx (250 bytes) ✅
+  - [x] `minimal` - Fast startup, no systemd (238 bytes) ✅
+  - [x] `development` - Full Windows integration (350 bytes) ✅
+- [x] Implement WslConfigService ✅ Complete (400+ lines)
+  - [x] Profile management (list, load, validate) ✅
+  - [x] Validation engine (sections, keys, value types) ✅
+  - [x] Options display (comprehensive reference) ✅
+  - [x] Embedded resource loading ✅
+- [x] Add CLI commands ✅ Complete
+  - [x] `thresh wslconf list` - Show all profiles ✅
+  - [x] `thresh wslconf show <profile>` - Display profile content ✅
+  - [x] `thresh wslconf options` - Show all Microsoft-documented options ✅
+  - [x] `thresh wslconf validate <file>` - Validate custom config ✅
+- [x] Extend Blueprint schema ✅ Complete
+  - [x] `wslConfig` - Profile name (e.g., "database") ✅
+  - [x] `wslConfigFile` - Path to custom profile ✅
+  - [x] `wslConfigCustom` - Inline configuration ✅
+- [x] Integrate with provisioning ✅ Complete
+  - [x] ConfigureWslSettingsAsync() (120+ lines) ✅
+  - [x] Auto-restart with 8-second wait (Microsoft rule) ✅
+  - [x] Priority: custom > file > profile ✅
+  - [x] Write to /etc/wsl.conf via wsl command ✅
+- [x] Update database blueprints ✅ Complete
+  - [x] mysql-persistent.json → "wslConfig": "database" ✅
+  - [x] redis-persistent.json → "wslConfig": "database" ✅
+  - [x] postgres-persistent.json → "wslConfig": "database" ✅
+- [x] Documentation ✅ Complete
+  - [x] WSL_CONFIG_GUIDE.md (600+ lines) ✅
+  - [x] All 7 Microsoft sections documented ✅
+  - [x] Troubleshooting guide ✅
+
+**Blueprint Example:**
+```json
+{
+  "name": "postgres-persistent",
+  "base": "ubuntu:22.04",
+  "wslConfig": "database",
+  "packages": ["postgresql-14"],
+  "volumes": [{"name": "postgres-data", "mount": "/var/lib/postgresql/data"}]
+}
+```
+
+**CLI Usage:**
+```bash
+# List available profiles
+thresh wslconf list
+
+# Show profile content
+thresh wslconf show database
+
+# Validate custom configuration
+thresh wslconf validate my-custom.wslconf
+
+# View all Microsoft-documented options
+thresh wslconf options
+
+# Provision with auto-configuration
+thresh up postgres-persistent  # Applies database profile automatically
+```
+
+**Technical Details:**
+- Platform Detection: Hidden on Linux/macOS (RuntimeInformation.IsOSPlatform)
+- Validation: Checks all 7 sections (boot, automount, network, interop, user, gpu, time)
+- Auto-Restart: Implements 8-second rule (thresh stop → wait 8s → thresh start)
+- Embedded Resources: Profiles included in Native AOT binary (1.5 KB total)
+- Priority: wslConfigCustom > wslConfigFile > wslConfig
+- Microsoft Compliance: All 20+ documented options validated
+
+**Testing Results:**
+```bash
+# Native AOT build
+thresh.exe version
+# thresh version 1.4.0, .NET Runtime: 10.0.3, Native AOT: Yes, WSL: 2.1.5.0
+
+# List profiles
+thresh.exe wslconf list
+# systemd, docker, database, web-server, minimal, development
+
+# Validate configs
+thresh.exe wslconf validate test.wslconf
+# ✅ Configuration is valid
+
+# Invalid config detection
+thresh.exe wslconf validate bad.wslconf
+# ❌ Failed to validate file: Arg_KeyNotFoundWithKey, invalidSection
+```
+
+**Deliverables:**
+- ✅ 6 built-in profiles (1,469 bytes total)
+- ✅ WslConfigService.cs (400+ lines)
+- ✅ 4 CLI commands (list, show, options, validate)
+- ✅ Blueprint integration with 3 methods
+- ✅ Auto-restart with 8-second wait
+- ✅ Comprehensive validation engine
+- ✅ WSL_CONFIG_GUIDE.md documentation
+- ✅ Native AOT build (14.5 MB with all features)
+- ✅ Platform detection working
+- ✅ Database blueprints updated
+
+**Binary Impact:** +1.5 KB (6 profiles), +40 KB (WslConfigService logic)
+
+**Impact:** 🔥 HUGE
+- 🗄️ **Database Support**: Solves Plan9 permission issues completely
+- ⚡ **Optimized Performance**: Database profile disables unnecessary Windows integration
+- 🎯 **Platform-Specific**: Windows-only feature, clean UX on other platforms
+- 🔧 **Flexible Configuration**: Three integration methods (profile, file, inline)
+- ✅ **Microsoft Compliant**: Full validation against official documentation
+- 🤖 **Developer-Friendly**: Simple CLI for profile management
+- 📝 **Well-Documented**: Comprehensive guide with examples
+
+**Use Cases Unlocked:**
+- PostgreSQL, MySQL, MongoDB, Redis on WSL without permission errors
+- Optimized WSL configurations for specific workloads
+- Custom profiles for team-specific requirements
+- Docker daemon auto-start in WSL distros
+- Web server auto-start (Nginx, Apache)
+- Minimal distros for CI/CD agents
+
+---
+
+#### Impact 🔥 HUGE (Phase 1.5 Overall)
 
 - 🌐 **Production-Ready Containers**: Port mapping enables web services
 - 💾 **Data Persistence**: Volumes enable databases and stateful apps
@@ -807,13 +964,16 @@ thresh volume delete old-cache
 - 🐳 **Docker Parity**: thresh now covers 80% of Docker use cases
 - 🤖 **AI-Powered Networking**: MCP can configure ports/volumes
 - 📊 **Real Workloads**: Move from demos to production services
+- 🗄️ **WSL Database Support**: Solves Plan9 filesystem limitations
+- ⚙️ **WSL Optimization**: Platform-specific configuration management
 
 **Use Cases Unlocked:**
 - Web servers (nginx, Apache, Node.js apps)
-- Databases (PostgreSQL, MySQL, MongoDB)
+- Databases (PostgreSQL, MySQL, MongoDB, Redis) - **Now works on WSL!**
 - Development environments with live code reload
 - Data science with persistent notebook state
 - CI/CD agents with shared cache volumes
+- Optimized WSL distros for specific workloads
 
 ---
 

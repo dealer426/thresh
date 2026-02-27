@@ -9,7 +9,8 @@
 
 # Native binaries and executables (not directories)
 thresh/Thresh/thresh
-thresh/thresh
+# But allow Profiles directory
+!thresh/Thresh/Profiles/
 
 # IDE files
 .vscode/

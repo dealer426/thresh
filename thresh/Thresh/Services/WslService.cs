@@ -10,6 +10,11 @@ namespace Thresh.Services;
 public partial class WslService : IContainerService
 {
     private const string ThreshPrefix = "thresh-";
+    private static readonly string VolumeDirectory = Path.Combine(
+        System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
+        ".thresh",
+        "volumes"
+    );
 
     [GeneratedRegex(@"\s*(\*?)\s*(.+?)\s+(Running|Stopped|Installing|Terminated)", RegexOptions.IgnoreCase)]
     private static partial Regex WslListPattern();
@@ -350,38 +355,281 @@ public partial class WslService : IContainerService
     }
 
     /// <summary>
-    /// List all volumes (not supported in WSL)
+    /// List all directory-based volumes
     /// </summary>
     public Task<List<VolumeInfo>> ListVolumesAsync()
     {
-        // WSL doesn't have native volume management like Docker
-        return Task.FromResult(new List<VolumeInfo>());
+        var volumes = new List<VolumeInfo>();
+        
+        try
+        {
+            if (!Directory.Exists(VolumeDirectory))
+            {
+                return Task.FromResult(volumes);
+            }
+
+            var volumeDirs = Directory.GetDirectories(VolumeDirectory);
+            
+            foreach (var volumePath in volumeDirs)
+            {
+                var volumeName = Path.GetFileName(volumePath);
+                var dirInfo = new DirectoryInfo(volumePath);
+                
+                // Calculate directory size
+                long size = 0;
+                try
+                {
+                    var files = dirInfo.GetFiles("*", SearchOption.AllDirectories);
+                    size = files.Sum(f => f.Length);
+                }
+                catch
+                {
+                    // Size calculation failed, continue with 0
+                }
+                
+                volumes.Add(new VolumeInfo
+                {
+                    Name = volumeName,
+                    Driver = "local",
+                    Mountpoint = volumePath,
+                    CreatedAt = dirInfo.CreationTime,
+                    Size = size
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Warning: Failed to list volumes: {ex.Message}");
+        }
+        
+        return Task.FromResult(volumes);
     }
 
     /// <summary>
-    /// Create a volume (not supported in WSL)
+    /// Create a directory-based volume (no admin required)
     /// </summary>
     public Task<bool> CreateVolumeAsync(string volumeName)
     {
-        Console.WriteLine("Volume management is not supported for WSL environments.");
-        Console.WriteLine("WSL environments use native Windows file system for storage.");
-        return Task.FromResult(false);
+        try
+        {
+            // Ensure volume directory exists
+            if (!Directory.Exists(VolumeDirectory))
+            {
+                Directory.CreateDirectory(VolumeDirectory);
+            }
+
+            var volumePath = Path.Combine(VolumeDirectory, volumeName);
+            
+            // Check if volume already exists
+            if (Directory.Exists(volumePath))
+            {
+                Console.WriteLine($"Volume '{volumeName}' already exists");
+                return Task.FromResult(true);
+            }
+
+            Console.WriteLine($"Creating volume '{volumeName}'...");
+            
+            // Create volume directory
+            Directory.CreateDirectory(volumePath);
+
+            Console.WriteLine($"✅ Volume '{volumeName}' created successfully");
+            Console.WriteLine($"   Location: {volumePath}");
+            return Task.FromResult(true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Failed to create volume: {ex.Message}");
+            return Task.FromResult(false);
+        }
     }
 
     /// <summary>
-    /// Delete a volume (not supported in WSL)
+    /// Delete a directory-based volume
     /// </summary>
     public Task<bool> DeleteVolumeAsync(string volumeName)
     {
-        Console.WriteLine("Volume management is not supported for WSL environments.");
-        return Task.FromResult(false);
+        try
+        {
+            var volumePath = Path.Combine(VolumeDirectory, volumeName);
+            
+            if (!Directory.Exists(volumePath))
+            {
+                Console.WriteLine($"Volume '{volumeName}' not found");
+                return Task.FromResult(false);
+            }
+
+            Console.WriteLine($"Deleting volume '{volumeName}'...");
+            Directory.Delete(volumePath, recursive: true);
+            
+            Console.WriteLine($"✅ Volume '{volumeName}' deleted successfully");
+            return Task.FromResult(true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Failed to delete volume: {ex.Message}");
+            return Task.FromResult(false);
+        }
     }
 
     /// <summary>
-    /// Inspect a volume (not supported in WSL)
+    /// Inspect a directory-based volume
     /// </summary>
     public Task<VolumeInfo?> InspectVolumeAsync(string volumeName)
     {
-        return Task.FromResult<VolumeInfo?>(null);
+        try
+        {
+            var volumePath = Path.Combine(VolumeDirectory, volumeName);
+            
+            if (!Directory.Exists(volumePath))
+            {
+                return Task.FromResult<VolumeInfo?>(null);
+            }
+
+            var dirInfo = new DirectoryInfo(volumePath);
+            
+            // Calculate directory size
+            long size = 0;
+            try
+            {
+                var files = dirInfo.GetFiles("*", SearchOption.AllDirectories);
+                size = files.Sum(f => f.Length);
+            }
+            catch
+            {
+                // Size calculation failed, continue with 0
+            }
+            
+            var volume = new VolumeInfo
+            {
+                Name = volumeName,
+                Driver = "local",
+                Mountpoint = volumePath,
+                CreatedAt = dirInfo.CreationTime,
+                Size = size
+            };
+            
+            return Task.FromResult<VolumeInfo?>(volume);
+        }
+        catch
+        {
+            return Task.FromResult<VolumeInfo?>(null);
+        }
     }
+
+    /// <summary>
+    /// Mount a Windows directory volume to a WSL distro using bind mount (no admin required)
+    /// </summary>
+    public async Task<bool> MountVolumeToDistroAsync(string volumeName, string distroName, string mountPoint)
+    {
+        try
+        {
+            var volumePath = Path.Combine(VolumeDirectory, volumeName);
+            
+            if (!Directory.Exists(volumePath))
+            {
+                Console.WriteLine($"Volume '{volumeName}' not found");
+                return false;
+            }
+
+            Console.WriteLine($"  Mounting volume '{volumeName}'...");
+            
+            // Convert Windows path to WSL path format
+            // C:\Users\burns\.thresh\volumes\data -> /mnt/c/Users/burns/.thresh/volumes/data
+            var wslPath = ConvertWindowsPathToWsl(volumePath);
+            
+            // Create bind mount inside the distro (use Unix line endings)
+            var bindMountScript = $"mkdir -p {mountPoint} && mount --bind {wslPath} {mountPoint} && if mountpoint -q {mountPoint}; then echo 'Volume mounted successfully'; else echo 'Mount verification failed'; exit 1; fi";
+            
+            var bindResult = await ProcessHelper.ExecuteAsync(
+                "wsl",
+                "-d", distroName,
+                "sh", "-c", bindMountScript
+            );
+
+            if (!bindResult.IsSuccess)
+            {
+                Console.WriteLine($"  ⚠️  Failed to create bind mount: {bindResult.Error}");
+                return false;
+            }
+
+            // Create persistent mount script in /etc/profile.d/
+            // This ensures volumes are remounted when the distro starts
+            await CreatePersistentMountScriptAsync(distroName, volumeName, wslPath, mountPoint);
+
+            Console.WriteLine($"  ✅ Volume '{volumeName}' mounted to {mountPoint}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"  ⚠️  Failed to mount volume: {ex.Message}");
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// Create a startup script that remounts volumes on distro boot/login
+    /// </summary>
+    private async Task CreatePersistentMountScriptAsync(string distroName, string volumeName, string wslPath, string mountPoint)
+    {
+        try
+        {
+            var scriptPath = "/etc/profile.d/thresh-volumes.sh";
+            
+            // Create mount command that's idempotent (safe to run multiple times)
+            var mountCommand = $"[ ! -d '{mountPoint}' ] && mkdir -p '{mountPoint}'; ! mountpoint -q '{mountPoint}' 2>/dev/null && mount --bind '{wslPath}' '{mountPoint}' 2>/dev/null || true";
+            
+            // Check if script exists
+            var checkScript = $"test -f {scriptPath} && echo exists || echo new";
+            var checkResult = await ProcessHelper.ExecuteAsync("wsl", "-d", distroName, "sh", "-c", checkScript);
+            var isNew = checkResult.GetOutputAsString().Trim() == "new";
+            
+            if (isNew)
+            {
+                // Create new script with header using printf (ensures Unix line endings)
+                var createScript = $@"printf '#!/bin/sh\n# thresh - Persistent volume mounts\n# Auto-generated - do not edit manually\n\n# Mount: {volumeName} -> {mountPoint}\n{mountCommand}\n' > {scriptPath} && chmod +x {scriptPath}";
+                
+                await ProcessHelper.ExecuteAsync("wsl", "-d", distroName, "sh", "-c", createScript);
+            }
+            else
+            {
+                // Check if this mount is already in the script
+                var grepScript = $"grep -q '{mountPoint}' {scriptPath}";
+                var grepResult = await ProcessHelper.ExecuteAsync("wsl", "-d", distroName, "sh", "-c", grepScript);
+                
+                if (!grepResult.IsSuccess) // grep returns non-zero when pattern not found
+                {
+                    // Append new mount to existing script using printf
+                    var appendScript = $"printf '\n# Mount: {volumeName} -> {mountPoint}\n{mountCommand}\n' >> {scriptPath}";
+                    await ProcessHelper.ExecuteAsync("wsl", "-d", distroName, "sh", "-c", appendScript);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Non-fatal - mount still works for current session
+            Console.WriteLine($"  Warning: Could not create persistent mount script: {ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// Convert Windows path to WSL path format
+    /// </summary>
+    private static string ConvertWindowsPathToWsl(string windowsPath)
+    {
+        // Normalize path separators
+        var normalized = windowsPath.Replace("\\", "/");
+        
+        // Convert drive letter (C: -> /mnt/c)
+        if (normalized.Length >= 2 && normalized[1] == ':')
+        {
+            var driveLetter = char.ToLower(normalized[0]);
+            normalized = $"/mnt/{driveLetter}{normalized.Substring(2)}";
+        }
+        
+        return normalized;
+    }
+
+    /// <summary>
+    /// Initialize VHD with ext4 filesystem
+    /// </summary>
 }

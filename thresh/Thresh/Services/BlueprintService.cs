@@ -80,51 +80,74 @@ public class BlueprintService
         Console.WriteLine($"Creating environment '{environmentName}' from blueprint '{blueprint.Name}'");
 
         // Step 1: Install base distribution
-        Console.WriteLine($"[1/5] Installing base distribution: {blueprint.Base}");
+        Console.WriteLine($"[1/7] Installing base distribution: {blueprint.Base}");
         await InstallBaseDistributionAsync(environmentName, blueprint.Base, blueprint.Name, verbose, blueprint);
 
-        // Step 2: Install packages FIRST (before scripts that may depend on them)
+        // Step 1.5: Setup volumes (if any)
+        if (blueprint.Volumes != null && blueprint.Volumes.Count > 0)
+        {
+            Console.WriteLine($"[2/7] Setting up volumes ({blueprint.Volumes.Count} volumes)...");
+            await SetupVolumesAsync(environmentName, blueprint.Volumes, verbose);
+        }
+        else
+        {
+            Console.WriteLine("[2/7] No volumes to setup [SKIP]");
+        }
+
+        // Step 2: Configure WSL settings (Windows only)
+        var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+        if (isWindows && (blueprint.WslConfig != null || blueprint.WslConfigFile != null || blueprint.WslConfigCustom != null))
+        {
+            Console.WriteLine("[3/7] Configuring WSL settings...");
+            await ConfigureWslSettingsAsync(environmentName, blueprint, verbose);
+        }
+        else
+        {
+            Console.WriteLine("[3/7] No WSL configuration [SKIP]");
+        }
+
+        // Step 3: Install packages FIRST (before scripts that may depend on them)
         if (blueprint.Packages != null && blueprint.Packages.Count > 0)
         {
-            Console.WriteLine($"[2/5] Installing packages ({blueprint.Packages.Count} packages)...");
+            Console.WriteLine($"[4/7] Installing packages ({blueprint.Packages.Count} packages)...");
             await InstallPackagesAsync(environmentName, blueprint.Packages, verbose);
         }
         else
         {
-            Console.WriteLine("[2/5] No packages to install [SKIP]");
+            Console.WriteLine("[4/7] No packages to install [SKIP]");
         }
 
-        // Step 3: Run setup script (after packages are installed)
+        // Step 4: Run setup script (after packages are installed)
         if (!string.IsNullOrEmpty(blueprint.Scripts?.Setup))
         {
-            Console.WriteLine("[3/5] Running setup script...");
+            Console.WriteLine("[5/7] Running setup script...");
             await RunScriptAsync(environmentName, blueprint.Scripts.Setup, verbose);
         }
         else
         {
-            Console.WriteLine("[3/5] No setup script [SKIP]");
+            Console.WriteLine("[5/7] No setup script [SKIP]");
         }
 
-        // Step 4: Set environment variables
+        // Step 5: Set environment variables
         if (blueprint.Environment != null && blueprint.Environment.Count > 0)
         {
-            Console.WriteLine("[4/5] Configuring environment variables...");
+            Console.WriteLine("[6/7] Configuring environment variables...");
             await ConfigureEnvironmentAsync(environmentName, blueprint.Environment, verbose);
         }
         else
         {
-            Console.WriteLine("[4/5] No environment variables [SKIP]");
+            Console.WriteLine("[6/7] No environment variables [SKIP]");
         }
 
-        // Step 5: Run post-install script
+        // Step 6: Run post-install script
         if (!string.IsNullOrEmpty(blueprint.Scripts?.PostInstall))
         {
-            Console.WriteLine("[5/5] Running post-install script...");
+            Console.WriteLine("[7/7] Running post-install script...");
             await RunScriptAsync(environmentName, blueprint.Scripts.PostInstall, verbose);
         }
         else
         {
-            Console.WriteLine("[5/5] No post-install script [SKIP]");
+            Console.WriteLine("[7/7] No post-install script [SKIP]");
         }
 
         Console.WriteLine();
@@ -132,6 +155,48 @@ public class BlueprintService
         
         // Save metadata for tracking
         SaveMetadata(environmentName, blueprint);
+    }
+
+    /// <summary>
+    /// Setup volumes for an environment
+    /// </summary>
+    private async Task SetupVolumesAsync(string environmentName, List<BlueprintVolume> volumes, bool verbose)
+    {
+        var distroName = "thresh-" + environmentName;
+        
+        foreach (var volume in volumes)
+        {
+            if (verbose)
+                Console.WriteLine($"  Setting up volume '{volume.Name}' -> {volume.Mount}");
+            
+            // Ensure volume exists (create if doesn't exist)
+            var existingVolume = await _containerService.InspectVolumeAsync(volume.Name);
+            if (existingVolume == null)
+            {
+                if (verbose)
+                    Console.WriteLine($"    Creating volume '{volume.Name}'...");
+                
+                var created = await _containerService.CreateVolumeAsync(volume.Name);
+                if (!created)
+                {
+                    Console.WriteLine($"  ⚠️  Failed to create volume '{volume.Name}'");
+                    continue;
+                }
+            }
+            else
+            {
+                if (verbose)
+                    Console.WriteLine($"    Using existing volume '{volume.Name}'");
+            }
+
+            // For WSL, mount the VHD to the distro
+            if (_containerService is WslService wslService)
+            {
+                await wslService.MountVolumeToDistroAsync(volume.Name, distroName, volume.Mount);
+            }
+        }
+        
+        Console.WriteLine("  [OK] Volumes configured");
     }
 
     private void SaveMetadata(string environmentName, Blueprint blueprint)
@@ -491,5 +556,135 @@ fi";
     {
         var json = JsonSerializer.Serialize(blueprint, BlueprintJsonContext.Default.Blueprint);
         File.WriteAllText(filePath, json);
+    }
+
+    /// <summary>
+    /// Configure WSL settings for an environment
+    /// </summary>
+    private async Task ConfigureWslSettingsAsync(string environmentName, Blueprint blueprint, bool verbose)
+    {
+        var wslConfigService = new WslConfigService();
+        var distroName = "thresh-" + environmentName;
+        string? configContent = null;
+
+        // Priority: custom > file > profile
+        if (!string.IsNullOrEmpty(blueprint.WslConfigCustom))
+        {
+            if (verbose)
+                Console.WriteLine("  Using inline custom wsl.conf");
+            
+            configContent = blueprint.WslConfigCustom;
+        }
+        else if (!string.IsNullOrEmpty(blueprint.WslConfigFile))
+        {
+            if (verbose)
+                Console.WriteLine($"  Loading wsl.conf from file: {blueprint.WslConfigFile}");
+            
+            var filePath = blueprint.WslConfigFile;
+            if (filePath.StartsWith("~"))
+            {
+                var homeDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
+                filePath = filePath.Replace("~", homeDir);
+            }
+            
+            if (!File.Exists(filePath))
+            {
+                throw new Exception($"WSL config file not found: {filePath}");
+            }
+            
+            configContent = File.ReadAllText(filePath);
+        }
+        else if (!string.IsNullOrEmpty(blueprint.WslConfig))
+        {
+            if (verbose)
+                Console.WriteLine($"  Using built-in profile: {blueprint.WslConfig}");
+            
+            configContent = wslConfigService.GetProfileContent(blueprint.WslConfig);
+            if (configContent == null)
+            {
+                throw new Exception($"WSL config profile not found: {blueprint.WslConfig}");
+            }
+        }
+
+        if (string.IsNullOrEmpty(configContent))
+        {
+            Console.WriteLine("  [SKIP] No WSL configuration provided");
+            return;
+        }
+
+        // Validate configuration
+        var validation = wslConfigService.ValidateConfig(configContent);
+        if (!validation.IsValid)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("  ❌ Invalid WSL configuration:");
+            foreach (var error in validation.Errors)
+            {
+                Console.WriteLine($"     {error}");
+            }
+            Console.ResetColor();
+            throw new Exception("WSL configuration validation failed");
+        }
+
+        if (validation.Warnings.Count > 0 && verbose)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            foreach (var warning in validation.Warnings)
+            {
+                Console.WriteLine($"  ⚠️  {warning}");
+            }
+            Console.ResetColor();
+        }
+
+        // Write config to temporary file
+        var tempFile = Path.GetTempFileName();
+        File.WriteAllText(tempFile, configContent);
+
+        try
+        {
+            // Copy wsl.conf to distro
+            var targetPath = "/etc/wsl.conf";
+            
+            if (verbose)
+                Console.WriteLine($"  Writing wsl.conf to {targetPath}");
+
+            // Create wsl.conf in distro using wsl command (requires root/sudo)
+            var createConfigCmd = $"sudo sh -c 'cat > {targetPath} <<THRESH_WSL_CONF_EOF\n{configContent}\nTHRESH_WSL_CONF_EOF'";
+            await ExecuteInDistroAsync(distroName, createConfigCmd, verbose);
+
+            Console.WriteLine("  [OK] WSL configuration applied");
+
+            // Restart distro to apply changes (8-second rule)
+            if (verbose)
+                Console.WriteLine("  Restarting distro to apply WSL configuration...");
+
+            // Stop the distro
+            await _containerService.StopEnvironmentAsync(environmentName);
+            
+            // Wait for shutdown (8-second rule)
+            await Task.Delay(TimeSpan.FromSeconds(8));
+            
+            // Start the distro
+            var startSuccess = await _containerService.StartEnvironmentAsync(environmentName);
+            if (!startSuccess)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("  ⚠️  Failed to restart distro automatically");
+                Console.WriteLine("  You may need to run: thresh stop && thresh start");
+                Console.ResetColor();
+            }
+            else if (verbose)
+            {
+                Console.WriteLine("  [OK] Distro restarted successfully");
+            }
+        }
+        finally
+        {
+            // Clean up temp file
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
     }
 }

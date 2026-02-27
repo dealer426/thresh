@@ -6,7 +6,7 @@ namespace Thresh;
 
 class Program
 {
-    private const string Version = "1.4.0";
+    private const string Version = "1.5.0";
     
     static async Task<int> Main(string[] args)
     {
@@ -31,6 +31,7 @@ class Program
         AddDestroyCommand(rootCommand);
         AddBlueprintCommand(rootCommand);
         AddVolumeCommand(rootCommand);
+        AddWslConfCommand(rootCommand);
         AddChatCommand(rootCommand);
         AddConfigCommand(rootCommand);
         AddDistroCommand(rootCommand);
@@ -65,6 +66,10 @@ class Program
         Console.WriteLine($"  destroy     Remove a {envType}");
         Console.WriteLine("  blueprint   Manage blueprints (list, generate, delete)");
         Console.WriteLine("  volume      Manage volumes (list, create, delete, inspect)");
+        if (isWindows)
+        {
+            Console.WriteLine("  wslconf     Manage WSL configuration profiles");
+        }
         Console.WriteLine("  chat        Interactive AI chat mode for blueprint help");
         Console.WriteLine("  config      Manage configuration");
         Console.WriteLine("  distro      Manage custom distributions");
@@ -704,15 +709,7 @@ class Program
     
     private static void AddVolumeCommand(RootCommand rootCommand)
     {
-        var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
-        
-        if (isWindows)
-        {
-            // Volume commands not meaningful for WSL
-            return;
-        }
-        
-        var volumeCommand = new Command("volume", "Manage container volumes");
+        var volumeCommand = new Command("volume", "Manage persistent volumes");
         
         // volume list
         var listCommand = new Command("list", "List all volumes");
@@ -862,6 +859,204 @@ class Program
         volumeCommand.AddCommand(inspectCommand);
         
         rootCommand.AddCommand(volumeCommand);
+    }
+
+    private static void AddWslConfCommand(RootCommand rootCommand)
+    {
+        // Only add this command on Windows
+        if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+        {
+            return;
+        }
+        
+        var wslConfCommand = new Command("wslconf", "Manage WSL configuration profiles");
+        var wslConfigService = new Services.WslConfigService();
+        
+        // wslconf list
+        var listCommand = new Command("list", "List available WSL configuration profiles");
+        listCommand.SetHandler(() =>
+        {
+            try
+            {
+                var profiles = wslConfigService.ListProfiles();
+                
+                if (profiles.Count == 0)
+                {
+                    Console.WriteLine("No profiles found.");
+                    return;
+                }
+                
+                Console.WriteLine("Available WSL Configuration Profiles:");
+                Console.WriteLine("=====================================");
+                Console.WriteLine();
+                
+                var builtInProfiles = profiles.Where(p => p.IsBuiltIn).ToList();
+                var userProfiles = profiles.Where(p => !p.IsBuiltIn).ToList();
+                
+                if (builtInProfiles.Any())
+                {
+                    Console.WriteLine("Built-in Profiles:");
+                    Console.WriteLine("------------------");
+                    foreach (var profile in builtInProfiles)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write($"  {profile.Name,-15}");
+                        Console.ResetColor();
+                        Console.WriteLine($" {profile.Description}");
+                    }
+                    Console.WriteLine();
+                }
+                
+                if (userProfiles.Any())
+                {
+                    Console.WriteLine("User Profiles:");
+                    Console.WriteLine("--------------");
+                    foreach (var profile in userProfiles)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write($"  {profile.Name,-15}");
+                        Console.ResetColor();
+                        Console.WriteLine($" {profile.Description}");
+                    }
+                    Console.WriteLine();
+                }
+                
+                Console.WriteLine($"Total: {profiles.Count} profile(s)");
+                Console.WriteLine();
+                Console.WriteLine("Usage in blueprints:");
+                Console.WriteLine("  \"wslConfig\": \"database\"");
+                Console.WriteLine("  \"wslConfigFile\": \"~/.thresh/profiles/custom.wslconf\"");
+                Console.WriteLine("  \"wslConfigCustom\": \"[boot]\\nsystemd=true\"");
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"❌ Failed to list profiles: {ex.Message}");
+                Console.ResetColor();
+            }
+        });
+        wslConfCommand.AddCommand(listCommand);
+        
+        // wslconf show
+        var showCommand = new Command("show", "Show profile content");
+        var showProfileArg = new Argument<string>("profile", "Profile name");
+        showCommand.AddArgument(showProfileArg);
+        showCommand.SetHandler((string profileName) =>
+        {
+            try
+            {
+                var content = wslConfigService.GetProfileContent(profileName);
+                
+                if (content == null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"❌ Profile '{profileName}' not found");
+                    Console.ResetColor();
+                    return;
+                }
+                
+                Console.WriteLine($"Profile: {profileName}");
+                Console.WriteLine(new string('=', 50));
+                Console.WriteLine(content);
+                Console.WriteLine(new string('=', 50));
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"❌ Failed to show profile: {ex.Message}");
+                Console.ResetColor();
+            }
+        }, showProfileArg);
+        wslConfCommand.AddCommand(showCommand);
+        
+        // wslconf options
+        var optionsCommand = new Command("options", "Show all available WSL configuration options");
+        optionsCommand.SetHandler(() =>
+        {
+            try
+            {
+                wslConfigService.DisplayOptions();
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"❌ Failed to display options: {ex.Message}");
+                Console.ResetColor();
+            }
+        });
+        wslConfCommand.AddCommand(optionsCommand);
+        
+        // wslconf validate
+        var validateCommand = new Command("validate", "Validate a wsl.conf file");
+        var validateFileArg = new Argument<string>("file", "Path to wsl.conf file");
+        validateCommand.AddArgument(validateFileArg);
+        validateCommand.SetHandler((string filePath) =>
+        {
+            try
+            {
+                if (!File.Exists(filePath))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"❌ File not found: {filePath}");
+                    Console.ResetColor();
+                    return;
+                }
+                
+                var content = File.ReadAllText(filePath);
+                var result = wslConfigService.ValidateConfig(content);
+                
+                if (result.IsValid)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("✅ Configuration is valid");
+                    Console.ResetColor();
+                    
+                    if (result.Warnings.Count > 0)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine();
+                        Console.WriteLine("Warnings:");
+                        foreach (var warning in result.Warnings)
+                        {
+                            Console.WriteLine($"  ⚠️  {warning}");
+                        }
+                        Console.ResetColor();
+                    }
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("❌ Configuration has errors:");
+                    Console.WriteLine();
+                    foreach (var error in result.Errors)
+                    {
+                        Console.WriteLine($"  ❌ {error}");
+                    }
+                    Console.ResetColor();
+                    
+                    if (result.Warnings.Count > 0)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine();
+                        Console.WriteLine("Warnings:");
+                        foreach (var warning in result.Warnings)
+                        {
+                            Console.WriteLine($"  ⚠️  {warning}");
+                        }
+                        Console.ResetColor();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"❌ Failed to validate file: {ex.Message}");
+                Console.ResetColor();
+            }
+        }, validateFileArg);
+        wslConfCommand.AddCommand(validateCommand);
+        
+        rootCommand.AddCommand(wslConfCommand);
     }
 
     private static void AddConfigCommand(RootCommand rootCommand)

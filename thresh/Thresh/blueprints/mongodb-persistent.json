@@ -1,0 +1,21 @@
+{
+  "name": "mongodb-persistent",
+  "description": "MongoDB with persistent data storage",
+  "base": "ubuntu-22.04",
+  "packages": [
+    "gnupg",
+    "curl"
+  ],
+  "volumes": [
+    {
+      "name": "mongodb-data",
+      "mount": "/data/db"
+    }
+  ],
+  "scripts": {
+    "setup": "# Install MongoDB\ncurl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg\necho \"deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse\" | tee /etc/apt/sources.list.d/mongodb-org-7.0.list\napt-get update\napt-get install -y mongodb-org\n\n# Create data directory\nmkdir -p /data/db\nchown -R mongodb:mongodb /data/db\n\n# Start MongoDB\nmongod --fork --logpath /var/log/mongodb/mongod.log --dbpath /data/db --bind_ip_all\n\necho \"MongoDB started\"\necho \"Data directory: /data/db\"\necho \"Connect with: mongosh\"\n"
+  },
+  "ports": [
+    "27017:27017"
+  ]
+}
