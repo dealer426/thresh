@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>thresh</id>
-    <version>1.4.0</version>
+    <version>1.5.0</version>
     <title>thresh</title>
     <authors>dealer426</authors>
     <owners>dealer426</owners>
@@ -30,7 +30,7 @@ Requirements:
 - .NET runtime NOT required (self-contained Native AOT binary)
     </description>
     <summary>Fast, native WSL2 environment provisioning with AI-powered blueprints and MCP integration</summary>
-    <releaseNotes>https://github.com/dealer426/thresh/releases/tag/v1.1.0</releaseNotes>
+    <releaseNotes>https://github.com/dealer426/thresh/releases/tag/v1.5.0</releaseNotes>
     <tags>wsl wsl2 linux provisioning devops containers infrastructure ai blueprints dotnet native-aot cli</tags>
     <projectSourceUrl>https://github.com/dealer426/thresh</projectSourceUrl>
     <packageSourceUrl>https://github.com/dealer426/thresh/tree/main/packages/chocolatey</packageSourceUrl>

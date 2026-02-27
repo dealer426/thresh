@@ -1,10 +1,10 @@
 {
-    "version": "1.4.0",
+    "version": "1.5.0",
     "description": "Fast, native WSL2 environment provisioning with AI-powered blueprints and MCP integration",
     "homepage": "https://github.com/dealer426/thresh",
     "license": "MIT",
-    "url": "https://github.com/dealer426/thresh/releases/download/v1.4.0/thresh-windows-x64.zip",
-    "hash": "<TO_BE_UPDATED_AFTER_RELEASE>",
+    "url": "https://github.com/dealer426/thresh/releases/download/v1.5.0/thresh-windows-x64.zip",
+    "hash": "deed76e07698f5e152b0e250eb5626af5b00381f13136e8877d95b4b5e5f35f1",
     "bin": "thresh.exe",
     "checkver": {
         "github": "https://github.com/dealer426/thresh"

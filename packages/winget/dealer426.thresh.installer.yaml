@@ -2,16 +2,16 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
 
 PackageIdentifier: dealer426.thresh
-PackageVersion: 1.4.0
+PackageVersion: 1.5.0
 Platform:
 - Windows.Desktop
 MinimumOSVersion: 10.0.22000.0
 InstallerType: zip
-ReleaseDate: 2026-02-09
+ReleaseDate: 2026-02-27
 Installers:
 - Architecture: x64
-  InstallerUrl: https://github.com/dealer426/thresh/releases/download/v1.1.0/thresh-windows-x64.zip
-  InstallerSha256: <TO_BE_UPDATED_AFTER_RELEASE>
+  InstallerUrl: https://github.com/dealer426/thresh/releases/download/v1.5.0/thresh-windows-x64.zip
+  InstallerSha256: deed76e07698f5e152b0e250eb5626af5b00381f13136e8877d95b4b5e5f35f1
   NestedInstallerType: portable
   NestedInstallerFiles:
   - RelativeFilePath: thresh.exe

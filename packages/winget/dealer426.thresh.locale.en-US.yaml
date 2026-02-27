@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
 
 PackageIdentifier: dealer426.thresh
-PackageVersion: 1.4.0
+PackageVersion: 1.5.0
 PackageLocale: en-US
 Publisher: dealer426
 PublisherUrl: https://github.com/dealer426
@@ -47,26 +47,26 @@ Tags:
 - native-aot
 - cli
 ReleaseNotes: |-
-  Phase 1 Complete: MCP Integration & Cross-Platform Foundation (v1.1.0)
+  Phase 1.5 Complete: Networking, Persistent Storage & WSL Configuration (v1.5.0)
   
-  New Features:
-  - Model Context Protocol (MCP) server with 7 AI-accessible tools
-  - GitHub Copilot SDK integration (dual AI provider support)
-  - Cross-platform container abstraction (WSL2 + containerd/nerdctl)
-  - Real-time metrics service with host/container monitoring
-  - Comprehensive logging and error handling
+  Major Features:
+  - Full networking support: port mapping, network modes, hostnames, exposed ports
+  - Persistent storage: named volumes, bind mounts, tmpfs mounts
+  - WSL configuration profiles: 6 built-in profiles for database optimization
+  - Volume management: CLI commands for volume lifecycle
+  - Lifecycle management: start/stop commands for environment control
+  - Metadata tracking: persistent environment configuration
   
-  Improvements:
-  - Enhanced decryption validation for API keys
-  - Normalized line endings in provisioning scripts
-  - JSON source generation for Native AOT compatibility
-  - End-to-end CLI testing (all 15 commands validated)
+  Platform Support:
+  - Windows 11 (WSL2): All features with automatic port forwarding
+  - Linux (containerd): Full networking and storage support
+  - macOS (Apple Silicon): Beta support
   
-  Technical:
-  - .NET 10 Native AOT architecture
-  - 75 MB self-contained binary
-  - Zero dependencies
-  - Windows 11 + WSL2 platform
-ReleaseNotesUrl: https://github.com/dealer426/thresh/releases/tag/v1.1.0
+  Documentation:
+  - Comprehensive tutorials for networking and volumes
+  - WSL configuration guide with built-in profiles
+  - Complete CLI reference for all new commands
+  - Migration guide from v1.4.0
+ReleaseNotesUrl: https://github.com/dealer426/thresh/releases/tag/v1.5.0
 ManifestType: defaultLocale
 ManifestVersion: 1.6.0
