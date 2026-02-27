@@ -1,9 +1,9 @@
 # thresh Roadmap 2026 - Distributed Development Orchestration
 
 **Created**: February 6, 2026  
-**Updated**: February 26, 2026  
-**Timeline**: 16 weeks (4 months)  
-**Current Version**: v1.4.0 (Cross-Platform Release) → v1.5.0 (In Development)  
+**Updated**: February 27, 2026  
+**Timeline**: 20 weeks (5 months)  
+**Current Version**: v1.5.0 (Released - Feb 27, 2026)  
 **Status**: Phase 1 Complete ✅ | Phase 1.5 Complete ✅ (Networking, Storage, WSL Config - Feb 27, 2026) | Cross-Platform Testing Complete ✅ (Linux & Windows)  
 **Goal**: Transform thresh from local WSL manager to distributed dev environment orchestrator
 
@@ -21,24 +21,24 @@ Single Windows machine → WSL environments → OpenAI/Copilot blueprints
 Windows/WSL only → MCP integration → GitHub Copilot AI → UPX compressed → 3.8 MB binary → Professional docs
 ```
 
-**v1.4.0 State (Feb 17, 2026 - CURRENT):**
+**v1.4.0 State (Feb 17, 2026):**
 ```
 Cross-platform (Windows/Linux/macOS) → Multi-platform builds → 11 MCP tools → Platform-specific docs → Repository cleanup
 ```
 
-**Target v1.5.0 State (Mar 2026):**
+**v1.5.0 State (Feb 27, 2026 - CURRENT):**
 ```
-Port mapping → Persistent volumes → Networking configuration → Storage mounting → Blueprint networking/storage support
+Port mapping → Persistent volumes → Networking configuration → Storage mounting → WSL configuration profiles → Blueprint networking/storage support
 ```
 
 **Target v1.6.0 State (Mar-Apr 2026):**
 ```
-Package managers (winget/Chocolatey/Scoop/Homebrew) → Enhanced tutorials → Search integration (Algolia)
+Agent Mode (daemon) → Mesh Network (Tailscale/Netmaker) → Central Hub → Fleet management → Workload orchestration → Package managers
 ```
 
 **Target v2.0 State (Jun 2026):**
 ```
-Fleet of machines → Mesh network → Central orchestration → Distributed workloads → Professional docs
+Production-grade distributed orchestration → Enhanced monitoring → Security hardening → Enterprise features → Full documentation
 ```
 
 ---
@@ -1137,7 +1137,186 @@ jobs:
 
 ---
 
-### **Phase 2 (Original): Metrics & Networking (Weeks 9-12) - Distributed Foundation**
+### **Phase 1.6: Distributed Features (Weeks 9-12) - Agent Mode & Mesh Networking** 🆕 v1.6.0
+
+**Goal:** Enable multi-machine awareness, agent mode, and mesh networking  
+**Status:** 📋 Planned (Mar-Apr 2026)  
+**Priority:** P1 (High - Distributed foundation)
+
+#### Week 9-10: Agent Mode & Metrics Enhancement
+- [ ] Implement daemon/background mode
+- [ ] Periodic metrics collection and reporting
+- [ ] HTTP reporting client
+- [ ] Configuration for hub URL
+- [ ] Auto-restart and health monitoring
+- [ ] Enhanced metrics (network I/O, disk usage patterns)
+
+**Deliverables:**
+```bash
+# Agent daemon mode
+thresh agent start --hub http://hub.local:8080
+thresh agent status
+thresh agent stop
+thresh agent logs
+
+# Runs in background, reports metrics every 60s
+# Auto-restarts on failure
+# Configurable reporting interval
+```
+
+**Commands Added:**
+- `thresh agent start [--hub URL]` - Start agent in background
+- `thresh agent stop` - Stop agent daemon
+- `thresh agent status` - Show agent health
+- `thresh agent logs` - View agent logs
+- `thresh agent config` - Configure agent settings
+
+**Binary Impact:** +60 KB
+
+---
+
+#### Week 10-11: Dual Mesh Network Support
+- [ ] Create `IMeshNetworkService` interface
+- [ ] Implement `TailscaleService` (cloud-based)
+- [ ] Implement `NetmakerService` (self-hosted/air-gapped)
+- [ ] Add `thresh network` commands
+- [ ] WireGuard integration for both providers
+- [ ] Auto-discovery of peers
+- [ ] Connection health monitoring
+
+**Deliverables:**
+```bash
+# Tailscale (simple cloud-based)
+thresh network join --provider tailscale
+thresh network status
+thresh network peers
+
+# Netmaker (air-gapped self-hosted)
+thresh network join --provider netmaker \
+  --server https://netmaker.corp.local \
+  --token <enrollment-token>
+
+# Common commands
+thresh network leave
+thresh network info
+thresh network test <peer>
+```
+
+**Commands Added:**
+- `thresh network join --provider <tailscale|netmaker>` - Join mesh
+- `thresh network leave` - Leave mesh network
+- `thresh network status` - Show network status
+- `thresh network peers` - List connected peers
+- `thresh network test <peer>` - Test connectivity
+- `thresh network info` - Show local node info
+
+**Binary Impact:** +120 KB
+
+---
+
+#### Week 11-12: Central Hub (Separate Project)
+- [ ] Create `thresh-hub` ASP.NET Core project
+- [ ] Metrics ingestion API (`POST /api/v1/agents/{id}/metrics`)
+- [ ] Agent registry and health tracking
+- [ ] SQLite persistence for metrics history
+- [ ] Simple web dashboard (Blazor)
+- [ ] REST API for workload management
+- [ ] WebSocket support for real-time updates
+
+**Deliverables:**
+```bash
+# Deploy hub (separate binary)
+thresh-hub start --bind 0.0.0.0:8080 --db /var/lib/thresh/hub.db
+
+# Agents automatically report to hub
+thresh agent start --hub http://hub.local:8080
+
+# Hub provides:
+# - Web UI at http://hub.local:8080
+# - REST API at http://hub.local:8080/api/v1
+# - Metrics aggregation
+# - Fleet overview
+```
+
+**Hub Features:**
+- Agent registration and health monitoring
+- Metrics collection and aggregation
+- Web dashboard showing fleet status
+- REST API for automation
+- Historical metrics (7 days retention)
+- Alert configuration
+
+**Hub Binary:** ~8-10 MB (separate from thresh)
+
+---
+
+#### Week 12: Workload Orchestration
+- [ ] Workload placement algorithm (resource-aware)
+- [ ] Remote provisioning API on agents
+- [ ] Hub → Agent RPC communication
+- [ ] Status tracking and reporting
+- [ ] Automatic host selection based on resources
+- [ ] Load balancing across fleet
+
+**Deliverables:**
+```bash
+# From any machine, provision anywhere
+thresh up python-dev --remote --cpu-min 4 --memory-min 8gb
+
+# Output:
+✓ Analyzing fleet capacity...
+✓ Selected host: dev-server-03 (CPU: 15%, RAM: 4/64GB)
+✓ Provisioning on 10.10.1.5...
+✓ Environment ready: ssh 10.10.1.5 -t "wsl -d python-dev"
+
+# Hub-based orchestration
+thresh hub workload create python-dev --replicas 3
+thresh hub workload list
+thresh hub workload delete python-dev
+```
+
+**Commands Added:**
+- `thresh up <name> --remote [--host HOST]` - Provision remotely
+- `thresh up <name> --remote --cpu-min N --memory-min N` - Resource-aware placement
+- `thresh hub workload create/list/delete` - Hub-based orchestration
+
+**Binary Impact:** +100 KB (thresh), +2 MB (thresh-hub)
+
+---
+
+**Phase 1.6 Success Metrics:**
+- [ ] Agent runs as daemon on Windows/Linux/macOS
+- [ ] Agents report metrics to hub every 60s
+- [ ] Mesh network connectivity (Tailscale + Netmaker)
+- [ ] Multi-node communication working (<100ms latency)
+- [ ] Air-gapped deployment tested (Netmaker)
+- [ ] Hub aggregates metrics from 10+ agents
+- [ ] Remote workload provisioning works
+- [ ] Automatic host selection based on resources
+- [ ] Dashboard shows fleet status in real-time
+- [ ] WebSocket updates < 1s latency
+
+**Impact:** 🔥 HUGE
+- 🌐 **Multi-Machine Management**: Control fleet from single point
+- 📊 **Centralized Monitoring**: Hub aggregates all metrics
+- 🔗 **Mesh Networking**: Seamless peer-to-peer communication
+- 🤖 **Intelligent Placement**: Auto-select best host for workloads
+- 🚀 **Remote Provisioning**: Deploy environments anywhere in fleet
+- 🏢 **Enterprise Ready**: Air-gapped support via Netmaker
+- 📈 **Scalability**: Manage 10-100+ development machines
+
+**Use Cases Unlocked:**
+- Distributed development teams with shared infrastructure
+- Resource optimization across multiple machines
+- Air-gapped enterprise environments
+- Automatic failover for development environments
+- Central monitoring and alerting for dev infrastructure
+- Remote environment provisioning for CI/CD
+- Multi-region development environments
+
+---
+
+### **Phase 2 (Original): Metrics & Networking (Weeks 9-12) - Distributed Foundation** ✅ REFERENCE ONLY
 
 **Goal:** Enable multi-machine awareness and connectivity
 
@@ -1220,118 +1399,189 @@ thresh network peers
 
 ---
 
-### **Phase 3: Orchestration (Weeks 13-16) - Hub & Automation**
+### **Phase 2.0: Polish & Production (Weeks 13-20) - Production Ready** 🎯 v2.0
 
-**Goal:** Central hub with workload scheduling
+**Goal:** Production-grade quality, comprehensive distribution, and enterprise features  
+**Status:** 📋 Planned (Apr-Jun 2026)  
+**Priority:** P1 (High - Production readiness)
 
-#### Week 13-14: Central Hub (Separate Project)
-- [ ] Create `thresh-hub` ASP.NET Core project
-- [ ] Metrics ingestion API (`POST /api/v1/agents/{id}/metrics`)
-- [ ] Agent registry and status
-- [ ] SQLite persistence
-- [ ] Simple web dashboard
-
-**Deliverables:**
-```bash
-# Deploy hub
-thresh-hub start --bind 10.10.1.1:8080
-
-# Agents automatically report
-thresh agent start --hub http://10.10.1.1:8080
-```
-
-**Hub Binary:** ~8-10 MB (separate from thresh)
-
-#### Week 15-16: Workload Orchestration
-- [ ] Workload placement algorithm
-- [ ] Remote provisioning API
-- [ ] Hub → Agent RPC communication
-- [ ] Status tracking and reporting
-
-**Deliverables:**
-```bash
-# From any machine, provision anywhere
-thresh up python-dev --remote --cpu-min 4 --memory-min 8gb
-
-# Output:
-✓ Analyzing fleet capacity...
-✓ Selected host: dev-server-03 (CPU: 15%, RAM: 4/64GB)
-✓ Provisioning on 10.10.1.5...
-✓ Environment ready: ssh 10.10.1.5 -t "wsl -d python-dev"
-```
-
-**Binary:** 17.18 MB → 17.28 MB (+100 KB)
-
-**Phase 3 Success Metrics:**
-- ✅ Hub aggregates metrics from 3+ agents
-- ✅ Remote workload provisioning works
-- ✅ Automatic host selection based on resources
-- ✅ Dashboard shows fleet status
-
----
-
-### **Phase 4: Polish & Distribution (Weeks 17-20) - Production Ready**
-
-**Goal:** Production-grade quality and distribution
-
-#### Week 17: Multi-Platform CI/CD
-- [ ] Add Linux x64 build to GitHub Actions
-- [ ] Add macOS ARM64 build
-- [ ] Update release workflow for 3 platforms
-- [ ] Add build badges to README
-
-**Deliverables:**
-- Linux binary (13-15 MB)
-- macOS binary (14-16 MB)
-- Windows binary (17.3 MB)
-
-#### Week 18: Package Managers
-- [ ] Update Chocolatey (Windows)
-- [ ] Update Scoop (Windows)
-- [ ] Update Winget (Windows)
-- [ ] Create Homebrew formula (macOS)
-- [ ] Create APT/RPM packages (Linux)
+#### Week 13-14: Package Manager Distribution
+- [ ] Submit Chocolatey package to community repository
+- [ ] Create PR for Scoop main bucket (ScoopInstaller/Main)
+- [ ] Submit WinGet manifest to microsoft/winget-pkgs
+- [ ] Create Homebrew formula for macOS
+- [ ] Create APT packages for Debian/Ubuntu
+- [ ] Create RPM packages for RHEL/Fedora/AlmaLinux
+- [ ] Set up package signing and GPG keys
 
 **Deliverables:**
 ```bash
 # Windows
 choco install thresh
 scoop install thresh
-winget install thresh
+winget install dealer426.thresh
 
 # macOS
 brew install thresh
 
 # Linux
 apt install thresh       # Debian/Ubuntu
-yum install thresh       # RHEL/Fedora
+yum install thresh       # RHEL/Fedora/AlmaLinux
 ```
 
-#### Week 19: Documentation & Examples
-- [ ] Complete getting started guide
-- [ ] Architecture documentation
-- [ ] MCP integration examples
+**Package Repositories:**
+- Chocolatey Community Repository
+- Scoop Main Bucket
+- WinGet Official Repository
+- Homebrew Core (tap if not accepted to core)
+- Debian PPA
+- RPM Copr Repository
+
+---
+
+#### Week 15-16: Enhanced Documentation & Search
+- [ ] Complete all CLI command documentation
+- [ ] Set up Algolia DocSearch for thresh.sh
+- [ ] Add video tutorials and demos
+- [ ] Architecture deep-dive documentation
 - [ ] Fleet deployment guide
-- [ ] Video demos
+- [ ] MCP integration advanced examples
+- [ ] Troubleshooting guide expansion
+- [ ] FAQ section
+- [ ] Community contribution guide
 
-#### Week 20: Testing & Hardening
-- [ ] End-to-end testing (all platforms)
-- [ ] Security audit
-- [ ] Performance optimization
-- [ ] Bug fixes
-- [ ] Release v2.0
+**Deliverables:**
+- Complete CLI reference (all commands documented)
+- Searchable documentation via Algolia
+- 5+ video tutorials on YouTube
+- Architecture diagrams (Mermaid)
+- Fleet deployment playbook
+- Community guidelines
 
-**Phase 4 Success Metrics:**
-- ✅ All platforms build automatically
-- ✅ Package managers updated
-- ✅ Comprehensive documentation
-- ✅ Production deployments validated
+---
+
+#### Week 17-18: Security & Enterprise Features
+- [ ] Security audit and hardening
+- [ ] RBAC (Role-Based Access Control) for hub
+- [ ] Audit logging for all operations
+- [ ] SSO integration (SAML/OAuth)
+- [ ] Encrypted agent<->hub communication (mTLS)
+- [ ] Secret management integration (vault support)
+- [ ] Compliance documentation (SOC2, ISO27001 guidance)
+- [ ] Multi-tenancy support in hub
+
+**Deliverables:**
+```bash
+# RBAC configuration
+thresh hub rbac add-role developer
+thresh hub rbac assign-user john@company.com developer
+
+# Audit logging
+thresh hub audit list --user john@company.com --days 7
+thresh hub audit export --format json
+
+# SSO setup
+thresh hub sso configure --provider azure-ad --tenant-id <id>
+```
+
+**Enterprise Features:**
+- Role-based access control
+- Audit trail for all operations
+- SSO/SAML authentication
+- mTLS for secure communication
+- Multi-tenancy isolation
+- Secret management integration
+
+---
+
+#### Week 19: Performance & Monitoring
+- [ ] Performance optimization pass
+- [ ] Memory usage reduction
+- [ ] Startup time optimization
+- [ ] Enhanced monitoring and observability
+- [ ] Prometheus metrics export
+- [ ] Grafana dashboard templates
+- [ ] Alert configuration system
+- [ ] Performance benchmarking suite
+
+**Deliverables:**
+```bash
+# Prometheus metrics endpoint
+thresh agent start --metrics-port 9090
+
+# Grafana integration
+thresh hub metrics prometheus --format yaml > prometheus.yml
+
+# Alerting
+thresh hub alert create --name high-memory \
+  --condition memory_percent>90 \
+  --action email --to ops@company.com
+```
+
+**Monitoring:**
+- Prometheus metrics exporter
+- Grafana dashboard templates
+- Built-in alerting system
+- Performance baselines
+- Health checks and SLOs
+
+---
+
+#### Week 20: Testing, Hardening & v2.0 Release
+- [ ] End-to-end testing suite (all platforms)
+- [ ] Load testing (100+ agent fleet)
+- [ ] Chaos engineering tests
+- [ ] Penetration testing
+- [ ] Bug fixes and polish
+- [ ] Release notes and migration guide
+- [ ] Version 2.0 release
+- [ ] Community announcement
+
+**Deliverables:**
+- Comprehensive test suite (unit, integration, E2E)
+- Load test results and benchmarks
+- Security assessment report
+- v2.0 release with all features
+- Migration guide (v1.x → v2.0)
+- Public announcement (blog, social media)
+
+---
+
+**Phase 2.0 Success Metrics:**
+- [ ] Available in 6+ package managers
+- [ ] Algolia search functional on thresh.sh
+- [ ] All CLI commands fully documented
+- [ ] 5+ video tutorials published
+- [ ] RBAC working with 3+ roles
+- [ ] Audit logging captures all operations
+- [ ] SSO integration tested with 2+ providers
+- [ ] mTLS enforced for hub communication
+- [ ] Prometheus metrics exported
+- [ ] 100+ agent fleet tested
+- [ ] <2s cold start time
+- [ ] <50MB memory per agent
+- [ ] Security audit passed
+- [ ] v2.0 release shipped
+
+**Impact:** 🚀 MASSIVE
+- 📦 **Easy Installation**: Available in all major package managers
+- 🔍 **Searchable Docs**: Fast documentation discovery
+- 🔒 **Enterprise Security**: RBAC, SSO, audit logging, mTLS
+- 📊 **Production Monitoring**: Prometheus/Grafana integration
+- 🎓 **Better Onboarding**: Video tutorials and complete docs
+- 🏢 **Enterprise Ready**: Compliance, multi-tenancy, security hardening
+- ⚡ **Performance**: Optimized for large fleets
+- 🌐 **Community Growth**: Easy contribution and adoption
+
+---
+
+### **Phase 3 & 4 (Legacy Reference)** ✅ ARCHIVED
 
 ---
 
 ## 🏗️ Architecture Evolution
 
-### v1.0 (Current)
+### v1.0 (Initial)
 ```
 ┌─────────────────┐
 │  thresh.exe     │
@@ -1343,7 +1593,7 @@ yum install thresh       # RHEL/Fedora
 └─────────────────┘
 ```
 
-### v2.0 (Target - Week 16)
+### v1.6 (Target - Distributed)
 ```
                     ┌──────────────────┐
                     │   thresh-hub     │
@@ -1362,6 +1612,8 @@ yum install thresh       # RHEL/Fedora
     │ • Agent   │      │ • Agent   │     │ • Agent   │
     │ • Metrics │      │ • Metrics │     │ • Metrics │
     │ • MCP     │      │ • MCP     │     │ • MCP     │
+    │ • Volumes │      │ • Volumes │     │ • Volumes │
+    │ • Network │      │ • Network │     │ • Network │
     └───────────┘      └───────────┘     └───────────┘
          ▲                  ▲                  ▲
          │                  │                  │
@@ -1381,16 +1633,15 @@ yum install thresh       # RHEL/Fedora
 | v1.2 (UPX) | 3.8 MB | -9.7 MB | UPX compression |
 | v1.3 (docs) | 3.8 MB | - | Documentation site |
 | v1.4 (multi-platform) | 5.0 MB | +1.2 MB | 11 MCP tools, macOS support |
-| **v1.5 (networking/storage)** | **5.1 MB** | **+100 KB** | **Port mapping, volumes** |
-| v1.6 (packages) | 5.1 MB | - | Package managers |
-| v1.7 (metrics) | 5.18 MB | +80 KB | Host monitoring |
-| v1.8 (agent) | 5.24 MB | +60 KB | Background mode |
-| v1.9 (mesh) | 5.36 MB | +120 KB | Tailscale + Netmaker |
-| **v2.0 (orchestration)** | **5.46 MB** | **+100 KB** | **Remote provisioning** |
+| **v1.5 (networking/storage)** ✅ | **5.1 MB** | **+100 KB** | **Port mapping, volumes, WSL config** |
+| **v1.6 (distributed)** 📋 | **5.46 MB** | **+360 KB** | **Agent mode, mesh network, hub, orchestration** |
+| **v2.0 (production)** 🎯 | **5.5 MB** | **+40 KB** | **RBAC, security, monitoring, polish** |
 
-**Total growth v1.4 → v2.0:** +460 KB (+9%)  
-**Value delivered:** Port mapping, volumes, fleet orchestration, mesh networking  
-**Exceptional efficiency:** <500 KB growth for production container features + distributed orchestration
+**Total growth v1.5 → v2.0:** +400 KB (+8%)  
+**Value delivered:** Agent daemon, mesh networking, fleet orchestration, central hub, enterprise security  
+**Exceptional efficiency:** <500 KB growth for complete distributed development platform
+
+**Note:** Hub is separate binary (~10 MB), not included in thresh binary size
 
 ---
 
