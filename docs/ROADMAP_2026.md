@@ -33,12 +33,12 @@ Port mapping → Persistent volumes → Networking configuration → Storage mou
 
 **Target v1.6.0 State (Mar-Apr 2026):**
 ```
-Agent Mode (daemon) → Mesh Network (Tailscale/Netmaker) → Central Hub → Fleet management → Workload orchestration → Package managers
+Agent Mode (daemon) → Mesh Network (Tailscale/Netmaker) → Remote operations (P2P) → Enhanced metrics
 ```
 
 **Target v2.0 State (Jun 2026):**
 ```
-Production-grade distributed orchestration → Enhanced monitoring → Security hardening → Enterprise features → Full documentation
+Production-grade distributed tool → Package distribution → Enhanced monitoring → Security hardening → Full documentation
 ```
 
 ---
@@ -87,8 +87,8 @@ Production-grade distributed orchestration → Enhanced monitoring → Security 
 | **Docusaurus Documentation** | 1-2 weeks | N/A (website) | 🔥 Huge | **P1** |
 | **Agent Mode (Daemon)** | 1 week | +60 KB | High | **P1** |
 | **Mesh Network (Tailscale/Netmaker)** | 2 weeks | +120 KB | High | **P1** |
-| **Central Hub** | 2 weeks | Separate (~8 MB) | High | **P2** |
-| **Workload Orchestration** | 2 weeks | +100 KB | Very High | **P2** |
+| **Remote Operations (P2P)** | 1 week | +80 KB | High | **P1** |
+| **Package Distribution** | 1 week | N/A | High | **P2** |
 | **Multi-Platform CI/CD** | 1 week | N/A | Medium | **P2** |
 | **Linux/macOS Packages** | 1 week | N/A | Medium | **P2** |
 | **API Documentation** | 1 week | N/A (website) | Medium | **P3** |
@@ -1137,35 +1137,39 @@ jobs:
 
 ---
 
-### **Phase 1.6: Distributed Features (Weeks 9-12) - Agent Mode & Mesh Networking** 🆕 v1.6.0
+### **Phase 1.6: Agent Mode & Mesh Networking (Weeks 9-12)** 🆕 v1.6.0
 
-**Goal:** Enable multi-machine awareness, agent mode, and mesh networking  
+**Goal:** Enable background operation and peer-to-peer networking  
 **Status:** 📋 Planned (Mar-Apr 2026)  
-**Priority:** P1 (High - Distributed foundation)
+**Priority:** P1 (High - Multi-machine foundation)
 
-#### Week 9-10: Agent Mode & Metrics Enhancement
+> **Note:** Centralized management, fleet orchestration, and SaaS features are being built separately  
+> as a private commercial product (`thresh-hub`). The open-source `thresh` CLI remains focused on  
+> individual machine management with optional agent mode for background operation.
+
+#### Week 9-10: Agent Mode & Enhanced Metrics
 - [ ] Implement daemon/background mode
-- [ ] Periodic metrics collection and reporting
-- [ ] HTTP reporting client
-- [ ] Configuration for hub URL
+- [ ] Periodic metrics collection
+- [ ] Enhanced metrics (network I/O, disk usage patterns, process monitoring)
 - [ ] Auto-restart and health monitoring
-- [ ] Enhanced metrics (network I/O, disk usage patterns)
+- [ ] Log rotation and management
 
 **Deliverables:**
 ```bash
-# Agent daemon mode
-thresh agent start --hub http://hub.local:8080
+# Agent daemon mode (local operation)
+thresh agent start
 thresh agent status
 thresh agent stop
 thresh agent logs
 
-# Runs in background, reports metrics every 60s
+# Runs in background
 # Auto-restarts on failure
-# Configurable reporting interval
+# Collects enhanced metrics locally
+# Useful for monitoring and automation
 ```
 
 **Commands Added:**
-- `thresh agent start [--hub URL]` - Start agent in background
+- `thresh agent start` - Start agent in background
 - `thresh agent stop` - Stop agent daemon
 - `thresh agent status` - Show agent health
 - `thresh agent logs` - View agent logs
@@ -1214,456 +1218,80 @@ thresh network test <peer>
 
 ---
 
-#### Week 11-12: Central Hub (Separate Project)
-- [ ] Create `thresh-hub` ASP.NET Core project
-- [ ] Authentication system (JWT-based, account management)
-- [ ] Metrics ingestion API (`POST /api/v1/agents/{id}/metrics`)
-- [ ] Agent registry and health tracking
-- [ ] Node clustering and organization
-- [ ] SQLite persistence for metrics history
-- [ ] Simple web dashboard (Blazor)
-- [ ] REST API for workload management
-- [ ] WebSocket support for real-time updates
-- [ ] **Centralized MCP Server** - Hub exposes MCP interface for fleet-wide AI control
+#### Week 12: Remote Operations (Peer-to-Peer)
+- [ ] SSH-based remote environment operations
+- [ ] `thresh remote` command group
+- [ ] Direct peer-to-peer provisioning (via mesh network)
+- [ ] Remote execution without centralized server
+- [ ] Blueprint sharing across peers
 
 **Deliverables:**
 ```bash
-# Deploy hub (separate binary)
-thresh-hub start --bind 0.0.0.0:8080 --db /var/lib/thresh/hub.db
+# Connect to specific peer on mesh network
+thresh remote connect <peer-name>
 
-# Authenticate to hub
-thresh login auth --hub http://hub.local:8080
-# Interactive prompt for username/password or API token
-# Stores credentials in ~/.thresh/credentials.json
+# List environments on remote peer
+thresh remote list --host <peer-name>
 
-# View all nodes in your account
-thresh node list
-# Output:
-# NODE-ID              STATUS   AGENT-VERSION  CPU    RAM     LOCATION
-# dev-server-01        online   v1.6.0         12%    8/32GB  us-east-1
-# dev-server-02        online   v1.6.0         45%    16/64GB us-west-2
-# laptop-burnsm        online   v1.6.0         5%     4/16GB  (local)
+# Provision environment on remote peer (direct SSH)
+thresh remote up python-dev --host <peer-name>
 
-thresh node info dev-server-01
-# Detailed node information, metrics history, active environments
-
-# Create clusters for organization
-thresh cluster create backend-team \
-  --nodes dev-server-01,dev-server-02 \
-  --purpose "Backend microservices development"
-
-thresh cluster list
-# CLUSTER        NODES  PURPOSE
-# backend-team   2      Backend microservices development
-# frontend-team  3      React/Next.js development
-
-thresh cluster info backend-team
-# Show cluster details, aggregated metrics, node list
-
-thresh cluster add backend-team dev-server-03
-thresh cluster remove backend-team dev-server-01
-thresh cluster delete frontend-team
-
-# Agents automatically report to hub after login
-thresh agent start --hub http://hub.local:8080
-
-# Hub provides:
-# - Web UI at http://hub.local:8080
-# - REST API at http://hub.local:8080/api/v1
-# - Metrics aggregation
-# - Fleet overview
-# - MCP interface for AI editors (VS Code → Hub → All nodes)
+# Execute command on remote environment
+thresh remote exec <peer-name> <env-name> -- python --version
 ```
 
-**Hub Features:**
-- **Authentication & Account System** - JWT-based auth, multi-user support
-- **Agent registration and health monitoring**
-- **Node Management** - View, organize, and monitor all connected nodes
-- **Cluster Management** - Group nodes by purpose/team/project
-- **Metrics collection and aggregation**
-- **Web dashboard showing fleet status**
-- **REST API for automation**
-- **Centralized MCP Server** - Single MCP connection controls entire fleet
-- **Historical metrics** (7 days retention)
-- **Alert configuration**
+**Commands Added:**
+- `thresh remote connect <peer>` - Connect to mesh peer
+- `thresh remote list --host <peer>` - List remote environments
+- `thresh remote up <name> --host <peer>` - Provision remotely
+- `thresh remote exec <peer> <env> -- <cmd>` - Execute remote command
 
-**Hub Binary:** ~8-10 MB (separate from thresh)
-
----
-
-#### Centralized MCP Architecture 🔥 GAME CHANGER
-
-**The Vision:** Connect VS Code to your hub once, control your entire infrastructure.
-
-**Current Architecture (v1.5.0):**
-```
-VS Code → MCP (stdio) → Local thresh → WSL/Docker on this machine
-```
-
-**New Architecture (v1.6.0):**
-```
-VS Code → MCP (stdio) → thresh-hub → HTTP/gRPC → Multiple agent nodes
-                              ↓
-                    Intelligent Placement
-                    Load Balancing
-                    Fleet Awareness
-```
-
-**Hub MCP Tools (Fleet-Wide AI Control):**
-
-1. **`list_all_environments`** - List environments across entire fleet
-   ```json
-   {
-     "node": "dev-server-01",
-     "name": "python-api",
-     "status": "Running",
-     "cpu": 12,
-     "ram_mb": 2048
-   }
-   ```
-
-2. **`create_environment_smart`** - AI-powered placement
-   ```json
-   {
-     "blueprint": "python-fastapi",
-     "requirements": {
-       "cpu_min": 4,
-       "memory_min_gb": 8,
-       "gpu": false
-     }
-   }
-   ```
-   Hub selects best node based on current load.
-
-3. **`migrate_environment`** - Move workloads between nodes
-   ```json
-   {
-     "name": "python-api",
-     "from_node": "dev-server-01",
-     "to_node": "dev-server-02",
-     "preserve_data": true
-   }
-   ```
-
-4. **`list_nodes`** - Show all connected nodes with health
-   ```json
-   {
-     "id": "dev-server-01",
-     "status": "online",
-     "cpu_percent": 12,
-     "ram_used_gb": 8,
-     "ram_total_gb": 32,
-     "environments": 3
-   }
-   ```
-
-5. **`get_cluster_info`** - Query cluster capacity
-   ```json
-   {
-     "cluster": "backend-team",
-     "nodes": 3,
-     "total_cpu": 24,
-     "total_ram_gb": 96,
-     "environments": 12
-   }
-   ```
-
-**AI Conversation Example:**
-
-```
-Developer: "I need a Python FastAPI environment with at least 8GB RAM"
-
-VS Code Copilot (via Hub MCP):
-✓ Analyzing fleet capacity...
-✓ Found 3 eligible nodes
-✓ Selected dev-server-02 (CPU: 15%, RAM: 8/64GB available)
-✓ Creating environment on dev-server-02...
-✓ Environment ready: ssh dev-server-02 -t "wsl -d python-fastapi-1"
-
-Developer: "Show me all my Python environments"
-
-VS Code Copilot:
-Found 4 Python environments across your fleet:
-1. python-api (dev-server-01) - Running, 2GB RAM
-2. python-fastapi-1 (dev-server-02) - Running, 8GB RAM
-3. python-ml (dev-server-03) - Running, 16GB RAM, GPU enabled
-4. python-test (laptop-burnsm) - Stopped
-
-Developer: "Migrate python-api to dev-server-03 to free up resources"
-
-VS Code Copilot:
-✓ Checking dev-server-03 capacity... OK
-✓ Snapshotting python-api environment...
-✓ Transferring to dev-server-03...
-✓ Verifying integrity...
-✓ Starting on dev-server-03...
-✓ Migration complete! Old environment destroyed.
-New location: ssh dev-server-03 -t "wsl -d python-api"
-```
-
-**Technical Implementation:**
-
-```csharp
-// Hub MCP Server (in thresh-hub)
-public class HubMcpServer : IMcpServer
-{
-    private readonly IAgentRegistry _agentRegistry;
-    private readonly IPlacementAlgorithm _placement;
-    
-    public async Task<McpResponse> HandleToolCall(string toolName, JsonDocument args)
-    {
-        return toolName switch
-        {
-            "list_all_environments" => await ListAllEnvironments(),
-            "create_environment_smart" => await CreateWithPlacement(args),
-            "migrate_environment" => await MigrateEnvironment(args),
-            "list_nodes" => await ListNodes(),
-            "get_cluster_info" => await GetClusterInfo(args),
-            _ => McpResponse.Error($"Unknown tool: {toolName}")
-        };
-    }
-    
-    private async Task<McpResponse> CreateWithPlacement(JsonDocument args)
-    {
-        var requirements = args.RootElement.GetProperty("requirements");
-        var blueprint = args.RootElement.GetProperty("blueprint").GetString();
-        
-        // Intelligent placement algorithm
-        var bestNode = await _placement.SelectBestNode(requirements);
-        
-        // Route to agent via HTTP
-        var result = await _agentRegistry.SendToAgent(
-            bestNode.Id,
-            "POST",
-            "/api/v1/environments",
-            new { blueprint, name = GenerateName() }
-        );
-        
-        return McpResponse.Success(result);
-    }
-}
-```
-
-**VS Code Configuration:**
-
-```json
-{
-  "mcpServers": {
-    "thresh-hub": {
-      "command": "thresh-hub",
-      "args": ["mcp", "--url", "http://hub.local:8080", "--token", "${THRESH_TOKEN}"]
-    }
-  }
-}
-```
-
-Instead of connecting to local `thresh` binary, VS Code connects to `thresh-hub` which exposes MCP interface over HTTP to the hub.
-
-**Benefits:**
-- 🌍 **Single Connection**: One MCP connection → entire infrastructure
-- 🧠 **Fleet Awareness**: AI knows about all nodes, capacity, locations
-- 🎯 **Intelligent Placement**: Automatic resource-aware provisioning
-- 🔄 **Live Migration**: Move workloads between nodes seamlessly
-- 📊 **Unified View**: "Show all my environments" works across fleet
-- ⚖️ **Load Balancing**: Hub distributes workloads optimally
-- 🎨 **Natural Language**: "Create Python env with GPU" → finds GPU node automatically
-
----
-
-#### Week 12: Workload Orchestration
-- [ ] Workload placement algorithm (resource-aware)
-- [ ] Remote provisioning API on agents
-- [ ] Hub → Agent RPC communication
-- [ ] Status tracking and reporting
-- [ ] Automatic host selection based on resources
-- [ ] Load balancing across fleet
-
-**Deliverables:**
-```bash
-# From any machine, provision anywhere
-thresh up python-dev --remote --cpu-min 4 --memory-min 8gb
-
-# Output:
-✓ Analyzing fleet capacity...
-✓ Selected host: dev-server-03 (CPU: 15%, RAM: 4/64GB)
-✓ Provisioning on 10.10.1.5...
-✓ Environment ready: ssh 10.10.1.5 -t "wsl -d python-dev"
-
-# Hub-based orchestration
-thresh hub workload create python-dev --replicas 3
-thresh hub workload list
-thresh hub workload delete python-dev
-```
-
-**Commands Added (Agent):**
-- `thresh agent start [--hub URL]` - Start agent in background
-- `thresh agent stop` - Stop agent daemon
-- `thresh agent status` - Show agent health
-- `thresh agent logs` - View agent logs
-- `thresh agent config` - Configure agent settings
-
-**Commands Added (Network):**
-- `thresh network join --provider <tailscale|netmaker>` - Join mesh
-- `thresh network leave` - Leave mesh network
-- `thresh network status` - Show network status
-- `thresh network peers` - List connected peers
-- `thresh network test <peer>` - Test connectivity
-- `thresh network info` - Show local node info
-
-**Commands Added (Hub/Fleet Management):**
-- `thresh login auth --hub URL` - Authenticate to hub
-- `thresh login status` - Show authentication status
-- `thresh logout` - Clear credentials
-- `thresh node list` - List all nodes in your account
-- `thresh node info <node-id>` - Show detailed node information
-- `thresh cluster create <name> --nodes <list> --purpose <text>` - Create cluster
-- `thresh cluster list` - List all clusters
-- `thresh cluster info <name>` - Show cluster details
-- `thresh cluster add <name> <node-id>` - Add node to cluster
-- `thresh cluster remove <name> <node-id>` - Remove node from cluster
-- `thresh cluster delete <name>` - Delete cluster
-
-**Commands Added (Remote Provisioning):**
-- `thresh up <name> --remote [--host HOST]` - Provision remotely
-- `thresh up <name> --remote --cpu-min N --memory-min N` - Resource-aware placement
-- `thresh up <name> --cluster <name>` - Provision on specific cluster
-- `thresh hub workload create/list/delete` - Hub-based orchestration
-
-**Binary Impact:** +280 KB (thresh agent + network + auth client), +3 MB (thresh-hub with MCP server)
+**Binary Impact:** +80 KB
 
 ---
 
 **Phase 1.6 Success Metrics:**
 - [ ] Agent runs as daemon on Windows/Linux/macOS
-- [ ] Agents report metrics to hub every 60s
-- [ ] **Authentication system working** (JWT, multi-user accounts)
-- [ ] **`thresh login auth` connects to hub successfully**
-- [ ] **`thresh node list` shows all nodes in account**
-- [ ] **`thresh cluster create` organizes nodes by purpose**
+- [ ] Agent collects enhanced local metrics
 - [ ] Mesh network connectivity (Tailscale + Netmaker)
-- [ ] Multi-node communication working (<100ms latency)
+- [ ] Multi-peer communication working (<100ms latency)
 - [ ] Air-gapped deployment tested (Netmaker)
-- [ ] Hub aggregates metrics from 10+ agents
-- [ ] Remote workload provisioning works
-- [ ] **Centralized MCP server functional** (VS Code → Hub → All nodes)
-- [ ] **Fleet-wide AI operations** ("create environment with GPU" finds GPU node)
-- [ ] **Environment migration between nodes works**
-- [ ] Automatic host selection based on resources
-- [ ] Dashboard shows fleet status in real-time
-- [ ] WebSocket updates < 1s latency
+- [ ] Peer discovery working automatically
+- [ ] Remote operations via SSH functional
+- [ ] Direct peer-to-peer provisioning works
 
-**Impact:** 🔥 HUGE
-- 🌐 **Multi-Machine Management**: Control fleet from single point
-- 🔐 **Account System**: Multi-user support with JWT authentication
-- 📋 **Node Management**: View, organize, track all connected nodes
-- 🏷️ **Cluster Organization**: Group nodes by team/purpose/project
-- 📊 **Centralized Monitoring**: Hub aggregates all metrics
+**Binary Impact:** +260 KB total (v1.6 = ~5.36 MB)
+
+**Impact:** 🚀 Significant
+- 🤖 **Background Operation**: Agent mode for automation and monitoring
+- 📊 **Enhanced Metrics**: Detailed system and container monitoring
 - 🔗 **Mesh Networking**: Seamless peer-to-peer communication
-- 🤖 **Intelligent Placement**: Auto-select best host for workloads
-- 🧠 **Fleet-Wide AI Control**: Single VS Code → MCP → Hub → All nodes
-- 🚀 **Remote Provisioning**: Deploy environments anywhere in fleet
-- 🔄 **Live Migration**: Move workloads between nodes seamlessly
+- 🌐 **Remote Operations**: Manage environments on other machines
 - 🏢 **Enterprise Ready**: Air-gapped support via Netmaker
-- 📈 **Scalability**: Manage 10-100+ development machines
+- 🔄 **P2P Provisioning**: No central server required
 
 **Use Cases Unlocked:**
-- Distributed development teams with shared infrastructure
-- **Multi-tenant environments** (separate accounts per team/user)
-- **Cluster-based organization** (frontend team, backend team, ML team)
-- Resource optimization across multiple machines
+- Background monitoring and automation
+- Distributed development teams with direct peer connections
 - Air-gapped enterprise environments
-- Automatic failover for development environments
-- Central monitoring and alerting for dev infrastructure
-- Remote environment provisioning for CI/CD
-- Multi-region development environments
-- **AI-powered infrastructure management** (natural language → fleet operations)
-- **"Show me all Python environments"** → searches entire fleet
-- **"Create GPU environment"** → automatically finds GPU node
+- Remote environment provisioning without central infrastructure
+- Multi-machine workload distribution (manual, team-based)
+- Mesh VPN for secure dev environment access
 
----
+**What's NOT in v1.6 (Commercial Product Scope):**
+- ❌ Centralized hub/dashboard
+- ❌ Authentication & multi-user accounts
+- ❌ Node/cluster management UI
+- ❌ Centralized MCP server
+- ❌ Automatic intelligent placement
+- ❌ Fleet-wide orchestration
+- ❌ SaaS/cloud hosting
 
-### **Phase 2 (Original): Metrics & Networking (Weeks 9-12) - Distributed Foundation** ✅ REFERENCE ONLY
+These features are being developed separately as `thresh-hub` - a commercial SaaS/self-hosted  
+product for enterprise fleet management. The open-source `thresh` CLI remains focused on  
+individual machine management with P2P mesh capabilities.
 
-**Goal:** Enable multi-machine awareness and connectivity
 
-#### Week 9: Host Metrics Collection ✅ COMPLETE (v1.1.0)
-- [x] Create `HostMetrics` model
-- [x] Implement cross-platform metrics (CPU, RAM, storage)
-- [x] Add `thresh metrics` command
-- [x] JSON output for scripting
-
-**Deliverables:** ✅ Shipped
-```bash
-thresh metrics
-thresh metrics --json
-
-# Output:
-{
-  "hostname": "dev-machine-01",
-  "platform": "windows",
-  "cpu_percent": 23.5,
-  "memory_used_gb": 8.2,
-  "memory_total_gb": 16.0,
-  "storage_free_gb": 150.0,
-  "containers": 3
-}
-```
-
-**Enhanced in v1.4.0:**
-- IP address display
-- Load average monitoring
-- Docker/containerd storage information
-- `--format json` flag
-
-**Binary:** +80 KB (included in v1.1.0)
-
-#### Week 10: Agent Mode
-- [ ] Implement daemon/background mode
-- [ ] Periodic metrics collection
-- [ ] HTTP reporting client
-- [ ] Configuration for hub URL
-
-**Deliverables:**
-```bash
-thresh agent start
-thresh agent status
-thresh agent stop
-
-# Runs in background, reports metrics every 60s
-```
-
-**Binary:** 17.0 MB → 17.06 MB (+60 KB)
-
-#### Week 11-12: Dual Mesh Network Support
-- [ ] Create `IMeshNetworkService` interface
-- [ ] Implement `TailscaleService`
-- [ ] Implement `NetmakerService`
-- [ ] Add `thresh network` commands
-- [ ] Test air-gapped (Netmaker) and cloud (Tailscale)
-
-**Deliverables:**
-```bash
-# Tailscale (simple)
-thresh network join --provider tailscale
-thresh network status
-
-# Netmaker (air-gapped)
-thresh network join --provider netmaker \
-  --server https://netmaker.local \
-  --token <token>
-
-thresh network peers
-```
-
-**Binary:** 17.06 MB → 17.18 MB (+120 KB)
-
-**Phase 2 Success Metrics:**
-- ✅ Agents report metrics to hub
-- ✅ Mesh network connectivity (Tailscale + Netmaker)
-- ✅ Multi-node communication working
-- ✅ Air-gapped deployment tested
-
----
 
 ### **Phase 2.0: Polish & Production (Weeks 13-20) - Production Ready** 🎯 v2.0
 
@@ -1900,14 +1528,14 @@ thresh hub alert create --name high-memory \
 | v1.3 (docs) | 3.8 MB | - | Documentation site |
 | v1.4 (multi-platform) | 5.0 MB | +1.2 MB | 11 MCP tools, macOS support |
 | **v1.5 (networking/storage)** ✅ | **5.1 MB** | **+100 KB** | **Port mapping, volumes, WSL config** |
-| **v1.6 (distributed)** 📋 | **5.38 MB** | **+280 KB** | **Agent mode, mesh network, auth, node/cluster management** |
-| **v2.0 (production)** 🎯 | **5.5 MB** | **+120 KB** | **RBAC, security, monitoring, polish** |
+| **v1.6 (agent/mesh)** 📋 | **5.36 MB** | **+260 KB** | **Agent mode, mesh network (Tailscale/Netmaker), remote ops** |
+| **v2.0 (production)** 🎯 | **5.5 MB** | **+140 KB** | **Package distribution, security, monitoring, polish** |
 
 **Total growth v1.5 → v2.0:** +400 KB (+8%)  
-**Value delivered:** Agent daemon, mesh networking, fleet orchestration, central hub, enterprise security, authentication, node/cluster management  
-**Exceptional efficiency:** <500 KB growth for complete distributed development platform
+**Value delivered:** Agent daemon, P2P mesh networking, remote operations, package distribution, enterprise polish  
+**Exceptional efficiency:** <500 KB growth for distributed P2P development tool
 
-**Note:** Hub is separate binary (~10-12 MB with MCP server), not included in thresh binary size
+**Note:** Centralized management features (Hub/SaaS) are being built in a separate private commercial product
 
 ---
 
@@ -1915,17 +1543,14 @@ thresh hub alert create --name high-memory \
 
 ### Technical Metrics
 - [ ] Single binary runs on Windows, Linux, macOS
-- [ ] Binary size < 20 MB
+- [ ] Binary size < 6 MB (compressed)
 - [ ] Provision time < 30 seconds
-- [ ] Fleet of 10+ nodes managed seamlessly
-- [ ] **Authentication system supports multi-user accounts**
-- [ ] **`thresh node list` shows all connected nodes**
-- [ ] **Cluster management organizes nodes by purpose**
+- [ ] Agent mode runs stable in background
+- [ ] Mesh network connectivity (Tailscale + Netmaker)
+- [ ] Peer-to-peer latency < 100ms
 - [ ] MCP integration working in 3+ AI editors
-- [ ] **Centralized MCP at hub level** (VS Code → Hub → All nodes)
-- [ ] **Fleet-wide AI operations** ("create GPU env" auto-finds GPU node)
-- [ ] Mesh network latency < 100ms
-- [ ] Hub handles 100+ agents
+- [ ] Remote operations via SSH functional
+- [ ] Air-gapped deployment tested (Netmaker)
 
 ### User Experience
 - [ ] Install to first environment: < 5 minutes
@@ -1992,11 +1617,11 @@ graph TD
     E --> G[Host Metrics]
     G --> H[Agent Mode]
     H --> I[Mesh Network]
-    I --> J[Central Hub]
-    J --> K[Workload Orchestration]
+    I --> J[Remote Operations]
+    J --> K[Package Distribution]
     
     B --> L[AI Editor Integration]
-    K --> M[Fleet Management]
+    K --> M[Production Ready]
     
     style A fill:#90EE90
     style C fill:#90EE90
@@ -2012,7 +1637,13 @@ graph TD
 ```
 
 **Legend:**
-- 🟢 Green: Complete
+- 🟢 Green: Complete (v1.5.0)
+- 🟡 Yellow: In Progress (v1.5.0)
+- 🔵 Blue: Planned (v1.6.0)
+- 🟠 Orange: Future (v2.0)
+
+**Note:** Centralized management features (Hub, Fleet Management, Orchestration) are being  
+developed as a separate commercial product and are not part of the open-source roadmap.
 - 🟡 Yellow: Phase 1 (Weeks 1-4) - Foundation
 - 🔵 Blue: Phase 2.5 (Weeks 7-8) - Cross-Platform Testing
 - 🟣 Purple: Phase 2 (Weeks 9-12) - Metrics & Networking
