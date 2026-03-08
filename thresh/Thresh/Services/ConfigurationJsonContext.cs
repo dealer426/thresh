@@ -11,6 +11,7 @@ namespace Thresh.Services;
 [JsonSerializable(typeof(Dictionary<string, string>))]
 [JsonSerializable(typeof(Dictionary<string, CustomDistribution>))]
 [JsonSerializable(typeof(CustomDistribution))]
+[JsonSerializable(typeof(AgentConfiguration))]
 internal partial class ConfigurationJsonContext : JsonSerializerContext
 {
 }

@@ -388,4 +388,95 @@ public class ConfigurationService
 
         _cachedSettings = null;
     }
+
+    /// <summary>
+    /// Get agent configuration
+    /// </summary>
+    public AgentConfiguration GetAgentConfiguration()
+    {
+        Initialize();
+
+        var agentConfigPath = Path.Combine(ConfigDirectory, "agent.json");
+        if (!File.Exists(agentConfigPath))
+        {
+            return new AgentConfiguration();
+        }
+
+        try
+        {
+            var json = File.ReadAllText(agentConfigPath);
+            var config = JsonSerializer.Deserialize(json, ConfigurationJsonContext.Default.AgentConfiguration) ?? new AgentConfiguration();
+            
+            // Decrypt sensitive values
+            config.ApiKey = DecryptValue(config.ApiKey);
+            config.FallbackApiKey = DecryptValue(config.FallbackApiKey);
+            
+            return config;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️  Failed to load agent config: {ex.Message}");
+            return new AgentConfiguration();
+        }
+    }
+
+    /// <summary>
+    /// Save agent configuration
+    /// </summary>
+    public void SaveAgentConfiguration(AgentConfiguration config)
+    {
+        Initialize();
+
+        try
+        {
+            // Clone config to avoid modifying the original
+            var configToSave = new AgentConfiguration
+            {
+                AgentId = config.AgentId,
+                MidtierUrl = config.MidtierUrl,
+                FallbackUrl = config.FallbackUrl,
+                ApiKey = EncryptValue(config.ApiKey),
+                FallbackApiKey = EncryptValue(config.FallbackApiKey),
+                Transport = config.Transport,
+                SignalRHubPath = config.SignalRHubPath,
+                ConnectTimeoutSeconds = config.ConnectTimeoutSeconds,
+                CommandTimeoutSeconds = config.CommandTimeoutSeconds,
+                MetricsIntervalSeconds = config.MetricsIntervalSeconds,
+                FailoverEnabled = config.FailoverEnabled,
+                FailoverTimeoutSeconds = config.FailoverTimeoutSeconds,
+                FailbackEnabled = config.FailbackEnabled,
+                FailbackDelaySeconds = config.FailbackDelaySeconds,
+                OfflineCacheEnabled = config.OfflineCacheEnabled,
+                OfflineCacheDurationSeconds = config.OfflineCacheDurationSeconds,
+                TlsVerify = config.TlsVerify,
+                Proxy = config.Proxy
+            };
+
+            var json = JsonSerializer.Serialize(configToSave, new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                TypeInfoResolver = ConfigurationJsonContext.Default
+            });
+
+            var agentConfigPath = Path.Combine(ConfigDirectory, "agent.json");
+            File.WriteAllText(agentConfigPath, json);
+
+            // Set file permissions on Unix systems
+            if (!OperatingSystem.IsWindows())
+            {
+                try
+                {
+                    File.SetUnixFileMode(agentConfigPath, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+                }
+                catch
+                {
+                    // Ignore if setting permissions fails
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Failed to save agent configuration: {ex.Message}", ex);
+        }
+    }
 }

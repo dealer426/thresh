@@ -6,7 +6,7 @@ namespace Thresh;
 
 class Program
 {
-    private const string Version = "1.5.0";
+    private const string Version = "1.6.0";
     
     static async Task<int> Main(string[] args)
     {
@@ -37,6 +37,7 @@ class Program
         AddDistroCommand(rootCommand);
         AddMetricsCommand(rootCommand);
         AddServeCommand(rootCommand);
+        AddAgentCommand(rootCommand);
         AddVersionCommand(rootCommand);
         AddTestSdkCommand(rootCommand);
         
@@ -74,6 +75,7 @@ class Program
         Console.WriteLine("  config      Manage configuration");
         Console.WriteLine("  distro      Manage custom distributions");
         Console.WriteLine("  distros     List all available distributions");
+        Console.WriteLine("  agent       Manage agent daemon (start, stop, status, config)");
         Console.WriteLine("  metrics     Display host system metrics");
         Console.WriteLine("  serve       Start MCP server");
         Console.WriteLine();
@@ -1520,6 +1522,275 @@ class Program
         }, jsonOption);
         
         rootCommand.AddCommand(metricsCommand);
+    }
+
+    private static void AddAgentCommand(RootCommand rootCommand)
+    {
+        var agentCommand = new Command("agent", "Manage thresh agent (daemon mode)");
+
+        // agent start
+        var startCmd = new Command("start", "Start the agent daemon");
+        startCmd.SetHandler(async () =>
+        {
+            var containerService = ContainerServiceFactory.Create();
+            var configService = new ConfigurationService();
+            var metricsService = new MetricsService(containerService);
+            var agentService = new AgentService(configService, metricsService);
+
+            var config = agentService.GetConfiguration();
+            if (string.IsNullOrEmpty(config.MidtierUrl))
+            {
+                Console.WriteLine("❌ Agent not configured. Run 'thresh agent config set midtier-url <url>' first.");
+                return;
+            }
+
+            var started = await agentService.StartAsync();
+            if (started)
+            {
+                Console.WriteLine("✅ Agent started successfully");
+                Console.WriteLine("   Press Ctrl+C to stop");
+                
+                // Keep running until cancelled
+                var cts = new CancellationTokenSource();
+                Console.CancelKeyPress += (sender, e) =>
+                {
+                    e.Cancel = true;
+                    cts.Cancel();
+                };
+
+                try
+                {
+                    await Task.Delay(-1, cts.Token);
+                }
+                catch (TaskCanceledException)
+                {
+                    await agentService.StopAsync();
+                }
+            }
+        });
+
+        // agent stop
+        var stopCmd = new Command("stop", "Stop the agent daemon");
+        stopCmd.SetHandler(async () =>
+        {
+            Console.WriteLine("⚠️ Use Ctrl+C in the running agent terminal to stop");
+        });
+
+        // agent status
+        var statusCmd = new Command("status", "Show agent status");
+        statusCmd.SetHandler(() =>
+        {
+            var containerService = ContainerServiceFactory.Create();
+            var configService = new ConfigurationService();
+            var metricsService = new MetricsService(containerService);
+            var agentService = new AgentService(configService, metricsService);
+
+            var status = agentService.GetStatus();
+            var config = agentService.GetConfiguration();
+
+            Console.WriteLine();
+            Console.WriteLine("🤖 Thresh Agent Status");
+            Console.WriteLine("─────────────────────────────────────────────────");
+            Console.WriteLine($"Status:           {(status.IsRunning ? "🟢 Running" : "⚪ Stopped")}");
+            Console.WriteLine($"Agent ID:         {status.AgentId}");
+            Console.WriteLine($"Connection:       {(status.IsConnected ? "🟢 Connected" : "🔴 Disconnected")}");
+            Console.WriteLine($"Current Tier:     {status.CurrentTier}");
+            if (status.IsRunning)
+            {
+                Console.WriteLine($"Uptime:           {status.Uptime.Days}d {status.Uptime.Hours}h {status.Uptime.Minutes}m");
+            }
+            if (status.LastConnected.HasValue)
+            {
+                Console.WriteLine($"Last Connected:   {status.LastConnected:yyyy-MM-dd HH:mm:ss} UTC");
+            }
+            Console.WriteLine($"Reconnect Count:  {status.ReconnectCount}");
+            Console.WriteLine();
+            Console.WriteLine("Configuration:");
+            Console.WriteLine($"  Primary:        {config.MidtierUrl ?? "(not set)"}");
+            if (!string.IsNullOrEmpty(config.FallbackUrl))
+            {
+                Console.WriteLine($"  Fallback:       {config.FallbackUrl}");
+            }
+            Console.WriteLine($"  Transport:      {config.Transport}");
+            Console.WriteLine($"  Failover:       {(config.FailoverEnabled ? "Enabled" : "Disabled")}");
+            Console.WriteLine($"  Metrics:        Every {config.MetricsIntervalSeconds}s");
+            Console.WriteLine();
+        });
+
+        // agent config
+        var configCmd = new Command("config", "Manage agent configuration");
+        
+        var setCmd = new Command("set", "Set a configuration value");
+        var setKeyArg = new Argument<string>("key", "Configuration key");
+        var setValueArg = new Argument<string>("value", "Configuration value");
+        setCmd.AddArgument(setKeyArg);
+        setCmd.AddArgument(setValueArg);
+        setCmd.SetHandler((string key, string value) =>
+        {
+            var containerService = ContainerServiceFactory.Create();
+            var configService = new ConfigurationService();
+            var metricsService = new MetricsService(containerService);
+            var agentService = new AgentService(configService, metricsService);
+            var config = agentService.GetConfiguration();
+
+            switch (key.ToLowerInvariant())
+            {
+                case "midtier-url":
+                    config.MidtierUrl = value;
+                    break;
+                case "fallback-url":
+                    config.FallbackUrl = value;
+                    break;
+                case "api-key":
+                    config.ApiKey = value;
+                    break;
+                case "fallback-api-key":
+                    config.FallbackApiKey = value;
+                    break;
+                case "transport":
+                    config.Transport = value;
+                    break;
+                case "metrics-interval":
+                    config.MetricsIntervalSeconds = int.Parse(value);
+                    break;
+                case "failover-enabled":
+                    config.FailoverEnabled = bool.Parse(value);
+                    break;
+                case "failback-enabled":
+                    config.FailbackEnabled = bool.Parse(value);
+                    break;
+                case "failback-delay":
+                    config.FailbackDelaySeconds = int.Parse(value);
+                    break;
+                case "tls-verify":
+                    config.TlsVerify = bool.Parse(value);
+                    break;
+                default:
+                    Console.WriteLine($"❌ Unknown configuration key: {key}");
+                    return;
+            }
+
+            agentService.UpdateConfiguration(config);
+            Console.WriteLine($"✅ Configuration updated: {key} = {value}");
+        }, setKeyArg, setValueArg);
+
+        var getCmd = new Command("get", "Get a configuration value");
+        var getKeyArg = new Argument<string>("key", "Configuration key");
+        getCmd.AddArgument(getKeyArg);
+        getCmd.SetHandler((string key) =>
+        {
+            var containerService = ContainerServiceFactory.Create();
+            var configService = new ConfigurationService();
+            var metricsService = new MetricsService(containerService);
+            var agentService = new AgentService(configService, metricsService);
+            var config = agentService.GetConfiguration();
+
+            var value = key.ToLowerInvariant() switch
+            {
+                "midtier-url" => config.MidtierUrl,
+                "fallback-url" => config.FallbackUrl,
+                "api-key" => config.ApiKey != null ? "***" : "(not set)",
+                "fallback-api-key" => config.FallbackApiKey != null ? "***" : "(not set)",
+                "transport" => config.Transport,
+                "metrics-interval" => config.MetricsIntervalSeconds.ToString(),
+                "failover-enabled" => config.FailoverEnabled.ToString(),
+                "failback-enabled" => config.FailbackEnabled.ToString(),
+                "failback-delay" => config.FailbackDelaySeconds.ToString(),
+                "tls-verify" => config.TlsVerify.ToString(),
+                _ => null
+            };
+
+            if (value != null)
+            {
+                Console.WriteLine($"{key} = {value}");
+            }
+            else
+            {
+                Console.WriteLine($"❌ Unknown configuration key: {key}");
+            }
+        }, getKeyArg);
+
+        var listCmd = new Command("list", "List all configuration");
+        listCmd.SetHandler(() =>
+        {
+            var containerService = ContainerServiceFactory.Create();
+            var configService = new ConfigurationService();
+            var metricsService = new MetricsService(containerService);
+            var agentService = new AgentService(configService, metricsService);
+            var config = agentService.GetConfiguration();
+
+            Console.WriteLine();
+            Console.WriteLine("Agent Configuration:");
+            Console.WriteLine("─────────────────────────────────────────────────");
+            Console.WriteLine($"agent-id:            {config.AgentId}");
+            Console.WriteLine($"midtier-url:         {config.MidtierUrl ?? "(not set)"}");
+            Console.WriteLine($"fallback-url:        {config.FallbackUrl ?? "(not set)"}");
+            Console.WriteLine($"api-key:             {(config.ApiKey != null ? "***" : "(not set)")}");
+            Console.WriteLine($"fallback-api-key:    {(config.FallbackApiKey != null ? "***" : "(not set)")}");
+            Console.WriteLine($"transport:           {config.Transport}");
+            Console.WriteLine($"signalr-hub-path:    {config.SignalRHubPath}");
+            Console.WriteLine($"metrics-interval:    {config.MetricsIntervalSeconds}s");
+            Console.WriteLine($"failover-enabled:    {config.FailoverEnabled}");
+            Console.WriteLine($"failover-timeout:    {config.FailoverTimeoutSeconds}s");
+            Console.WriteLine($"failback-enabled:    {config.FailbackEnabled}");
+            Console.WriteLine($"failback-delay:      {config.FailbackDelaySeconds}s");
+            Console.WriteLine($"offline-cache:       {config.OfflineCacheEnabled}");
+            Console.WriteLine($"tls-verify:          {config.TlsVerify}");
+            Console.WriteLine();
+        });
+
+        configCmd.AddCommand(setCmd);
+        configCmd.AddCommand(getCmd);
+        configCmd.AddCommand(listCmd);
+
+        // agent failover
+        var failoverCmd = new Command("failover", "Manually failover to cloud tier");
+        failoverCmd.SetHandler(async () =>
+        {
+            var containerService = ContainerServiceFactory.Create();
+            var configService = new ConfigurationService();
+            var metricsService = new MetricsService(containerService);
+            var agentService = new AgentService(configService, metricsService);
+
+            var success = await agentService.FailoverAsync();
+            if (success)
+            {
+                Console.WriteLine("✅ Failover successful");
+            }
+            else
+            {
+                Console.WriteLine("❌ Failover failed");
+            }
+        });
+
+        // agent failback
+        var failbackCmd = new Command("failback", "Manually failback to primary tier");
+        failbackCmd.SetHandler(async () =>
+        {
+            var containerService = ContainerServiceFactory.Create();
+            var configService = new ConfigurationService();
+            var metricsService = new MetricsService(containerService);
+            var agentService = new AgentService(configService, metricsService);
+
+            var success = await agentService.FailbackAsync();
+            if (success)
+            {
+                Console.WriteLine("✅ Failback successful");
+            }
+            else
+            {
+                Console.WriteLine("❌ Failback failed");
+            }
+        });
+
+        agentCommand.AddCommand(startCmd);
+        agentCommand.AddCommand(stopCmd);
+        agentCommand.AddCommand(statusCmd);
+        agentCommand.AddCommand(configCmd);
+        agentCommand.AddCommand(failoverCmd);
+        agentCommand.AddCommand(failbackCmd);
+
+        rootCommand.AddCommand(agentCommand);
     }
 
     private static void AddTestSdkCommand(RootCommand rootCommand)
