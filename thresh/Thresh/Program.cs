@@ -40,6 +40,7 @@ class Program
         AddAgentCommand(rootCommand);
         AddVersionCommand(rootCommand);
         AddTestSdkCommand(rootCommand);
+        AuthCommands.Register(rootCommand);
         
         // Root handler (when no command specified)
         rootCommand.SetHandler((bool verbose) =>
@@ -78,6 +79,7 @@ class Program
         Console.WriteLine("  agent       Manage agent daemon (start, stop, status, config)");
         Console.WriteLine("  metrics     Display host system metrics");
         Console.WriteLine("  serve       Start MCP server");
+        Console.WriteLine("  auth        Authenticate with a thresh-hub (login, logout, status, token)");
         Console.WriteLine();
         Console.WriteLine("Options:");
         Console.WriteLine("  --verbose        Enable verbose logging");

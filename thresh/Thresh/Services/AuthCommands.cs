@@ -1,0 +1,525 @@
+using System.CommandLine;
+using System.Net.Http.Json;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Thresh.Models;
+
+namespace Thresh.Services;
+
+/// <summary>
+/// CLI auth commands: login, logout, status, token
+/// Implements Azure CLI-style device code flow against the thresh-hub.
+/// </summary>
+public static class AuthCommands
+{
+    private const string DefaultHubUrl = "https://thresh.io";
+    private const int PollIntervalMs = 5000;
+    private const int MaxPollSeconds = 300; // 5 minutes hard limit
+
+    public static void Register(RootCommand rootCommand)
+    {
+        var authCommand = new Command("auth", "Manage authentication with thresh-hub");
+
+        authCommand.AddCommand(BuildLoginCommand());
+        authCommand.AddCommand(BuildLogoutCommand());
+        authCommand.AddCommand(BuildStatusCommand());
+        authCommand.AddCommand(BuildTokenCommand());
+
+        rootCommand.AddCommand(authCommand);
+    }
+
+    // -------------------------------------------------------------------------
+    // thresh auth login
+    // -------------------------------------------------------------------------
+    private static Command BuildLoginCommand()
+    {
+        var loginCommand = new Command("login", "Authenticate with a thresh-hub");
+
+        var hubOption = new Option<string?>(
+            aliases: ["--hub", "-h"],
+            description: "Hub URL (default: from config or https://thresh.io)");
+
+        var noBrowserOption = new Option<bool>(
+            aliases: ["--no-browser"],
+            description: "Print the activation URL instead of opening a browser");
+
+        var tokenOption = new Option<string?>(
+            aliases: ["--token", "-t"],
+            description: "Login directly with an existing thresh_cli_* token");
+
+        loginCommand.AddOption(hubOption);
+        loginCommand.AddOption(noBrowserOption);
+        loginCommand.AddOption(tokenOption);
+
+        loginCommand.SetHandler(async (string? hub, bool noBrowser, string? token) =>
+        {
+            var hubUrl = hub ?? GetHubUrlFromConfig() ?? DefaultHubUrl;
+            hubUrl = hubUrl.TrimEnd('/');
+
+            // Direct token injection (CI / copy-paste scenario)
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                await LoginWithDirectTokenAsync(hubUrl, token);
+                return;
+            }
+
+            await LoginWithDeviceFlowAsync(hubUrl, noBrowser);
+
+        }, hubOption, noBrowserOption, tokenOption);
+
+        return loginCommand;
+    }
+
+    private static async Task LoginWithDirectTokenAsync(string hubUrl, string token)
+    {
+        Console.WriteLine("Validating token...");
+
+        using var client = CreateHttpClient(hubUrl, token);
+        try
+        {
+            var resp = await client.GetAsync("/api/auth/sessions");
+            if (!resp.IsSuccessStatusCode)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"❌ Token rejected by hub ({(int)resp.StatusCode} {resp.ReasonPhrase})");
+                Console.ResetColor();
+                return;
+            }
+
+            // Parse user info from sessions response if available, otherwise just save
+            var creds = new StoredCredentials
+            {
+                HubUrl = hubUrl,
+                Token = token,
+                UserEmail = "(direct token)",
+                UserName = "(direct token)",
+                ExpiresAt = DateTime.UtcNow.AddDays(90),
+                DeviceName = GetDeviceName(),
+                Roles = []
+            };
+
+            new CredentialService().Save(creds);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✅ Logged in to {hubUrl}");
+            Console.ResetColor();
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"❌ Failed to validate token: {ex.Message}");
+            Console.ResetColor();
+        }
+    }
+
+    private static async Task LoginWithDeviceFlowAsync(string hubUrl, bool noBrowser)
+    {
+        using var client = CreateHttpClient(hubUrl, token: null);
+
+        // Step 1: Start device flow
+        DeviceStartResponse? startResp;
+        try
+        {
+            var startReq = new DeviceStartRequest
+            {
+                DeviceName = GetDeviceName(),
+                DeviceOs = GetDeviceOs()
+            };
+
+            var body = JsonContent.Create(startReq, options: new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            var resp = await client.PostAsync("/api/auth/device/start", body);
+            if (!resp.IsSuccessStatusCode)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"❌ Hub returned {(int)resp.StatusCode}: {await resp.Content.ReadAsStringAsync()}");
+                Console.ResetColor();
+                return;
+            }
+
+            startResp = await resp.Content.ReadFromJsonAsync<DeviceStartResponse>(new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (startResp == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("❌ Hub returned an empty response");
+                Console.ResetColor();
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"❌ Could not reach hub at {hubUrl}: {ex.Message}");
+            Console.ResetColor();
+            return;
+        }
+
+        // Step 2: Show user the code + activation URL
+        var activateUrl = $"{hubUrl}/activate?code={Uri.EscapeDataString(startResp.UserCode)}";
+
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("  To authenticate, open a browser and enter the code below:");
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine($"  Activation URL:  {activateUrl}");
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine($"  Code:            {startResp.UserCode}");
+        Console.ResetColor();
+        Console.WriteLine();
+        Console.WriteLine("  Waiting for authentication...");
+        Console.WriteLine();
+
+        if (!noBrowser)
+        {
+            TryOpenBrowser(activateUrl);
+        }
+
+        // Step 3: Poll /api/auth/device/token
+        var deadline = DateTime.UtcNow.AddSeconds(MaxPollSeconds);
+        var pollReq = new DeviceTokenRequest { DeviceCode = startResp.DeviceCode };
+
+        while (DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(PollIntervalMs);
+
+            try
+            {
+                var body = JsonContent.Create(pollReq, options: new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+                var pollResp = await client.PostAsync("/api/auth/device/token", body);
+
+                if (!pollResp.IsSuccessStatusCode)
+                    continue; // transient error, keep polling
+
+                var tokenResp = await pollResp.Content.ReadFromJsonAsync<DeviceTokenResponse>(new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (tokenResp == null)
+                    continue;
+
+                switch (tokenResp.Status?.ToLowerInvariant())
+                {
+                    case "pending":
+                        // Still waiting, print a dot and continue
+                        Console.Write(".");
+                        continue;
+
+                    case "access_denied":
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("❌ Authentication was denied.");
+                        Console.ResetColor();
+                        return;
+
+                    case "expired":
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("❌ Code expired. Run 'thresh auth login' again.");
+                        Console.ResetColor();
+                        return;
+
+                    case "approved":
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine("✅ Authentication successful!");
+                        Console.ResetColor();
+
+                        var creds = new StoredCredentials
+                        {
+                            HubUrl = hubUrl,
+                            Token = tokenResp.AccessToken ?? string.Empty,
+                            UserEmail = tokenResp.UserEmail ?? string.Empty,
+                            UserName = tokenResp.UserName ?? string.Empty,
+                            ExpiresAt = tokenResp.ExpiresAt ?? DateTime.UtcNow.AddDays(90),
+                            DeviceName = GetDeviceName(),
+                            Roles = tokenResp.Roles ?? []
+                        };
+
+                        new CredentialService().Save(creds);
+
+                        Console.WriteLine();
+                        Console.WriteLine($"  Logged in as: {creds.UserEmail}");
+                        Console.WriteLine($"  Hub:          {hubUrl}");
+                        Console.WriteLine($"  Expires:      {creds.ExpiresAt:yyyy-MM-dd}");
+                        if (creds.Roles.Count > 0)
+                            Console.WriteLine($"  Roles:        {string.Join(", ", creds.Roles)}");
+                        Console.WriteLine();
+                        return;
+
+                    default:
+                        // Unknown status — continue polling
+                        continue;
+                }
+            }
+            catch
+            {
+                // Network blip — keep polling
+                await Task.Delay(PollIntervalMs);
+            }
+        }
+
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("❌ Timed out waiting for authentication. Run 'thresh auth login' again.");
+        Console.ResetColor();
+    }
+
+    // -------------------------------------------------------------------------
+    // thresh auth logout
+    // -------------------------------------------------------------------------
+    private static Command BuildLogoutCommand()
+    {
+        var logoutCommand = new Command("logout", "Sign out and revoke the current CLI session");
+
+        logoutCommand.SetHandler(async () =>
+        {
+            var credService = new CredentialService();
+            var creds = credService.Load();
+
+            if (creds == null || !credService.IsValid(creds))
+            {
+                Console.WriteLine("Not currently logged in.");
+                credService.Clear(); // clean up any stale file
+                return;
+            }
+
+            // Try to revoke the session on the hub
+            using var client = CreateHttpClient(creds.HubUrl, creds.Token);
+            try
+            {
+                var resp = await client.DeleteAsync("/api/auth/sessions/current");
+                if (resp.IsSuccessStatusCode)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("✅ Session revoked on hub.");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"⚠️  Hub returned {(int)resp.StatusCode} — session may already be expired.");
+                    Console.ResetColor();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"⚠️  Could not reach hub to revoke session: {ex.Message}");
+                Console.WriteLine("    Credentials cleared locally.");
+                Console.ResetColor();
+            }
+            finally
+            {
+                credService.Clear();
+            }
+
+            Console.WriteLine("Logged out.");
+        });
+
+        return logoutCommand;
+    }
+
+    // -------------------------------------------------------------------------
+    // thresh auth status
+    // -------------------------------------------------------------------------
+    private static Command BuildStatusCommand()
+    {
+        var statusCommand = new Command("status", "Show current authentication status");
+
+        statusCommand.SetHandler(() =>
+        {
+            // Check THRESH_CLI_TOKEN env var first
+            var envToken = System.Environment.GetEnvironmentVariable("THRESH_CLI_TOKEN");
+            if (!string.IsNullOrWhiteSpace(envToken))
+            {
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine($"Authenticated via THRESH_CLI_TOKEN environment variable");
+                Console.ResetColor();
+                return;
+            }
+
+            var credService = new CredentialService();
+            var creds = credService.Load();
+
+            if (creds == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Not logged in. Run 'thresh auth login' to authenticate.");
+                Console.ResetColor();
+                return;
+            }
+
+            if (!credService.IsValid(creds))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Session expired ({creds.ExpiresAt:yyyy-MM-dd HH:mm} UTC).");
+                Console.WriteLine("Run 'thresh auth login' to re-authenticate.");
+                Console.ResetColor();
+                return;
+            }
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✅ Logged in");
+            Console.ResetColor();
+            Console.WriteLine($"  User:     {creds.UserEmail}");
+            Console.WriteLine($"  Hub:      {creds.HubUrl}");
+            Console.WriteLine($"  Device:   {creds.DeviceName}");
+            Console.WriteLine($"  Expires:  {creds.ExpiresAt:yyyy-MM-dd} ({DaysRemaining(creds.ExpiresAt)} days remaining)");
+            if (creds.Roles.Count > 0)
+                Console.WriteLine($"  Roles:    {string.Join(", ", creds.Roles)}");
+        });
+
+        return statusCommand;
+    }
+
+    // -------------------------------------------------------------------------
+    // thresh auth token
+    // -------------------------------------------------------------------------
+    private static Command BuildTokenCommand()
+    {
+        var tokenCommand = new Command("token", "Print the current access token (for scripting)");
+
+        tokenCommand.SetHandler(() =>
+        {
+            var token = new CredentialService().GetEffectiveToken();
+            if (token == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine("Not authenticated. Run 'thresh auth login'.");
+                Console.ResetColor();
+                System.Environment.Exit(1);
+            }
+            else
+            {
+                Console.WriteLine(token);
+            }
+        });
+
+        return tokenCommand;
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+    private static HttpClient CreateHttpClient(string hubUrl, string? token)
+    {
+        var handler = new HttpClientHandler
+        {
+            // Allow self-signed certs for local dev hubs
+            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+        };
+
+        var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri(hubUrl),
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+
+        client.DefaultRequestHeaders.Add("User-Agent", "thresh-cli/1.0");
+
+        if (!string.IsNullOrWhiteSpace(token))
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+        return client;
+    }
+
+    private static string GetDeviceName()
+        => System.Environment.MachineName ?? "unknown";
+
+    private static string GetDeviceOs()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return $"Windows {System.Environment.OSVersion.Version.Major}";
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            return "macOS";
+        return "Linux";
+    }
+
+    private static string? GetHubUrlFromConfig()
+    {
+        try
+        {
+            var configPath = Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
+                ".thresh", "config.json");
+
+            if (!File.Exists(configPath))
+                return null;
+
+            var json = File.ReadAllText(configPath);
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("hubUrl", out var val))
+                return val.GetString();
+        }
+        catch { /* ignore */ }
+
+        return null;
+    }
+
+    private static int DaysRemaining(DateTime expiresAt)
+        => Math.Max(0, (int)(expiresAt - DateTime.UtcNow).TotalDays);
+
+    private static void TryOpenBrowser(string url)
+    {
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                System.Diagnostics.Process.Start("open", url);
+            else
+                System.Diagnostics.Process.Start("xdg-open", url);
+        }
+        catch { /* If browser open fails, user sees the URL and can open manually */ }
+    }
+
+    // -------------------------------------------------------------------------
+    // DTOs (used only for device flow HTTP calls)
+    // -------------------------------------------------------------------------
+    private class DeviceStartRequest
+    {
+        public string DeviceName { get; set; } = string.Empty;
+        public string DeviceOs { get; set; } = string.Empty;
+    }
+
+    private class DeviceStartResponse
+    {
+        public string DeviceCode { get; set; } = string.Empty;
+        public string UserCode { get; set; } = string.Empty;
+        public int ExpiresIn { get; set; }
+        public int Interval { get; set; }
+    }
+
+    private class DeviceTokenRequest
+    {
+        public string DeviceCode { get; set; } = string.Empty;
+    }
+
+    private class DeviceTokenResponse
+    {
+        public string? Status { get; set; }
+        public string? AccessToken { get; set; }
+        public string? UserEmail { get; set; }
+        public string? UserName { get; set; }
+        public DateTime? ExpiresAt { get; set; }
+        public List<string>? Roles { get; set; }
+    }
+}

@@ -15,6 +15,7 @@ public class AgentService
 {
     private readonly ConfigurationService _configService;
     private readonly MetricsService _metricsService;
+    private readonly CredentialService _credentialService = new();
     private HubConnection? _hubConnection;
     private ConnectionTier _currentTier = ConnectionTier.Offline;
     private DateTime? _lastConnected;
@@ -302,6 +303,11 @@ public class AgentService
                 {
                     options.Headers["Authorization"] = $"Bearer {apiKey}";
                 }
+                var cliToken = _credentialService.GetEffectiveToken();
+                if (!string.IsNullOrEmpty(cliToken))
+                {
+                    options.Headers["X-Cli-Token"] = cliToken;
+                }
                 options.HttpMessageHandlerFactory = handler =>
                 {
                     if (handler is HttpClientHandler clientHandler && !config.TlsVerify)
@@ -382,6 +388,11 @@ public class AgentService
             if (!string.IsNullOrEmpty(apiKey))
             {
                 request.Headers.Add("Authorization", $"Bearer {apiKey}");
+            }
+            var cliToken = _credentialService.GetEffectiveToken();
+            if (!string.IsNullOrEmpty(cliToken))
+            {
+                request.Headers.Add("X-Cli-Token", cliToken);
             }
 
             var agentInfo = await GetAgentInfoAsync();
