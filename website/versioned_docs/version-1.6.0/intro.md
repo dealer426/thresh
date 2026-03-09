@@ -4,8 +4,6 @@ title: Introduction
 description: Overview of thresh - AI-powered container environment manager for Windows, Linux, and macOS
 ---
 
-import Admonition from '@theme/Admonition';
-
 # Introduction to thresh
 
 **AI-powered container environment manager for Windows, Linux, and macOS**
