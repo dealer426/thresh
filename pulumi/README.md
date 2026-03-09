@@ -1,352 +1,370 @@
-# Thresh Pulumi Infrastructure
+# thresh Pulumi + vCenter Setup Guide
 
-This directory contains Pulumi infrastructure-as-code for provisioning test VMs in vCenter for thresh cross-platform development and testing.
+Infrastructure-as-code for provisioning thresh test VMs in vCenter.
 
-## Prerequisites
+## Quick Start
 
-1. **Pulumi CLI** - Install from https://www.pulumi.com/docs/install/
-2. **.NET 10 SDK** - Already installed for thresh development
-3. **vCenter Access** - Credentials and network access to your vCenter server
-4. **SSH Key** - Public key for VM access (default: `~/.ssh/id_rsa.pub`)
-
-## Setup
-
-### 1. Install Pulumi CLI
+### 1. Install Prerequisites
 
 ```powershell
-# Windows (via Chocolatey)
+# Install Pulumi CLI
 choco install pulumi
 
-# Or download from https://www.pulumi.com/docs/install/
+# Verify installation
+pulumi version
+dotnet --version  # Should be 10.0+
 ```
 
-### 2. Configure vCenter Credentials
+### 2. Configure vCenter
 
-```bash
-cd pulumi
-
-# Copy the example environment file
-cp .env.example .env
-
-# Edit .env with your vCenter details
-# IMPORTANT: Never commit .env to git!
-```
-
-### 3. Update `.env` File
-
-Fill in your actual vCenter configuration:
+Create `pulumi/.env` (copy from `.env.example`):
 
 ```env
-VSPHERE_SERVER=your-vcenter.example.com
+# vCenter Connection
+VSPHERE_SERVER=vcenter.thresh.sh
 VSPHERE_USER=administrator@vsphere.local
-VSPHERE_PASSWORD=your-actual-password
+VSPHERE_PASSWORD=your-password
 
-VSPHERE_DATACENTER=YourDatacenter
-VSPHERE_CLUSTER=YourCluster
-VSPHERE_DATASTORE=YourDatastore
-VSPHERE_NETWORK=VM Network
+# Infrastructure Details  
+VSPHERE_DATACENTER=thresh
+VSPHERE_CLUSTER=thresh-cluster
+VSPHERE_DATASTORE=your-datastore-name      # ← Get this from vCenter
+VSPHERE_NETWORK=VM Network                 # ← Get this from vCenter
 VSPHERE_RESOURCE_POOL=Resources
 
-UBUNTU_TEMPLATE=ubuntu-22.04-cloud-init
-CREATE_TEMPLATE=false
-SSH_PUBLIC_KEY_PATH=C:\Users\YourUser\.ssh\id_rsa.pub
+# VM Configuration
+VM_NAME=thresh-ubuntu-test
+VM_CPUS=4
+VM_MEMORY_MB=8192
+VM_DISK_GB=60
+
+# Templates (build with Packer first!)
+UBUNTU_TEMPLATE=packer-ubuntu-22.04
+WINDOWS_TEMPLATE=packer-windows-2022
+
+# SSH Key
+SSH_PUBLIC_KEY_PATH=~/.ssh/id_ed25519.pub
+
+# Optional
+DEPLOY_WINDOWS=false
 ```
 
-### 4. Setup Ubuntu Cloud-Init Template
+### 3. Build VM Templates with Packer
 
-You need an Ubuntu 22.04 cloud-init enabled template in vCenter. **Two options:**
+**See [PACKER_GUIDE.md](PACKER_GUIDE.md) for complete instructions.**
 
-#### Option A: Download and Import Ubuntu Cloud Image (Recommended)
+Quick version:
 
 ```bash
-# 1. Download Ubuntu Cloud Image OVA
-wget https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.ova
+cd packer
+# Create credentials.pkrvars.hcl with your vCenter details
+# Upload Ubuntu 22.04 ISO to datastore
 
-# 2. Import to vCenter via vSphere Client:
-#    - Right-click Datacenter → Deploy OVF Template
-#    - Select the downloaded OVA
-#    - Name it: ubuntu-22.04-cloud-init
-#    - Select your datastore and network
-#    - Finish deployment
-
-# 3. Convert to Template:
-#    - Right-click the deployed VM → Template → Convert to Template
-
-# Done! Template is ready for Pulumi
+cd ubuntu-22.04
+packer build -var-file=../credentials.pkrvars.hcl ubuntu.pkr.hcl
 ```
 
-#### Option B: Use Pulumi to Guide Template Creation
+This creates `packer-ubuntu-22.04` template in vCenter (~20 minutes).
+
+### 4. Get Datastore and Network Names
+
+**Option 1: Use govc (CLI)**
 
 ```bash
-# 1. Set CREATE_TEMPLATE=true in .env
-echo "CREATE_TEMPLATE=true" >> .env
+# Install govc
+choco install govc
 
-# 2. Run Pulumi
-pulumi up
-
-# 3. Follow the detailed instructions printed by Pulumi
-
-# 4. After template is ready, set back to false
-sed -i 's/CREATE_TEMPLATE=true/CREATE_TEMPLATE=false/' .env
-
-# 5. Run Pulumi again with real template
-pulumi up
-```
-
-#### Option C: Use govc CLI (Automated)
-
-```bash
-# 1. Install govc
-# Download from: https://github.com/vmware/govmomi/releases
-
-# 2. Download Ubuntu Cloud Image
-wget https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.ova
-
-# 3. Set govc environment
-export GOVC_URL=https://your-vcenter.example.com/sdk
+# Configure
+export GOVC_URL=https://vcenter.thresh.sh/sdk
 export GOVC_USERNAME=administrator@vsphere.local
 export GOVC_PASSWORD=your-password
 export GOVC_INSECURE=true
 
-# 4. Import OVA and mark as template
-govc import.ova \
-  -name=ubuntu-22.04-cloud-init \
-  -ds=YourDatastore \
-  -pool=YourCluster/Resources \
-  ubuntu-22.04-server-cloudimg-amd64.ova
+# List datastores
+govc ls -t Datastore /thresh/datastore/*
 
-govc vm.markastemplate ubuntu-22.04-cloud-init
-
-# Done! Ready for Pulumi
+# List networks
+govc ls -t Network /thresh/network/*
 ```
 
-### 5. Login to Pulumi
+**Option 2: Use vSphere Client (GUI)**
+
+1. Open https://vcenter.thresh.sh
+2. Log in with administrator@vsphere.local
+3. **Datastore**: Navigate to Datacenter → Storage → Note the datastore name
+4. **Network**: Navigate to Datacenter → Networks → Note the network name
+
+### 5. Initialize Pulumi
 
 ```bash
-# Login to Pulumi (can use local backend or Pulumi Cloud)
-pulumi login --local  # For local state storage
+cd pulumi
 
-# Or use Pulumi Cloud (free for individuals)
-pulumi login
-```
+# Login to Pulumi (local backend)
+pulumi login --local
 
-### 6. Initialize Pulumi Stack
+# Create new stack
+pulumi stack init vcenter
 
-```bash
-# Restore .NET dependencies
-dotnet restore
-
-# Initialize dev stack (already configured)
-pulumi stack select dev
-
-# Or create a new stack
-pulumi stack init dev
-```
-
-## Usage
-
-### Check Template Availability
-
-```bash
-# Verify your template exists before deploying
-# This should be set in .env and match your vCenter template name
-echo $UBUNTU_TEMPLATE
-```
-
-### Preview Changes
-
-```bash
+# Preview deployment
 pulumi preview
 ```
 
-### Deploy Infrastructure
+### 6. Deploy Test VM
 
 ```bash
-# Deploy the Ubuntu test VM
 pulumi up
 
-# Review changes and confirm
-```
-
-### Get VM IP Address
-
-```bash
-# After deployment, get the VM IP
+# Wait 3-5 minutes, then get VM IP
 pulumi stack output vmIp
 
-# Get SSH command
+# SSH into VM
+ssh thresh@<ip-address>
+
+# Test thresh
+cd ~/thresh
+./thresh/Thresh/bin/Debug/net10.0/thresh --version
+```
+
+---
+
+## vCenter Cluster Setup (Single ESXi)
+
+**Question:** Can I create a cluster with a single ESXi server?  
+**Answer:** **Yes!** This is a common setup.
+
+### Steps to Create Cluster in vCenter:
+
+1. **Add ESXi Host to vCenter**:
+   - vCenter → Hosts and Clusters
+   - Right-click Datacenter → Add Host
+   - Enter ESXi IP/hostname and credentials
+   - Accept certificate
+
+2. **Create Cluster**:
+   - Right-click Datacenter → New Cluster
+   - Name: `thresh-cluster`
+   - Enable DRS (optional, but recommended)
+   - Enable HA (optional)
+
+3. **Move Host to Cluster**:
+   - Drag ESXi host into cluster
+   - Or: Right-click host → Move To → Select cluster
+
+4. **Verify Resource Pool**:
+   - Cluster → Resource Pools
+   - Default pool should be "Resources"
+   - Update `VSPHERE_RESOURCE_POOL=Resources` in `.env`
+
+---
+
+## Architecture
+
+### Current Setup (Simple)
+
+```
+vCenter (vcenter.thresh.sh)
+└── Datacenter: thresh
+    ├── Cluster: thresh-cluster
+    │   └── ESXi Host (128GB RAM, 24 vCPUs)
+    │       └── Resources (Resource Pool)
+    ├── Datastores
+    │   └── [your-datastore]
+    └── Networks
+        └── VM Network
+
+Templates (Built with Packer):
+├── packer-ubuntu-22.04     ← Ubuntu 22.04 LTS + cloud-init
+└── packer-windows-2022     ← Windows Server 2022 (optional)
+
+Test VMs (Deployed with Pulumi):
+└── thresh-ubuntu-test      ← Cloned from template
+```
+
+### Workflow
+
+```
+1. Packer builds templates (once)
+   └── Creates: packer-ubuntu-22.04
+
+2. Pulumi clones template (many times)
+   └── Creates: thresh-ubuntu-test (with cloud-init)
+   
+3. Cloud-init provisions VM
+   └── Installs: Docker, .NET 10, thresh repo
+   
+4. Test thresh
+   └── SSH → build → test → destroy
+```
+
+---
+
+## Resource Allocation
+
+**Your Server:**
+- **Memory:** 128GB  
+- **CPUs:** 24 (Xeon E5-2670 v3 @ 2.30GHz)
+
+**Current VM Configuration** (from `.env`):
+- **Test VM:** 4 vCPUs, 8GB RAM, 60GB disk
+
+**Capacity:**
+- Can run ~12-15 test VMs simultaneously
+- Adequate for parallel testing (Phase 1.5+)
+
+**Recommendations:**
+- Start with 1 VM to validate setup
+- Scale to 3-5 VMs for multi-OS testing  
+- Use resource pools to limit CPU/RAM
+
+---
+
+## Common Operations
+
+### Deploy Test VM
+
+```bash
+pulumi up
+```
+
+### Get VM Details
+
+```bash
+pulumi stack output
+pulumi stack output vmIp
 pulumi stack output sshCommand
 ```
 
-### Connect to VM
+### SSH into VM
 
 ```bash
-# SSH into the Ubuntu test VM
-ssh thresh@<vm-ip-address>
-
-# The VM will have:
-# - Docker and containerd installed
-# - .NET 10 SDK installed
-# - thresh repository cloned to ~/thresh
-# - User 'thresh' with sudo access
+ssh thresh@$(pulumi stack output vmIp)
 ```
 
-### Destroy Infrastructure
+### Destroy Test VM
 
 ```bash
-# Remove all VMs (when testing is complete)
-pulumi destroy
-
-# Review resources to be deleted and confirm
+pulumi destroy --yes
 ```
 
-## VM Configuration
-
-### Ubuntu 22.04 Test VM
-
-- **Name**: thresh-ubuntu-test
-- **CPU**: 2 cores
-- **RAM**: 4 GB
-- **Disk**: 50 GB (thin provisioned)
-- **OS**: Ubuntu 22.04 LTS
-- **User**: thresh (with sudo access)
-- **Pre-installed**:
-  - Docker CE
-  - containerd
-  - .NET 10 SDK
-  - Git, curl, wget, vim, htop
-  - Build essentials
-
-### Cloud-Init Setup
-
-The VM uses cloud-init to automatically:
-1. Create `thresh` user with your SSH key
-2. Install Docker and containerd
-3. Install .NET 10 SDK
-4. Clone thresh repository
-5. Configure Docker permissions
-
-**Boot time**: 2-3 minutes for cloud-init to complete
-
-## Testing Workflow
-
-### 1. Deploy VM
+### Update Template
 
 ```bash
-cd pulumi
+# Rebuild Packer template
+cd packer/ubuntu-22.04
+packer build -force -var-file=../credentials.pkrvars.hcl ubuntu.pkr.hcl
+
+# Destroy old VMs, deploy new
+cd ../../
+pulumi destroy --yes
 pulumi up
 ```
 
-### 2. Wait for Cloud-Init
+### Change VM Resources
 
-```bash
-# Cloud-init takes 2-3 minutes
-# Watch cloud-init logs:
-ssh thresh@<vm-ip> sudo tail -f /var/log/cloud-init-output.log
+Edit `.env`:
+```env
+VM_CPUS=8            # Increase CPUs
+VM_MEMORY_MB=16384   # Increase to 16GB
+VM_DISK_GB=100       # Increase disk
 ```
 
-### 3. Build thresh on Linux
-
+Then:
 ```bash
-ssh thresh@<vm-ip>
-cd ~/thresh
-dotnet build thresh/Thresh/Thresh.csproj
+pulumi destroy && pulumi up
 ```
 
-### 4. Test thresh Commands
-
-```bash
-cd thresh/Thresh/bin/Debug/net10.0
-./thresh --version
-./thresh up python-dev
-./thresh list
-./thresh destroy python-dev
-```
-
-### 5. Iterate and Debug
-
-- Make changes on Windows dev machine
-- Push to GitHub (dev branch)
-- Pull changes on Ubuntu VM: `git pull`
-- Rebuild and test
-
-### 6. Cleanup When Done
-
-```bash
-# Back on Windows
-cd pulumi
-pulumi destroy
-```
+---
 
 ## Troubleshooting
 
-### VM Not Accessible
+### "Template not found"
 
 ```bash
-# Check VM status in vCenter
-pulumi stack output vmId
-
-# Check if VM got an IP address
-pulumi stack output vmIp
+# Error: error fetching virtual machine
+# Resolution: Build template first with Packer
+cd packer/ubuntu-22.04
+packer build -var-file=../credentials.pkrvars.hcl ubuntu.pkr.hcl
 ```
 
-### Cloud-Init Issues
+### "Datastore not found"
 
 ```bash
-# SSH into VM and check cloud-init status
-ssh thresh@<vm-ip> cloud-init status
-
-# View cloud-init logs
-ssh thresh@<vm-ip> sudo cat /var/log/cloud-init-output.log
+# Get datastore name from vCenter
+govc ls -t Datastore /thresh/datastore/*
+# Update VSPHERE_DATASTORE in .env
 ```
 
-### Template Not Found
-
-Ensure your vCenter has an Ubuntu 22.04 template named correctly in `.env`:
-- Template must exist in vCenter
-- Template must have cloud-init installed
-- Update `UBUNTU_TEMPLATE` in `.env` to match your template name
-
-### SSH Key Issues
+### "Network not found"
 
 ```bash
-# Verify your SSH public key exists
-cat ~/.ssh/id_rsa.pub
-
-# If not, generate one:
-ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+# Get network name
+govc ls -t Network /thresh/network/*
+# Update VSPHERE_NETWORK in .env
 ```
 
-## Security Notes
+### VM doesn't get IP address
 
-- ⚠️ **NEVER commit `.env` file** - Contains sensitive credentials
-- ✅ `.env` is in `.gitignore` by default
-- ✅ Use strong passwords for vCenter
-- ✅ Restrict SSH key access
-- ✅ Use Pulumi secrets for production environments
+```bash
+# Check cloud-init logs via vCenter console
+# Verify network has DHCP
+# Increase wait time in pulumi up
+```
 
-## Files
+### SSH connection refused
 
-- `pulumi.csproj` - .NET project file with Pulumi dependencies
-- `Program.cs` - Infrastructure code (VM definitions)
-- `Pulumi.yaml` - Pulumi project configuration
-- `Pulumi.dev.yaml` - Dev stack configuration
-- `.env.example` - Template for credentials
-- `.env` - **Your actual credentials (gitignored)**
-- `README.md` - This file
+```bash
+# Wait for cloud-init to complete (3-5 minutes)
+# Check VM console in vCenter
+# Verify SSH key is correct
+```
+
+---
 
 ## Next Steps
 
-After successful Linux testing:
-1. Add AlmaLinux VM for RHEL-like testing
-2. Implement GitHub Actions multi-platform builds
-3. Test macOS builds (GitHub hosted runners)
-4. Keep VMs running for ongoing development
-5. Update thresh documentation with Linux instructions
+1. ✅ **Setup vCenter cluster** (single ESXi is fine)
+2. ✅ **Get datastore and network names** (via govc or GUI)
+3. ⏭️ **Update `pulumi/.env`** with your details
+4. ⏭️ **Build Packer template** (see [PACKER_GUIDE.md](PACKER_GUIDE.md))
+5. ⏭️ **Deploy first test VM** with `pulumi up`
+6. ⏭️ **Add Windows template** (optional)
+7. ⏭️ **Multi-OS testing** (Phase 1.5+)
 
-## Support
+---
 
-For issues with:
-- **Pulumi**: https://www.pulumi.com/docs/
-- **vSphere Provider**: https://www.pulumi.com/registry/packages/vsphere/
-- **thresh**: https://github.com/dealer426/thresh
+## File Structure
+
+```
+pulumi/
+├── .env                      ← Your configuration (gitignored)
+├── .env.example              ← Template configuration
+├── Program.cs                ← Main Pulumi infrastructure code
+├── pulumi.csproj             ← .NET project file
+├── Pulumi.yaml               ← Pulumi project metadata
+├── Pulumi.vcenter.yaml       ← Stack configuration
+├── README.md                 ← This file
+├── PACKER_GUIDE.md           ← Packer template building guide
+├── QUICKSTART.md             ← Old quick start (deprecated)
+└── packer/
+    ├── credentials.pkrvars.hcl    ← Packer vCenter credentials
+    ├── ubuntu-22.04/
+    │   ├── ubuntu.pkr.hcl         ← Ubuntu Packer template
+    │   ├── http/
+    │   │   └── user-data          ← Ubuntu autoinstall config
+    │   └── scripts/
+    │       └── setup.sh           ← Post-install script
+└── windows-2022/
+        ├── windows.pkr.hcl         ← Windows Packer template
+        ├── autounattend.xml        ← Windows unattend config
+        └── scripts/
+            └── setup.ps1           ← Post-install script
+```
+
+---
+
+## Reference
+
+- [Pulumi VSphere Provider](https://www.pulumi.com/registry/packages/vsphere/)
+- [Packer Guide](PACKER_GUIDE.md)
+- [VMware vSphere Documentation](https://docs.vmware.com/en/VMware-vSphere/)
+- [Cloud-init Documentation](https://cloudinit.readthedocs.io/)

@@ -1137,56 +1137,671 @@ jobs:
 
 ---
 
-### **Phase 1.6: Agent Mode & Mesh Networking (Weeks 9-12)** 🆕 v1.6.0
+### **Phase 1.6: Agent Mode & Midtier Integration (Weeks 9-12)** 🆕 v1.6.0
 
-**Goal:** Enable background operation and peer-to-peer networking  
+**Goal:** Enable background operation with HTTPS-based midtier registration (Dynatrace-style)  
 **Status:** 📋 Planned (Mar-Apr 2026)  
-**Priority:** P1 (High - Multi-machine foundation)
+**Priority:** P1 (High - Foundation for SaaS/midtier)
 
-> **Note:** Centralized management, fleet orchestration, and SaaS features are being built separately  
-> as a private commercial product (`thresh-hub`). The open-source `thresh` CLI remains focused on  
-> individual machine management with optional agent mode for background operation.
+> **Architecture Decision:** Following proven APM patterns (Dynatrace, DataDog, New Relic), agents  
+> connect to midtier via standard HTTPS/REST APIs. This works with existing corporate networking,  
+> firewalls, and proxies. Advanced mesh networking (Tailscale/Netmaker) deferred to v1.7 for  
+> specialized P2P use cases.
 
-#### Week 9-10: Agent Mode & Enhanced Metrics
+> **Note:** Centralized management features (`thresh-hub` midtier/SaaS) are being built in a separate  
+> repository as a commercial product. The open-source `thresh` CLI focuses on local environment  
+> management with optional agent mode for midtier connectivity.
+
+#### Week 9-10: Agent Daemon & Local Operations
 - [ ] Implement daemon/background mode
-- [ ] Periodic metrics collection
-- [ ] Enhanced metrics (network I/O, disk usage patterns, process monitoring)
+- [ ] Windows service / Linux systemd integration
+- [ ] Periodic metrics collection (CPU, memory, disk, network)
+- [ ] Enhanced environment monitoring
+  - [ ] Container health checks
+  - [ ] Resource usage tracking
+  - [ ] Environment lifecycle events
 - [ ] Auto-restart and health monitoring
 - [ ] Log rotation and management
+- [ ] Configuration file support (`/etc/thresh/agent.conf`)
 
 **Deliverables:**
 ```bash
-# Agent daemon mode (local operation)
-thresh agent start
-thresh agent status
-thresh agent stop
-thresh agent logs
+# Agent daemon mode
+thresh agent install    # Install as service (Windows/Linux/macOS)
+thresh agent start      # Start agent daemon
+thresh agent stop       # Stop agent daemon
+thresh agent status     # Show agent health
+thresh agent logs       # View agent logs
+thresh agent config     # Show/edit configuration
 
-# Runs in background
-# Auto-restarts on failure
-# Collects enhanced metrics locally
-# Useful for monitoring and automation
+# Configuration file
+# /etc/thresh/agent.conf (Linux) or C:\ProgramData\thresh\agent.conf (Windows)
+[agent]
+enabled = true
+metrics_interval = 60s
+log_level = info
+log_max_size = 100MB
+log_max_backups = 5
+
+[midtier]
+url = https://thresh-hub.company.com
+api_key = ${THRESH_API_KEY}
+heartbeat_interval = 30s
+tls_verify = true
 ```
 
 **Commands Added:**
-- `thresh agent start` - Start agent in background
+- `thresh agent install` - Install agent as system service
+- `thresh agent uninstall` - Remove agent service
+- `thresh agent start` - Start agent daemon
 - `thresh agent stop` - Stop agent daemon
-- `thresh agent status` - Show agent health
-- `thresh agent logs` - View agent logs
-- `thresh agent config` - Configure agent settings
+- `thresh agent restart` - Restart agent
+- `thresh agent status` - Show agent health and uptime
+- `thresh agent logs [--follow]` - View agent logs
+- `thresh agent config` - Manage configuration
 
-**Binary Impact:** +60 KB
+**Binary Impact:** +80 KB
 
 ---
 
-#### Week 10-11: Dual Mesh Network Support
+#### Week 10-11: SignalR Midtier Registration & Real-Time Communication
+- [ ] Implement `MidtierClient` using SignalR (Native AOT compatible)
+- [ ] SignalR Hub connection with WebSocket transport
+  - [ ] `Microsoft.AspNetCore.SignalR.Client` (v10.0+)
+  - [ ] JSON protocol with source generators (AOT-friendly)
+  - [ ] Automatic reconnection with exponential backoff
+  - [ ] WebSocket over port 443 (firewall-friendly)
+- [ ] Agent registration on connection
+  - [ ] Generate agent ID (GUID)
+  - [ ] Send machine info (hostname, OS, platform, IP)
+  - [ ] API key authentication via query string or headers
+  - [ ] TLS/HTTPS support with certificate validation
+- [ ] Real-time bidirectional communication
+  - [ ] Hub→Agent: Commands (provision, destroy, restart)
+  - [ ] Agent→Hub: Results, events, status updates
+  - [ ] Instant command delivery (no polling delay)
+  - [ ] Connection state monitoring
+- [ ] Metrics streaming
+  - [ ] Real-time metrics push every 60s
+  - [ ] JSON serialization with System.Text.Json
+  - [ ] Environment lifecycle events (started, stopped)
+- [ ] Multi-tier fallback strategy
+  - [ ] Primary: SignalR to on-prem midtier
+  - [ ] Fallback 1: REST polling to on-prem midtier
+  - [ ] Fallback 2: SignalR to cloud SaaS (thresh-hub.io)
+  - [ ] Fallback 3: REST polling to cloud SaaS
+  - [ ] Graceful degradation: Store metrics locally if all fail
+  - [ ] Automatic failover and recovery
+  - [ ] Configurable retry intervals per tier
+- [ ] Proxy support (HTTP_PROXY, HTTPS_PROXY)
+- [ ] Native AOT compatibility
+  - [ ] JsonSerializerContext for all message types
+  - [ ] Source-generated serialization
+  - [ ] No reflection-based serialization
+
+**Architecture (Dynatrace-style):**
+```
+┌──────────────────────────────────────┐
+│      thresh-hub (Midtier/SaaS)       │
+│                                      │
+│  ┌─────────────────────────────────┐ │
+│  │   REST API (HTTPS)              │ │
+│  │   • /api/v1/agents/register     │ │
+│  │   • /api/v1/agents/heartbeat    │ │
+│  │   • /api/v1/agents/metrics      │ │
+│  │   • /api/v1/agents/poll         │ │
+│  └─────────────────────────────────┘ │
+│         ▲            ▲            ▲   │
+└─────────┼────────────┼────────────┼───┘
+          │            │            │
+     HTTPS/TLS    HTTPS/TLS    HTTPS/TLS
+   (Port 443)    (Port 443)   (Port 443)
+          │            │            │
+    ┌─────▼────┐ ┌─────▼────┐ ┌────▼─────┐
+    │  Agent   │ │  Agent   │ │  Agent   │
+    │(Windows) │ │ (Linux)  │ │ (macOS)  │
+    └──────────┘ └──────────┘ └──────────┘
+    
+• Agents initiate outbound HTTPS (firewall-friendly)
+• API key authentication
+• TLS certificate validation
+• Works through corporate proxies
+• No VPN or P2P mesh required
+• Standard REST/JSON protocol
+```
+
+**SignalR Protocol Example (C#):**
+```csharp
+// Agent-side SignalR client (Native AOT compatible)
+var hubConnection = new HubConnectionBuilder()
+    .WithUrl("https://thresh-hub.company.com/agenthub", options =>
+    {
+        options.AccessTokenProvider = () => Task.FromResult(apiKey);
+    })
+    .WithAutomaticReconnect(new[] 
+    { 
+        TimeSpan.FromSeconds(0),
+        TimeSpan.FromSeconds(2),
+        TimeSpan.FromSeconds(10),
+        TimeSpan.FromSeconds(30)
+    })
+    .AddJsonProtocol(options =>
+    {
+        // Use source-generated JSON context for AOT
+        options.PayloadSerializerOptions.TypeInfoResolverChain
+            .Add(AgentJsonContext.Default);
+    })
+    .Build();
+
+// Hub methods agent can call
+await hubConnection.InvokeAsync("RegisterAgent", new AgentInfo
+{
+    AgentId = agentId,
+    Hostname = "dev-machine-01",
+    Platform = "Windows",
+    OsVersion = "Windows 11 Pro",
+    ThreshVersion = "1.6.0",
+    IpAddress = "192.168.1.100",
+    Architecture = "x64"
+});
+
+await hubConnection.InvokeAsync("SendMetrics", new MetricsData
+{
+    AgentId = agentId,
+    Timestamp = DateTime.UtcNow,
+    CpuPercent = 45.5,
+    MemoryUsed = 8192,
+    Environments = environments
+});
+
+// Methods hub can call on agent (real-time commands)
+hubConnection.On<ProvisionRequest>("ProvisionEnvironment", async request =>
+{
+    // Execute provision command immediately (no polling delay)
+    var result = await ProvisionAsync(request.Blueprint);
+    await hubConnection.InvokeAsync("SendCommandResult", result);
+});
+
+hubConnection.On<string>("DestroyEnvironment", async envName =>
+{
+    await DestroyAsync(envName);
+});
+
+hubConnection.On("RestartAgent", async () =>
+{
+    await RestartAsync();
+});
+
+// Start connection with multi-tier fallback
+string primaryUrl = "https://thresh-hub.company.com/agenthub";
+string fallbackUrl = "https://thresh-hub.io/agenthub";
+
+try
+{
+    // Try primary on-prem midtier (SignalR)
+    hubConnection = CreateHubConnection(primaryUrl, primaryApiKey);
+    await hubConnection.StartAsync();
+    Console.WriteLine("✅ Connected to primary midtier via SignalR (real-time)");
+    currentTier = ConnectionTier.PrimarySignalR;
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️  Primary SignalR failed: {ex.Message}");
+    
+    try
+    {
+        // Fallback to primary REST polling
+        Console.WriteLine("🔄 Trying REST polling to primary...");
+        useRestForPrimary = true;
+        currentTier = ConnectionTier.PrimaryREST;
+    }
+    catch
+    {
+        try
+        {
+            // Failover to cloud SaaS (SignalR)
+            Console.WriteLine("☁️  Failing over to cloud SaaS...");
+            hubConnection = CreateHubConnection(fallbackUrl, fallbackApiKey);
+            await hubConnection.StartAsync();
+            Console.WriteLine("✅ Connected to cloud SaaS via SignalR");
+            currentTier = ConnectionTier.CloudSignalR;
+            
+            // Schedule failback attempt to primary in 5 minutes
+            ScheduleFailbackAttempt(TimeSpan.FromMinutes(5));
+        }
+        catch
+        {
+            try
+            {
+                // Fallback to cloud REST polling
+                Console.WriteLine("🔄 Trying REST polling to cloud...");
+                useRestForCloud = true;
+                currentTier = ConnectionTier.CloudREST;
+            }
+            catch
+            {
+                // All connections failed - go offline
+                Console.WriteLine("⚠️  All midtier connections failed");
+                Console.WriteLine("💾 Operating in offline mode (local cache)");
+                currentTier = ConnectionTier.Offline;
+                EnableOfflineMode();
+            }
+        }
+    }
+}
+```
+
+**JSON Source Generator (AOT-compatible):**
+```csharp
+// Required for Native AOT support
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    WriteIndented = false)]
+[JsonSerializable(typeof(AgentInfo))]
+[JsonSerializable(typeof(MetricsData))]
+[JsonSerializable(typeof(ProvisionRequest))]
+[JsonSerializable(typeof(CommandResult))]
+internal partial class AgentJsonContext : JsonSerializerContext
+{
+}
+```
+
+**Multi-Tier Connection Strategy:**
+```csharp
+// Connection tiers in order of preference
+public enum ConnectionTier
+{
+    PrimarySignalR,   // On-prem SignalR (best performance)
+    PrimaryREST,      // On-prem REST polling
+    CloudSignalR,     // Cloud SaaS SignalR (disaster recovery)
+    CloudREST,        // Cloud SaaS REST polling
+    Offline           // Local cache only (all connections failed)
+}
+
+// Failure detection and automatic failover
+private async Task MonitorConnectionHealth()
+{
+    while (agentRunning)
+    {
+        if (currentTier == ConnectionTier.PrimarySignalR)
+        {
+            // Monitor primary connection
+            if (!await PingPrimary(timeout: TimeSpan.FromSeconds(30)))
+            {
+                // Primary failed, initiate failover
+                await FailoverToNextTier();
+            }
+        }
+        else if (currentTier != ConnectionTier.PrimarySignalR)
+        {
+            // Not on primary - periodically check if primary recovered
+            if (DateTime.Now - lastFailbackAttempt > TimeSpan.FromMinutes(5))
+            {
+                if (await PingPrimary(timeout: TimeSpan.FromSeconds(5)))
+                {
+                    // Primary recovered, failback
+                    await FailbackToPrimary();
+                }
+                lastFailbackAttempt = DateTime.Now;
+            }
+        }
+        
+        await Task.Delay(TimeSpan.FromSeconds(10));
+    }
+}
+```
+
+**Deliverables:**
+```bash
+# Configure primary and fallback midtier
+thresh agent config set midtier.url https://thresh-hub.company.com
+thresh agent config set midtier.fallback_url https://thresh-hub.io
+thresh agent config set midtier.api_key abc123xyz
+thresh agent config set midtier.fallback_api_key def456uvw
+thresh agent config set midtier.failover_enabled true
+
+# Agent auto-registers on start
+thresh agent start
+# Agent registered with ID: 550e8400-e29b-41d4-a716-446655440000
+# ✅ Connected to hub via SignalR (real-time)
+# Primary: https://thresh-hub.company.com
+# Fallback: https://thresh-hub.io (standby)
+# Transport: SignalR WebSocket over TLS
+# Status: Connected to primary
+
+# View agent connection status
+thresh agent status
+# Agent: Running
+# Transport: SignalR (WebSocket)
+# Primary: https://thresh-hub.company.com (connected)
+# Fallback: https://thresh-hub.io (available)
+# Connection: Connected to primary (reconnects: 0)
+# Last message: 2s ago
+# Failover: Ready (timeout: 30s)
+# Environments: 3 Running, 0 Stopped
+# Uptime: 2h 15m
+
+# Simulate primary failure (automatic failover)
+# [Primary connection lost]
+# ⚠️  Primary midtier unreachable, attempting failover...
+# ✅ Connected to fallback cloud (https://thresh-hub.io)
+# Transport: SignalR WebSocket
+# Status: Connected to fallback (will retry primary in 5m)
+
+# When primary recovers
+# ✅ Primary midtier recovered
+# 🔄 Failing back to primary (https://thresh-hub.company.com)
+# ✅ Connected to primary midtier
+```
+
+**Configuration Options:**
+```ini
+[midtier]
+# Primary midtier URL (on-prem or cloud)
+url = https://thresh-hub.company.com
+
+# Fallback cloud SaaS URL (optional, for disaster recovery)
+fallback_url = https://thresh-hub.io
+
+# API key for authentication (required)
+api_key = ${THRESH_API_KEY}
+
+# Cloud SaaS API key (optional, can be different from on-prem)
+fallback_api_key = ${THRESH_CLOUD_API_KEY}
+
+# Transport mode (signalr, rest, auto - default: auto)
+transport = auto  # Try SignalR first, fallback to REST
+
+# Failover strategy
+failover_enabled = true
+failover_timeout = 30s  # Time to wait before failing over to cloud
+failback_delay = 5m     # Wait before attempting to reconnect to primary
+
+# SignalR settings
+signalr_hub_path = /agenthub
+signalr_reconnect_policy = exponential  # 0s, 2s, 10s, 30s
+
+# Metrics reporting interval (default: 60s)
+metrics_interval = 60s
+
+# TLS certificate verification (default: true)
+tls_verify = true
+
+# Custom CA certificate path (for on-prem)
+tls_ca_cert = /etc/thresh/ca.crt
+
+# HTTP proxy (optional)
+proxy = http://proxy.company.com:8080
+
+# Connection timeout
+timeout = 10s
+
+# REST fallback settings (if SignalR fails)
+rest_polling_interval = 30s
+rest_max_retries = 3
+rest_retry_backoff = exponential
+
+# Local storage for offline resilience
+offline_cache_enabled = true
+offline_cache_path = /var/lib/thresh/cache
+offline_cache_max_size = 100MB
+```
+
+**Commands Added:**
+- `thresh agent config set <key> <value>` - Set configuration
+- `thresh agent config get <key>` - Get configuration value
+- `thresh agent config list` - Show all configuration
+- `thresh agent register` - Manual registration (auto on start)
+- `thresh agent unregister` - Disconnect from midtier
+- `thresh agent failover` - Manually trigger failover to cloud
+- `thresh agent failback` - Manually trigger failback to primary
+
+**Deployment Models:**
+
+1. **Pure On-Prem** (No cloud fallback)
+   ```bash
+   thresh agent config set midtier.url https://thresh-hub.company.com
+   thresh agent config set midtier.failover_enabled false
+   ```
+   - Data never leaves corporate network
+   - Offline mode if on-prem down
+   
+2. **Hybrid with Cloud Backup** (Recommended)
+   ```bash
+   thresh agent config set midtier.url https://thresh-hub.company.com
+   thresh agent config set midtier.fallback_url https://thresh-hub.io
+   thresh agent config set midtier.failover_enabled true
+   ```
+   - On-prem for normal operations
+   - Automatic cloud failover for disaster recovery
+   - Best of both worlds: sovereignty + availability
+   
+3. **Pure Cloud SaaS**
+   ```bash
+   thresh agent config set midtier.url https://thresh-hub.io
+   thresh agent config set midtier.failover_enabled false
+   ```
+   - Zero infrastructure to manage
+   - Always connected
+   - Ideal for startups and small teams
+
+**Binary Impact:** +160 KB (SignalR client, WebSocket, JSON source generators, multi-tier fallback logic, offline cache)
+
+---
+
+#### Week 11-12: Agent Features & Quality
+- [ ] Environment snapshots and cloning
+  - [ ] `thresh snapshot create <env> [name]`
+  - [ ] `thresh snapshot list`
+  - [ ] `thresh snapshot restore <name>`
+  - [ ] `thresh clone <env> <new-name>`
+- [ ] Environment tags and metadata
+  - [ ] `thresh tag <env> <tag1> <tag2>`
+  - [ ] `thresh list --tag dev`
+  - [ ] Custom key-value metadata
+- [ ] Resource limits and quotas
+  - [ ] CPU/memory caps in blueprints
+  - [ ] Docker cgroup integration
+  - [ ] WSL resource configuration
+- [ ] Auto-cleanup and TTL
+  - [ ] `thresh up --ttl 24h` for temporary environments
+  - [ ] Agent periodic cleanup job
+  - [ ] Idle environment detection
+- [ ] Health checks in blueprints
+  - [ ] HTTP endpoint checks
+  - [ ] TCP port checks
+  - [ ] Custom script checks
+  - [ ] Auto-restart on failure
+
+**Deliverables:**
+```bash
+# Snapshots
+thresh snapshot create python-dev backup-before-upgrade
+thresh snapshot restore backup-before-upgrade
+thresh clone python-dev python-dev-experiment
+
+# Tags and filtering
+thresh tag python-dev production database
+thresh list --tag production
+thresh list --format json | jq '.[] | select(.tags | contains(["database"]))'
+
+# Resource limits in blueprint
+{
+  "name": "limited-env",
+  "resources": {
+    "cpu_limit": "2.0",
+    "memory_limit": "4GB",
+    "disk_limit": "20GB"
+  }
+}
+
+# TTL for ephemeral environments
+thresh up test-env --ttl 4h  # Auto-destroy after 4 hours
+
+# Health checks in blueprint
+{
+  "name": "web-server",
+  "health_checks": [
+    {"type": "http", "url": "http://localhost:8080/health", "interval": "30s"},
+    {"type": "tcp", "port": 8080, "interval": "10s"}
+  ]
+}
+```
+
+**Commands Added:**
+- `thresh snapshot create <env> [name]` - Create environment snapshot
+- `thresh snapshot list` - List all snapshots
+- `thresh snapshot restore <name>` - Restore from snapshot
+- `thresh snapshot delete <name>` - Delete snapshot
+- `thresh clone <env> <new-name>` - Clone environment
+- `thresh tag <env> <tags...>` - Add tags to environment
+- `thresh untag <env> <tags...>` - Remove tags
+- `thresh list --tag <tag>` - Filter by tag
+
+**Binary Impact:** +80 KB
+
+---
+
+**Phase 1.6 Success Metrics:**
+- [ ] Agent runs as daemon/service on Windows/Linux/macOS
+- [ ] SignalR connection established successfully
+- [ ] Agent registers with hub on connection
+- [ ] Real-time command delivery working (<1s latency)
+- [ ] Bidirectional messaging functional
+- [ ] Metrics streaming working (60s batches)
+- [ ] Automatic reconnection working (exponential backoff)
+- [ ] REST fallback working when WebSocket blocked
+- [ ] Multi-tier failover working (primary → cloud)
+- [ ] Automatic failback when primary recovers
+- [ ] Agent operates during primary outage via cloud
+- [ ] Offline mode stores metrics locally
+- [ ] Proxy support working (HTTP_PROXY)
+- [ ] TLS certificate validation working
+- [ ] Native AOT build with SignalR successful
+- [ ] JSON source generators working correctly
+- [ ] Agent survives complete midtier outage
+- [ ] Connection state monitoring accurate
+- [ ] Environment snapshots and cloning working
+- [ ] Resource limits enforced correctly
+- [ ] TTL auto-cleanup functional
+- [ ] Health checks triggering restarts
+
+**Binary Impact:** +320 KB total (v1.6 = ~5.42 MB compressed)
+
+**NuGet Dependencies:**
+- `Microsoft.AspNetCore.SignalR.Client` v10.0+ (Native AOT compatible)
+- `System.Text.Json` v10.0+ (source generators for AOT)
+- WebSocket transport (built-in to .NET)
+- No MessagePack (reflection issues with AOT)
+
+**Impact:** 🚀 HUGE
+- ⚡ **Real-Time**: Instant command delivery via SignalR (no polling delay)
+- 🔄 **Bidirectional**: Commands down, metrics/events up simultaneously
+- 🤖 **Background Operation**: Agent daemon for 24/7 monitoring
+- 📊 **Centralized Metrics**: Real-time streaming to midtier
+- 🔗 **Enterprise Friendly**: WebSocket over port 443, works with firewalls
+- 🔌 **Auto-Reconnect**: Exponential backoff, survives network issues
+- 🔙 **Multi-Tier Fallback**: SignalR → REST → Cloud SaaS → Offline
+- 🌩️ **Cloud Failover**: Automatic disaster recovery to SaaS
+- 🏢 **Hybrid Deployment**: On-prem primary + cloud backup
+- 💾 **Offline Resilience**: Local metric storage during outages
+- 🔁 **Auto-Failback**: Returns to primary when it recovers
+- 🏢 **Native AOT**: Full SignalR support with source generators
+- 🔐 **Secure**: API key auth + TLS encryption
+- 🌐 **Midtier Foundation**: Enables SaaS/on-prem thresh-hub
+- 💾 **Snapshots**: Quick backup and experimentation
+- 🏷️ **Organization**: Tags and metadata for scale
+- ⚡ **Resource Control**: Prevent resource hogging
+- 🧹 **Auto-Cleanup**: TTL for temporary environments
+
+**Use Cases Unlocked:**
+- Real-time fleet monitoring with <1s command latency
+- Instant remote provisioning from web dashboard
+- Live metrics streaming (not batch uploads)
+- Corporate deployments behind firewalls (WebSocket over 443)
+- SaaS service with persistent agent connections
+- **Hybrid deployments** (on-prem primary + cloud backup)
+- **Disaster recovery** (automatic cloud failover)
+- **High availability** (multi-tier redundancy)
+- **Offline resilience** (local metric caching)
+- Connection state awareness (know immediately when agent disconnects)
+- Automatic environment cleanup
+- Quick environment backups
+- Resource quota enforcement
+- Multi-tenant deployments
+- Scalable with SignalR backplane (Redis, Azure SignalR Service)
+- **Data sovereignty + cloud backup** (run on-prem, fail to cloud)
+
+**What's in thresh-hub (Separate Repo):**
+- ✅ Web dashboard for fleet management
+- ✅ REST API for agent communication
+- ✅ Multi-user authentication (SSO/SAML)
+- ✅ RBAC (Role-Based Access Control)
+- ✅ Centralized blueprint management
+- ✅ Audit logging
+- ✅ Metrics visualization
+- ✅ Intelligent workload placement
+- ✅ Cost tracking and optimization
+- ✅ SaaS deployment (cloud-hosted)
+
+The open-source `thresh` CLI focuses on local management + agent mode for midtier connectivity.
+
+---
+
+**🌟 Phase 1.6 Highlight: Multi-Tier Failover Architecture**
+
+One of the most powerful features in v1.6 is the **multi-tier failover strategy**, giving enterprises the best of both worlds:
+
+**📊 Connection Priority:**
+```
+1️⃣ Primary On-Prem (SignalR)      ← Data sovereignty, low latency
+2️⃣ Primary On-Prem (REST)         ← Proxy/firewall fallback  
+3️⃣ Cloud SaaS (SignalR)           ← Disaster recovery
+4️⃣ Cloud SaaS (REST)              ← Maximum compatibility
+5️⃣ Offline Cache                  ← Graceful degradation
+```
+
+**🎯 Real-World Scenario:**
+1. **Normal Operations**: All 100 agents connected to on-prem midtier via SignalR
+2. **Data Center Outage**: On-prem midtier goes down at 2 AM
+3. **Automatic Failover**: All agents detect failure within 30s, failover to cloud SaaS
+4. **Business Continuity**: Development continues uninterrupted, metrics flow to cloud
+5. **Recovery**: On-prem comes back online at 6 AM
+6. **Automatic Failback**: Agents detect recovery, gradually reconnect to on-prem
+7. **Result**: Zero manual intervention, zero downtime, 99.9%+ availability
+
+**💼 Enterprise Benefits:**
+- ✅ **Data Sovereignty**: Run on-prem for compliance (GDPR, HIPAA, SOC2)
+- ✅ **Disaster Recovery**: Automatic cloud failover without manual intervention
+- ✅ **High Availability**: 99.9%+ uptime with multi-tier redundancy
+- ✅ **Cost Optimization**: Pay for cloud only during on-prem outages
+- ✅ **Zero Config**: Agents handle failover/failback automatically
+- ✅ **Offline Resilience**: Agents cache metrics locally if all else fails
+
+**🚀 Competitive Advantage:**
+Most development tools are either **pure cloud** (no data sovereignty) or **pure on-prem** (no HA).  
+Thresh offers **hybrid deployment** with automatic failover, giving enterprises flexibility without compromise.
+
+---
+### **Phase 1.7: Advanced Mesh Networking (Optional)** 🆕 v1.7.0
+
+**Goal:** Add P2P mesh networking for advanced use cases (air-gapped, P2P collaboration)  
+**Status:** 📋 Planned (May 2026)  
+**Priority:** P2 (Optional - Advanced feature for specialized deployments)
+
+> **Note:** Mesh networking (Tailscale/Netmaker) is an **optional advanced feature** for specialized  
+> use cases where P2P connectivity is required (air-gapped environments, direct peer collaboration).  
+> Most deployments will use v1.6's HTTPS-based midtier connectivity via `thresh-hub`.
+
+#### Week 1-2: Mesh Network Integration
 - [ ] Create `IMeshNetworkService` interface
-- [ ] Implement `TailscaleService` (cloud-based)
-- [ ] Implement `NetmakerService` (self-hosted/air-gapped)
+- [ ] Implement `TailscaleService` (cloud-based, zero-config)
+- [ ] Implement `NetmakerService` (self-hosted, air-gapped)
 - [ ] Add `thresh network` commands
 - [ ] WireGuard integration for both providers
-- [ ] Auto-discovery of peers
+- [ ] Auto-discovery of peers on mesh
 - [ ] Connection health monitoring
+- [ ] Fallback to direct TCP if mesh unavailable
 
 **Deliverables:**
 ```bash
@@ -1204,99 +1819,89 @@ thresh network join --provider netmaker \
 thresh network leave
 thresh network info
 thresh network test <peer>
+
+# Hybrid mode (mesh + midtier)
+thresh agent start --midtier https://thresh-hub.com --mesh tailscale
 ```
 
 **Commands Added:**
-- `thresh network join --provider <tailscale|netmaker>` - Join mesh
+- `thresh network join --provider <tailscale|netmaker>` - Join mesh network
 - `thresh network leave` - Leave mesh network
 - `thresh network status` - Show network status
 - `thresh network peers` - List connected peers
 - `thresh network test <peer>` - Test connectivity
 - `thresh network info` - Show local node info
 
-**Binary Impact:** +120 KB
+**Binary Impact:** +150 KB
 
 ---
 
-#### Week 12: Remote Operations (Peer-to-Peer)
-- [ ] SSH-based remote environment operations
+#### Week 2-3: P2P Remote Operations
+- [ ] Direct P2P provisioning (via mesh, no midtier)
+- [ ] SSH-based fallback for remote operations
 - [ ] `thresh remote` command group
-- [ ] Direct peer-to-peer provisioning (via mesh network)
-- [ ] Remote execution without centralized server
-- [ ] Blueprint sharing across peers
+- [ ] Blueprint sharing peer-to-peer
+- [ ] P2P metrics streaming
 
 **Deliverables:**
 ```bash
-# Connect to specific peer on mesh network
-thresh remote connect <peer-name>
+# P2P operations (no midtier required)
+thresh remote list --peer dev-machine-02
+thresh remote up python-dev --peer dev-machine-02
+thresh remote exec dev-machine-02 python-dev -- python --version
 
-# List environments on remote peer
-thresh remote list --host <peer-name>
-
-# Provision environment on remote peer (direct SSH)
-thresh remote up python-dev --host <peer-name>
-
-# Execute command on remote environment
-thresh remote exec <peer-name> <env-name> -- python --version
+# Blueprint sharing
+thresh blueprint share postgres-dev --peer dev-machine-02
+thresh blueprint fetch postgres-dev --peer dev-machine-03
 ```
 
 **Commands Added:**
-- `thresh remote connect <peer>` - Connect to mesh peer
-- `thresh remote list --host <peer>` - List remote environments
-- `thresh remote up <name> --host <peer>` - Provision remotely
+- `thresh remote list --peer <name>` - List remote environments
+- `thresh remote up <env> --peer <name>` - Provision on peer
 - `thresh remote exec <peer> <env> -- <cmd>` - Execute remote command
+- `thresh blueprint share <name> --peer <name>` - Share blueprint
+- `thresh blueprint fetch <name> --peer <name>` - Fetch blueprint
 
-**Binary Impact:** +80 KB
+**Binary Impact:** +70 KB
 
 ---
 
-**Phase 1.6 Success Metrics:**
-- [ ] Agent runs as daemon on Windows/Linux/macOS
-- [ ] Agent collects enhanced local metrics
-- [ ] Mesh network connectivity (Tailscale + Netmaker)
-- [ ] Multi-peer communication working (<100ms latency)
-- [ ] Air-gapped deployment tested (Netmaker)
-- [ ] Peer discovery working automatically
-- [ ] Remote operations via SSH functional
-- [ ] Direct peer-to-peer provisioning works
+**Phase 1.7 Success Metrics:**
+- [ ] Tailscale mesh connectivity working
+- [ ] Netmaker air-gapped deployment working
+- [ ] P2P peer discovery functional
+- [ ] Remote operations via mesh working
+- [ ] Hybrid mode (mesh + midtier) working
+- [ ] SSH fallback functional when mesh unavailable
+- [ ] <100ms latency between peers
+- [ ] Air-gapped testing validated
 
-**Binary Impact:** +260 KB total (v1.6 = ~5.36 MB)
+**Binary Impact:** +220 KB (v1.7 = ~5.60 MB compressed)
 
-**Impact:** 🚀 Significant
-- 🤖 **Background Operation**: Agent mode for automation and monitoring
-- 📊 **Enhanced Metrics**: Detailed system and container monitoring
-- 🔗 **Mesh Networking**: Seamless peer-to-peer communication
-- 🌐 **Remote Operations**: Manage environments on other machines
-- 🏢 **Enterprise Ready**: Air-gapped support via Netmaker
-- 🔄 **P2P Provisioning**: No central server required
+**Impact:** 🔥 High (for specialized use cases)
+- 🔗 **P2P Connectivity**: Direct peer-to-peer without midtier
+- 🏢 **Air-Gapped**: Netmaker for isolated networks
+- 🌐 **Zero Config**: Tailscale for simple P2P
+- 🤝 **Collaboration**: Direct blueprint sharing
+- 🔄 **Hybrid**: Combine mesh + midtier for flexibility
 
-**Use Cases Unlocked:**
-- Background monitoring and automation
-- Distributed development teams with direct peer connections
+**Use Cases:**
 - Air-gapped enterprise environments
-- Remote environment provisioning without central infrastructure
-- Multi-machine workload distribution (manual, team-based)
-- Mesh VPN for secure dev environment access
+- Small team P2P collaboration (no centralized infrastructure)
+- Development team with direct peer sharing
+- Hybrid deployments (some agents on mesh, some via HTTPS)
+- Remote offices with VPN mesh
 
-**What's NOT in v1.6 (Commercial Product Scope):**
-- ❌ Centralized hub/dashboard
-- ❌ Authentication & multi-user accounts
-- ❌ Node/cluster management UI
-- ❌ Centralized MCP server
-- ❌ Automatic intelligent placement
-- ❌ Fleet-wide orchestration
-- ❌ SaaS/cloud hosting
+**When to use v1.7 vs v1.6:**
+- Use **v1.6 (HTTPS)** for: Corporate environments, SaaS, centralized management, standard networking
+- Use **v1.7 (Mesh)** for: Air-gapped, P2P collaboration, no central server, VPN-based deployments
 
-These features are being developed separately as `thresh-hub` - a commercial SaaS/self-hosted  
-product for enterprise fleet management. The open-source `thresh` CLI remains focused on  
-individual machine management with P2P mesh capabilities.
-
-
+---
 
 ### **Phase 2.0: Polish & Production (Weeks 13-20) - Production Ready** 🎯 v2.0
 
 **Goal:** Production-grade quality, comprehensive distribution, and enterprise features  
-**Status:** 📋 Planned (Apr-Jun 2026)  
+**Status:** 📋 Planned (May-Jun 2026)  
 **Priority:** P1 (High - Production readiness)
 
 #### Week 13-14: Package Manager Distribution
@@ -1487,32 +2092,84 @@ thresh hub alert create --name high-memory \
 └─────────────────┘
 ```
 
-### v1.6 (Target - Distributed)
+### v1.6 (Target - Centralized with SignalR Real-Time)
 ```
-                    ┌──────────────────┐
-                    │   thresh-hub     │
-                    │  (API + Dashboard)│
-                    └────────┬─────────┘
-                             │
-              Mesh Network (Tailscale/Netmaker)
-                             │
-          ┌──────────────────┼──────────────────┐
-          │                  │                  │
-    ┌─────▼─────┐      ┌─────▼─────┐     ┌─────▼─────┐
-    │  thresh   │      │  thresh   │     │  thresh   │
-    │ (Windows) │      │  (Linux)  │     │  (macOS)  │
-    │           │      │           │     │           │
-    │ • WSL     │      │•containerd│     │•containerd│
-    │ • Agent   │      │ • Agent   │     │ • Agent   │
-    │ • Metrics │      │ • Metrics │     │ • Metrics │
-    │ • MCP     │      │ • MCP     │     │ • MCP     │
-    │ • Volumes │      │ • Volumes │     │ • Volumes │
-    │ • Network │      │ • Network │     │ • Network │
-    └───────────┘      └───────────┘     └───────────┘
-         ▲                  ▲                  ▲
-         │                  │                  │
-    VS Code           VS Code           VS Code
-    (via MCP)        (via MCP)         (via MCP)
+                 ┌────────────────────────────────┐
+                 │       thresh-hub               │
+                 │   (Midtier/SaaS - Separate)    │
+                 │                                │
+                 │  • SignalR Hub (Real-time)     │
+                 │  • REST API (Fallback)         │
+                 │  • Web Dashboard               │
+                 │  • Multi-user Auth (SSO)       │
+                 │  • RBAC & Audit Logging        │
+                 │  • Metrics Aggregation         │
+                 │  • Blueprint Management        │
+                 └────────┬──────────┬────────────┘
+                          │          │
+           WebSocket/TLS (443)  WebSocket/TLS (443)
+                 SignalR        SignalR
+              Real-time ⚡     Real-time ⚡
+                          │          │
+       ┌──────────────────┼──────────┼─────────────┐
+       │                  │          │             │
+ ┌─────▼─────┐      ┌─────▼─────┐  ┌▼────────┐  ┌▼─────────┐
+ │  thresh   │      │  thresh   │  │ thresh  │  │ thresh   │
+ │ (Windows) │      │  (Linux)  │  │(macOS)  │  │ (Linux)  │
+ │           │      │           │  │         │  │          │
+ │ • WSL     │      │•containerd│  │•contain.│  │•Docker   │
+ │ • Agent   │←┐    │ • Agent   │←┐│• Agent  │←┐│• Agent   │
+ │ • SignalR │ │    │ • SignalR │ ││• SignalR││ │• SignalR │
+ │ • Snapshot│ │    │ • Snapshot│ ││• Snapsht││ │• Snapshot│
+ │ • Tags    │ │    │ • Tags    │ ││• Tags   ││ │• Tags    │
+ │ • TTL     │ │    │ • TTL     │ ││• TTL    ││ │• TTL     │
+ │ • Health  │ │    │ • Health  │ ││• Health ││ │• Health  │
+ │ • MCP     │ │    │ • MCP     │ ││• MCP    ││ │• MCP     │
+ │ • Volumes │ │    │ • Volumes │ ││• Volumes││ │• Volumes │
+ └─────┬─────┘ │    └─────┬─────┘ │└───┬─────┘│ └────┬─────┘
+       │       │          │       │    │      │      │
+       │   Corporate      │    Corporate │  Corporate │
+       │   Firewall       │    Firewall  │  Proxy     │
+       │   & Proxy        │    & Proxy   │            │
+       │                  │               │            │
+  VS Code           VS Code         VS Code      Cursor
+  (via MCP)        (via MCP)       (via MCP)  (via MCP)
+
+• SignalR over WebSocket/TLS port 443 (firewall-friendly)
+• Real-time bidirectional messaging (commands & metrics)
+• Instant command delivery (<1s latency, no polling)
+• Automatic reconnection (0s, 2s, 10s, 30s)
+• REST fallback if WebSocket blocked
+• Works through corporate proxies (HTTP_PROXY)
+• Native AOT compatible (JSON source generators)
+• API key authentication + TLS encryption
+• Scalable with SignalR backplane (Redis, Azure SignalR)
+```
+
+### v1.7 (Optional - P2P Mesh for Advanced Use Cases)
+```
+              Mesh Network (Tailscale or Netmaker)
+              ┌────────────────────────────┐
+              │   WireGuard P2P Overlay    │
+              │  (Optional for air-gapped) │
+              └────────┬───────────────────┘
+                       │
+          ┌────────────┼──────────────┐
+          │            │              │
+    ┌─────▼─────┐ ┌───▼──────┐ ┌────▼──────┐
+    │  thresh   │ │  thresh  │ │  thresh   │
+    │ (Windows) │ │ (Linux)  │ │  (macOS)  │
+    │           │ │          │ │           │
+    │ • P2P Ops │ │ • P2P Ops│ │ • P2P Ops │
+    │ • Mesh    │ │ • Mesh   │ │ • Mesh    │
+    │ • Share   │←┼─→• Share │←┼─→• Share  │
+    └───────────┘ └──────────┘ └───────────┘
+    
+• Direct peer-to-peer connectivity
+• No central server required
+• Blueprint sharing between peers
+• Air-gapped environments (Netmaker)
+• Small team collaboration
 ```
 
 ---
@@ -1528,14 +2185,22 @@ thresh hub alert create --name high-memory \
 | v1.3 (docs) | 3.8 MB | - | Documentation site |
 | v1.4 (multi-platform) | 5.0 MB | +1.2 MB | 11 MCP tools, macOS support |
 | **v1.5 (networking/storage)** ✅ | **5.1 MB** | **+100 KB** | **Port mapping, volumes, WSL config** |
-| **v1.6 (agent/mesh)** 📋 | **5.36 MB** | **+260 KB** | **Agent mode, mesh network (Tailscale/Netmaker), remote ops** |
-| **v2.0 (production)** 🎯 | **5.5 MB** | **+140 KB** | **Package distribution, security, monitoring, polish** |
+| **v1.6 (agent/midtier)** 📋 | **5.42 MB** | **+320 KB** | **Agent daemon, SignalR real-time, multi-tier fallback, cloud backup, snapshots, tags, TTL, health checks** |
+| **v1.7 (mesh - optional)** 📋 | **5.60 MB** | **+180 KB** | **P2P mesh (Tailscale/Netmaker), remote ops, air-gapped** |
+| **v2.0 (production)** 🎯 | **5.75 MB** | **+150 KB** | **Package distribution, security, monitoring, polish** |
 
-**Total growth v1.5 → v2.0:** +400 KB (+8%)  
-**Value delivered:** Agent daemon, P2P mesh networking, remote operations, package distribution, enterprise polish  
-**Exceptional efficiency:** <500 KB growth for distributed P2P development tool
+**Total growth v1.5 → v1.6:** +320 KB (+6.3%) - Core agent with multi-tier fallback  
+**Total growth v1.6 → v1.7:** +180 KB (+3.3%) - Optional mesh networking  
+**Total growth v1.5 → v2.0:** +650 KB (+12.7%) - Full feature set  
 
-**Note:** Centralized management features (Hub/SaaS) are being built in a separate private commercial product
+**Value delivered:**  
+- v1.6: Agent daemon, SignalR real-time communication, multi-tier failover (on-prem → cloud), disaster recovery, offline resilience, snapshots, resource control, health checks  
+- v1.7: Optional P2P mesh for air-gapped/small teams  
+- v2.0: Package distribution, enterprise security, production polish  
+
+**Exceptional efficiency:** <650 KB growth for enterprise-grade distributed development tool with HA failover
+
+**Note:** Centralized management (thresh-hub midtier/SaaS) built in separate commercial repository
 
 ---
 
@@ -1545,12 +2210,18 @@ thresh hub alert create --name high-memory \
 - [ ] Single binary runs on Windows, Linux, macOS
 - [ ] Binary size < 6 MB (compressed)
 - [ ] Provision time < 30 seconds
-- [ ] Agent mode runs stable in background
-- [ ] Mesh network connectivity (Tailscale + Netmaker)
-- [ ] Peer-to-peer latency < 100ms
+- [ ] Agent mode runs stable as daemon/service
+- [ ] SignalR connection established successfully
+- [ ] Real-time command delivery working (<1s latency)
+- [ ] Automatic reconnection working (exponential backoff)
+- [ ] REST fallback working when WebSocket blocked
 - [ ] MCP integration working in 3+ AI editors
-- [ ] Remote operations via SSH functional
-- [ ] Air-gapped deployment tested (Netmaker)
+- [ ] Snapshots and cloning working
+- [ ] Resource limits enforced correctly
+- [ ] TTL auto-cleanup functional
+- [ ] Health checks working
+- [ ] (Optional) Mesh network connectivity for v1.7
+- [ ] (Optional) P2P operations for v1.7
 
 ### User Experience
 - [ ] Install to first environment: < 5 minutes
@@ -1579,28 +2250,47 @@ thresh up python-dev
 thresh chat
 ```
 
-### Small Team (Week 8)
+### Small Team (Week 12)
 ```bash
-# Each dev joins Tailscale mesh
-thresh network join --provider tailscale
+# Option 1: Pure cloud SaaS (easiest)
+thresh agent config set midtier.url https://thresh-hub.io
+thresh agent config set midtier.api_key xyz789
 thresh agent start
 
-# Anyone can provision anywhere
-thresh up node-dev --remote
+# Option 2: Self-hosted with cloud backup (hybrid)
+thresh agent config set midtier.url https://thresh-hub.company.com
+thresh agent config set midtier.fallback_url https://thresh-hub.io
+thresh agent config set midtier.api_key xyz789
+thresh agent config set midtier.fallback_api_key abc123
+thresh agent start
+
+# Manage from web dashboard or CLI
+thresh list --remote  # See all team environments
 ```
 
-### Enterprise Fleet (Week 12)
+### Enterprise Fleet (Week 16)
 ```bash
-# IT deploys infrastructure
+# IT deploys on-prem thresh-hub midtier
 docker run -d thresh-hub
-docker run -d netmaker
 
-# Devs join air-gapped network
-thresh network join --provider netmaker \
-  --server http://netmaker.corp
+# Deploy agents with hybrid failover (on-prem + cloud backup)
+thresh agent config set midtier.url https://thresh-hub.corp.local
+thresh agent config set midtier.fallback_url https://thresh-hub.io
+thresh agent config set midtier.api_key ${API_KEY}
+thresh agent config set midtier.fallback_api_key ${CLOUD_KEY}
+thresh agent config set midtier.failover_enabled true
+thresh agent start
 
-# Hub orchestrates workloads
-thresh up python-dev --remote --priority high
+# Agents stay connected even if on-prem goes down
+# Automatic cloud failover for disaster recovery
+# Automatic failback when on-prem recovers
+
+# Centralized management from web dashboard
+# RBAC, audit logging, metrics, cost tracking
+# 99.9%+ uptime with cloud backup
+
+# Optional: Add mesh networking for air-gapped sites (v1.7)
+thresh network join --provider netmaker --server http://netmaker.corp
 ```
 
 ---

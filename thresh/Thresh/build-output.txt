@@ -1,0 +1,6 @@
+  Determining projects to restore...
+  Restored C:\Users\burns\source\repos\thresh\thresh\Thresh\Thresh.csproj (in 687 ms).
+C:\Users\burns\source\repos\thresh\thresh\Thresh\Mcp\StdioMcpServer.cs(484,28): warning CS8619: Nullability of reference types in value of type '<anonymous type: string Name, bool Success, string? Error>' doesn't match target type '<anonymous type: string Name, bool Success, string Error>'. [C:\Users\burns\source\repos\thresh\thresh\Thresh\Thresh.csproj]
+  Thresh -> C:\Users\burns\source\repos\thresh\thresh\Thresh\bin\Release\net10.0\win-x64\thresh.dll
+  Generating native code
+  Thresh -> C:\Users\burns\source\repos\thresh\thresh\Thresh\bin\Release\net10.0\win-x64\publish\
