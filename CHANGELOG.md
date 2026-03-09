@@ -19,6 +19,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.0] - 2026-03-08
+
+### Added
+
+- **Agent Mode** 🤖:
+  - `thresh agent start` - Start the agent daemon and connect to a Thresh Hub
+  - `thresh agent stop` - Stop the agent daemon
+  - `thresh agent status` - Show agent connection status, ID, and hub URL
+  - `thresh agent config set/get/list` - Manage agent configuration values
+  - Persistent agent ID (GUID) generated on first start
+  - Automatic reconnection with configurable delay (`ReconnectDelay`)
+  - Dual-transport: SignalR (WebSocket) primary with REST API fallback
+  - Automatic failover to fallback hub URL with configurable timeout
+  - Automatic failback to primary hub when restored
+  - Configurable metrics reporting interval (`MetricsInterval`)
+  - TLS certificate verification toggle (`TlsVerify`) for self-hosted hubs
+  - Configuration stored in `~/.thresh/agent.json`
+- **Thresh Hub Integration**:
+  - Agents register and authenticate via API key over SignalR
+  - Real-time bidirectional communication via `/agenthub` SignalR endpoint
+  - Agents report system metrics (CPU, memory, storage) to Hub on configurable interval
+  - Hub can dispatch environment commands to connected agents
+  - Agents appear in Hub UI upon successful connection
+- **ConfigurationService**: Centralized configuration management service for all agent and MCP settings
+
+### Changed
+
+- **CLI Help**: Added `agent` to the command list in `thresh --help` output
+- **Project Dependencies**: Added `Microsoft.AspNetCore.SignalR.Client` for agent hub connectivity
+
+### Fixed
+
+- **Kestrel Binding**: Hub now binds to all network interfaces (`0.0.0.0`) instead of localhost only, allowing remote agents to connect
+
+---
+
+## [1.5.0] - 2026-02-27
+
+### Added
+
+- **Container Networking** 🌐:
+  - Port mapping via blueprint `ports` field (`"8080:80"`, `"127.0.0.1:3000:3000"`)
+  - Container-only port exposure via `expose` field
+  - Named network configuration via `network` field
+  - Custom container hostname via `hostname` field
+  - Automatic WSL2 port forwarding on Windows using `netsh interface portproxy`
+- **Persistent Volume Management** 💾:
+  - `thresh volume list` - List all named volumes
+  - `thresh volume create <name>` - Create a named volume
+  - `thresh volume delete <name>` - Delete a named volume
+  - `thresh volume inspect <name>` - Inspect volume details and mount path
+  - Blueprint `volumes` field for named volume mounts
+  - Blueprint `bind_mounts` field for host directory mounting
+  - Blueprint `tmpfs` field for temporary filesystem mounts
+  - VHD-backed volumes on Windows for true persistence across WSL restarts
+- **Environment Lifecycle** 🔄:
+  - `thresh start <name>` - Start a stopped environment and restore port forwarding
+  - `thresh stop <name>` - Stop a running environment without data loss
+- **WSL Configuration Profiles** ⚙️ (Windows only):
+  - `thresh wslconf list` - List all available profiles
+  - `thresh wslconf show <profile>` - Show profile content
+  - `thresh wslconf options` - Show all available configuration options
+  - `thresh wslconf validate <file>` - Validate a custom WSL config file
+  - 6 built-in profiles: `systemd`, `docker`, `database`, `web-server`, `minimal`, `development`
+  - `database` profile fixes Plan9 filesystem permission issues for PostgreSQL/MySQL/Redis
+  - Blueprint `wslConfig`, `wslConfigFile`, `wslConfigCustom` fields for WSL integration
+- **Example Blueprints**:
+  - `mongodb-persistent.json` - MongoDB with persistent storage
+  - `mysql-persistent.json` - MySQL with WSL database profile
+  - `postgres-persistent.json` - PostgreSQL with persistent data
+- **WslConfigService**: New service managing WSL configuration profiles and validation
+- **Enhanced BlueprintService**: Full support for networking and storage blueprint properties
+- **Enhanced GitHubCopilotService**: Context-aware blueprint generation includes networking and volume hints
+
+### Changed
+
+- **WslService**: Extended with port forwarding (`netsh`), volume management, and lifecycle operations
+- **Platform Networking**: Linux/macOS use explicit `-p` flags; Windows WSL2 uses `netsh` port proxy
+
+### Fixed
+
+- **WSL Plan9 Filesystem**: `database` WSL profile resolves permission errors for database containers on Windows
+- **Port Forwarding Cleanup**: Port proxy rules are removed cleanly when environments are stopped or destroyed
+
+---
+
 ## [1.4.0] - 2026-02-17
 
 ### ⚠️ Breaking Changes

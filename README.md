@@ -2,7 +2,7 @@
 
 **Cross-platform CLI for provisioning development environments with AI**
 
-[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/dealer426/thresh/releases)
+[![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)](https://github.com/dealer426/thresh/releases)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![Native AOT](https://img.shields.io/badge/Native%20AOT-Yes-green.svg)](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -12,7 +12,7 @@
 
 ## Overview
 
-`thresh` is a **.NET 10 Native AOT** command-line tool that provisions container-based development environments using AI-generated blueprints. Create development environments in seconds with natural language prompts.
+`thresh` is a **.NET 10 Native AOT** command-line tool that provisions container-based development environments using AI-generated blueprints. Create development environments in seconds with natural language prompts, manage persistent storage and networking, and connect nodes to a centralized Thresh Hub for fleet management.
 
 **✨ Key Features:**
 - 🌍 **Multi-Platform** - Windows/WSL2, Linux/Docker/nerdctl, macOS/containerd
@@ -28,6 +28,7 @@
 - 🚀 **Native Binary** - No .NET runtime required (5-13 MB)
 - 📊 **System Metrics** - Monitor CPU, memory, storage, and container usage
 - 🔧 **MCP Server** - Model Context Protocol for VS Code, Cursor, Windsurf
+- 🖧 **Agent Mode** *(v1.6.0+)* - Connect nodes to Thresh Hub for centralized fleet management
 
 ---
 
@@ -279,6 +280,26 @@ thresh wslconf validate my-profile.wslconf
 }
 ```
 
+### Agent Mode (v1.6.0+)
+
+```bash
+# Configure agent connection to Thresh Hub
+thresh agent config set midtier-url https://192.168.1.100:7200
+thresh agent config set api-key thresh_live_xxxx
+thresh agent config set tls-verify false        # Use for self-signed certs
+
+# Start/stop the agent daemon
+thresh agent start
+thresh agent stop
+
+# Check connection status and agent ID
+thresh agent status
+
+# View all agent configuration
+thresh agent config list
+thresh agent config get midtier-url
+```
+
 ### System Metrics
 
 ```bash
@@ -312,130 +333,35 @@ thresh config set default-model gpt-4o
 thresh config get default-model
 ```
 
-**Available AI Models** (via GitHub Copilot SDK):
+## Available AI Models
 
-**GPT Models (OpenAI):**
-- **gpt-4o** - GPT-4 Optimized, most capable multimodal model (default)
-- **gpt-4o-mini** - Faster, more affordable GPT-4o variant
-- **gpt-4-turbo** - GPT-4 Turbo with 128K context window
-- **gpt-4** - Standard GPT-4 model
-- **gpt-3.5-turbo** - Fast, cost-effective legacy model
+AI features require GitHub CLI authentication (`gh auth login`). No API keys needed.
 
-**Reasoning Models (OpenAI):**
-- **o1-preview** - Advanced reasoning, slower but more thoughtful
-- **o1-mini** - Fast reasoning for simpler tasks
+| Model | Provider | Best For |
+|-------|----------|----------|
+| `gpt-4o` | OpenAI | Default; best all-around |
+| `gpt-4o-mini` | OpenAI | Fast, cost-effective |
+| `o1-preview` | OpenAI | Complex multi-step blueprints |
+| `claude-3.5-sonnet` | Anthropic | Complex tasks, long outputs |
+| `claude-3.5-haiku` | Anthropic | Fast Claude variant |
+| `gemini-1.5-pro` | Google | 1M token context window |
+| `llama-3.1-405b` | Meta | Largest open-source model |
+| `mistral-large` | Mistral | European open-source option |
 
-**Claude Models (Anthropic):**
-- **claude-3.5-sonnet** - Latest Claude 3.5 (recommended for complex tasks)
-- **claude-3.5-haiku** - Faster Claude 3.5 variant
-- **claude-3-opus** - Most capable Claude 3 model
-- **claude-3-sonnet** - Balanced Claude 3
-- **claude-3-haiku** - Fast Claude 3
-
-**Gemini Models (Google):**
-- **gemini-1.5-pro** - Google's Gemini Pro with 1M token context
-- **gemini-1.5-flash** - Faster Gemini variant
-
-**Open Source Models:**
-- **llama-3.1-405b** - Meta's largest Llama 3.1 (most capable)
-- **llama-3.1-70b** - Meta's Llama 3.1 70B
-- **llama-3.1-8b** - Meta's Llama 3.1 8B (fastest)
-- **mistral-large** - Mistral AI's large model
-- **mistral-nemo** - Smaller Mistral variant
-
-**Usage Examples:**
-```powershell
-# Use specific model for generation
-thresh generate "Python dev env" --model claude-3.5-sonnet
-
-# Use reasoning model for complex blueprints
-thresh generate "Multi-tier app with Redis, PostgreSQL, nginx" --model o1-preview
-
-# Interactive chat with Claude
-thresh chat --model claude-3.5-sonnet
+```bash
+# Use a specific model
+thresh blueprint generate "multi-tier app" --model claude-3.5-sonnet
+thresh chat --model o1-preview
 ```
-
-**Note**: All AI features require GitHub CLI authentication (`gh auth login`). No API keys needed!
 
 ---
 
-## 🚨 Breaking Changes in v1.4.0
+## Breaking Changes in v1.4.0
 
-**Command structure has changed from flat to grouped:**
-
-| Old (v1.3.0 and earlier) | New (v1.4.0+) |
-|--------------------------|---------------|
+| Old Command | New Command |
+|-------------|-------------|
 | `thresh blueprints` | `thresh blueprint list` |
 | `thresh generate <prompt>` | `thresh blueprint generate <prompt>` |
-| *(no command)* | `thresh blueprint delete <name>` |
-
-The old commands will show helpful error messages with suggestions.
-
-**Migration Example:**
-
-```bash
-# Old way (v1.3.0)
-thresh blueprints
-thresh generate \"redis cache\"
-
-# New way (v1.4.0+)
-thresh blueprint list
-thresh blueprint generate \"redis cache\" --output redis-cache
-thresh blueprint delete redis-cache
-```
-
-### System Metrics & Monitoring
-
-```powershell
-# Display system metrics (CPU, memory, storage, containers)
-thresh metrics
-
-# Export metrics as JSON for monitoring tools
-thresh metrics --json
-
-# Example JSON output
-{
-  "hostname": "DESKTOP-ABC123",
-  "platform": "Windows",
-  "runtime": "WSL",
-  "runtime_version": "2.1.5.0",
-  "cpu_cores": 8,
-  "cpu_percent": 23.5,
-  "memory_used_gb": 12.4,
-  "memory_total_gb": 32.0,
-  "memory_percent": 38.75,
-  "storage_free_gb": 450.2,
-  "storage_total_gb": 950.0,
-  "containers": 5
-}
-```
-
-### MCP Server Integration
-
-```powershell
-# Start MCP server for AI editor integration (VS Code, Cursor, Windsurf)
-thresh serve
-
-# Available MCP tools:
-# - list_environments - List all WSL environments
-# - create_environment - Create environments from blueprints
-# - destroy_environment - Remove environments
-# - list_blueprints - Show available blueprints
-# - get_blueprint - Get blueprint details
-# - get_version - Show thresh version and runtime info
-# - generate_blueprint - AI-powered blueprint generation
-
-# Configure in VS Code settings.json:
-{
-  "mcp.servers": {
-    "thresh": {
-      "command": "C:\\path\\to\\thresh.exe",
-      "args": ["serve"],
-      "serverType": "stdio"
-    }
-  }
-}
-```
 
 ---
 
@@ -445,65 +371,59 @@ Blueprints are JSON files that define environments:
 
 ```json
 {
-  "name": "python-ml",
-  "description": "Python machine learning environment",
+  "name": "fullstack-app",
+  "description": "Full-stack app with database and networking",
   "base": "ubuntu-22.04",
-  "packages": [
-    "python3",
-    "python3-pip",
-    "python3-venv",
-    "build-essential"
-  ],
+  "packages": ["nodejs", "npm", "postgresql-14"],
   "environment": {
-    "PYTHONUNBUFFERED": "1"
+    "NODE_ENV": "development",
+    "DATABASE_URL": "postgresql://localhost:5432/myapp"
   },
   "scripts": {
-    "setup": "pip3 install --upgrade pip",
-    "postInstall": "pip3 install jupyter pandas numpy scikit-learn"
+    "postInstall": "npm install -g pm2"
   },
-  "ports": ["8888:8888", "5000:5000"],
+  "ports": ["3000:3000", "8080:8080", "5432:5432"],
+  "expose": ["9090"],
+  "network": "bridge",
+  "hostname": "app.local",
   "volumes": [
-    {"name": "jupyter-data", "mount": "/home/jupyter"}
+    {"name": "postgres-data", "mount": "/var/lib/postgresql/data"},
+    {"name": "app-logs", "mount": "/var/log/app"}
   ],
   "bind_mounts": [
-    {"host": "C:/projects/notebooks", "container": "/notebooks"}
+    {"host": "C:/projects/myapp", "container": "/app"}
   ],
-  "tmpfs": ["/tmp"],
-  "network": "bridge",
-  "hostname": "ml-workstation",
-  "wslConfig": "development"
+  "tmpfs": ["/tmp", "/cache"],
+  "wslConfig": "database"
 }
 ```
 
-**New in v1.5.0:**
-- **ports** - Port mappings (host:container or IP:host:container)
-- **expose** - Exposed ports for inter-container communication
-- **network** - Network mode (bridge, host, none)
-- **hostname** - Custom hostname
-- **volumes** - Named persistent volumes
-- **bind_mounts** - Host directory mounts
-- **tmpfs** - In-memory temporary filesystems
-- **wslConfig** - WSL configuration profile (Windows only)
+**Blueprint Fields:**
 
-**Supported Base Images:**
-- Ubuntu: 20.04, 22.04, 24.04
-- Alpine: 3.18, 3.19, edge
-- Debian: 11, 12
-- And more...
+| Field | Version | Description |
+|-------|---------|-------------|
+| `name`, `description` | v1.0+ | Blueprint metadata |
+| `base` | v1.0+ | Base container image |
+| `packages` | v1.0+ | Packages to install |
+| `environment` | v1.0+ | Environment variables |
+| `scripts` | v1.0+ | Shell scripts (setup, postInstall) |
+| `ports` | v1.5.0+ | Port mappings (`host:container`) |
+| `expose` | v1.5.0+ | Inter-container exposed ports |
+| `network` | v1.5.0+ | Network mode (bridge, host, none) |
+| `hostname` | v1.5.0+ | Custom container hostname |
+| `volumes` | v1.5.0+ | Named persistent volume mounts |
+| `bind_mounts` | v1.5.0+ | Host directory mounts |
+| `tmpfs` | v1.5.0+ | In-memory temporary filesystems |
+| `wslConfig` | v1.5.0+ | WSL profile (Windows only) |
 
 ---
 
 ## Documentation
 
-- 📚 **[Getting Started Guide](GETTING_STARTED.md)** - Detailed setup and usage
-- 📖 **[Full Documentation](https://dealer426.github.io/thresh/)** - Docusaurus site with tutorials
-- 🔧 **[CLI Reference](website/docs/cli-reference/)** - Complete command documentation
-- 🌐 **[Networking Tutorial](website/docs/tutorials/networking.md)** - Port mapping and network configuration (v1.5.0)
-- 📦 **[Volumes Tutorial](website/docs/tutorials/volumes.md)** - Persistent storage guide (v1.5.0)
-- ⚙️ **[WSL Configuration Guide](website/docs/wsl-configuration.md)** - Database optimization profiles (v1.5.0)
 - 🤖 **[MCP Integration Guide](docs/MCP_INTEGRATION.md)** - VS Code, Cursor, Windsurf setup
 - 🗺️ **[Roadmap](docs/ROADMAP_2026.md)** - Future plans and features
-- 📝 **[Changelog](CHANGELOG.md)** - Version history and changes
+- 📝 **[Changelog](CHANGELOG.md)** - Full version history
+- 📖 **[Documentation Site](https://dealer426.github.io/thresh/)** - Tutorials and guides
 
 ---
 
@@ -513,29 +433,37 @@ Blueprints are JSON files that define environments:
 
 ```
 thresh/
-├── Thresh/                      # Main CLI application
-│   ├── Program.cs               # CLI entry point
-│   ├── Services/                # Core services
+├── thresh/Thresh/               # Main CLI application
+│   ├── Program.cs               # CLI entry point and command definitions
+│   ├── Services/
+│   │   ├── AgentService.cs      # Agent daemon - SignalR hub connection (v1.6.0)
+│   │   ├── ConfigurationService.cs  # Agent/MCP configuration management (v1.6.0)
 │   │   ├── BlueprintService.cs  # Environment provisioning
 │   │   ├── GitHubCopilotService.cs  # AI integration
-│   │   ├── ContainerServiceFactory.cs  # Multi-platform support
-│   │   └── WslService.cs / DockerService.cs / ContainerdService.cs
-│   ├── Models/                  # Data models
+│   │   ├── WslService.cs        # WSL2 + port forwarding + volumes
+│   │   ├── DockerService.cs     # Docker container management
+│   │   ├── ContainerdService.cs # containerd management
+│   │   └── WslConfigService.cs  # WSL profile management (v1.5.0)
+│   ├── Models/
+│   │   ├── AgentConfiguration.cs  # Agent config model (v1.6.0)
+│   │   ├── AgentModels.cs         # Agent status/metrics models (v1.6.0)
+│   │   └── Blueprint.cs           # Blueprint model
 │   ├── Mcp/                     # MCP server implementation
 │   └── blueprints/              # Built-in blueprints
+├── pulumi/                      # vSphere multi-node deployment
+│   └── Program.cs               # Automated cluster deployment
 ├── website/                     # Docusaurus documentation
 ├── docs/                        # Additional documentation
-└── packages/                    # Package manager configs
-
+└── packages/                    # Package manager configs (Chocolatey, Scoop, Winget)
 ```
 
 ### Technology Stack
 
 - **.NET 10** with Native AOT compilation
 - **System.CommandLine** for CLI framework
+- **Microsoft.AspNetCore.SignalR.Client** for agent hub connectivity
 - **GitHub.Copilot.SDK** for AI integration
-- **Docusaurus** for documentation
-- **GitHub Actions** for CI/CD
+- **GitHub Actions** for multi-platform CI/CD
 
 ---
 
@@ -547,15 +475,59 @@ thresh/
 | Binary Size (macOS) | ~13 MB (uncompressed) |
 | Startup Time | ~20-30ms |
 | Memory Usage (Idle) | ~30MB |
+| Agent Memory Usage | ~25MB |
 | Provision Time (Alpine) | ~15s |
 | Provision Time (Ubuntu) | ~25s |
 | AI First Token | ~1-2s |
 
 ---
 
-## What's New in v1.5.0
+## What's New
 
-### 🌐 Full Networking Support
+### v1.6.0 — Agent Mode & Hub Connectivity
+
+The flagship feature of v1.6.0 is **agent mode**, enabling any thresh node to connect to a centralized **Thresh Hub** for fleet management, remote visibility, and aggregated metrics.
+
+**New Commands:**
+```bash
+thresh agent start                              # Start agent daemon
+thresh agent stop                               # Stop agent daemon
+thresh agent status                             # Connection status and agent ID
+thresh agent config set midtier-url <url>       # Set Hub URL
+thresh agent config set api-key <key>           # Set API key
+thresh agent config list                        # Show all configuration
+```
+
+**Connect to a Thresh Hub:**
+```bash
+thresh agent config set midtier-url https://192.168.1.100:7200
+thresh agent config set api-key thresh_live_xxxx
+thresh agent config set tls-verify false        # For self-signed certs
+thresh agent start
+```
+
+**Transport:** SignalR WebSocket (primary) → REST API (automatic fallback)
+
+**High Availability:** Configure `FallbackUrl` + `AutoFailover` for automatic failover if the primary Hub goes offline.
+
+**Agent config** (`~/.thresh/agent.json`):
+```json
+{
+  "AgentId": "5f6d5891-76d2-466f-a33f-7b87acb17653",
+  "Enabled": true,
+  "MidtierUrl": "https://hub.example.com:7200",
+  "ApiKey": "thresh_live_xxxx",
+  "TlsVerify": false,
+  "ReconnectDelay": 5,
+  "MetricsInterval": 30,
+  "AutoFailover": false,
+  "FallbackUrl": "https://cloud.thresh.sh"
+}
+```
+
+---
+
+### v1.5.0 — Networking, Storage & Lifecycle
 
 **Port Mapping:**
 ```json
@@ -563,24 +535,11 @@ thresh/
   "ports": ["8080:80", "5432:5432", "127.0.0.1:3000:3000"]
 }
 ```
-
-- Flexible port mapping syntax (host:container, IP:host:container)
-- **Windows (WSL2)**: Automatic port forwarding to localhost
-- **Linux/macOS**: Explicit port mapping with container runtime
+- Windows (WSL2): Automatic `netsh` port proxy forwarding to localhost
+- Linux/macOS: Explicit port mapping with container runtime
 - Protocol support (TCP/UDP)
 
-**Advanced Networking:**
-```json
-{
-  "expose": ["9090"],      // Inter-container communication
-  "network": "bridge",     // Network modes: bridge, host, none
-  "hostname": "api.local"  // Custom hostname
-}
-```
-
-### 💾 Persistent Storage
-
-**Named Volumes:**
+**Persistent Volumes:**
 ```json
 {
   "volumes": [
@@ -589,154 +548,38 @@ thresh/
   ]
 }
 ```
+Data survives environment recreation. CLI: `thresh volume list|create|inspect|delete`
 
-- Data survives environment recreation
-- Platform-specific: directory-based (Windows) or containerd-managed (Linux)
-- CLI management: `thresh volume list|create|inspect|delete`
-
-**Bind Mounts:**
+**WSL Configuration (Windows):**
 ```json
-{
-  "bind_mounts": [
-    {"host": "C:/projects/myapp", "container": "/app", "readonly": false}
-  ]
-}
+{ "wslConfig": "database" }
 ```
+Fixes Plan9 filesystem permissions for PostgreSQL/MySQL/Redis on Windows.
 
-- Direct host filesystem access
-- Perfect for live code editing
-
-**Tmpfs (In-Memory):**
-```json
-{
-  "tmpfs": ["/tmp", "/cache", "/run"]
-}
-```
-
-### ⚙️ WSL Configuration Profiles (Windows)
-
-**Fix database permission issues and optimize environments:**
-
-```json
-{
-  "wslConfig": "database"  // Fixes Plan9 filesystem issues
-}
-```
-
-**Built-in Profiles:**
-- **database** - Fixes PostgreSQL/MySQL/MongoDB permissions
-- **docker** - Enables systemd for Docker daemon
-- **web-server** - Optimized for nginx/Apache
-- **systemd** - Basic systemd support
-- **minimal** - Maximum isolation
-- **development** - Balanced for general work
-
-**Custom Profiles:**
+**Lifecycle:**
 ```bash
-thresh wslconf list
-thresh wslconf show database
-thresh wslconf validate my-profile.wslconf
+thresh stop my-env    # Graceful stop, data preserved
+thresh start my-env   # Resume from stopped state
 ```
-
-### 🔄 Lifecycle Management
-
-**Start/Stop Commands:**
-```bash
-# Stop environment without losing data
-thresh stop postgres-server
-
-# Start again - all volumes and config preserved
-thresh start postgres-server
-```
-
-- Graceful shutdown and restart
-- Preserves all volumes and configuration
-- Metadata tracking for environment restoration
-
-### 📊 Volume Management
-
-**Complete volume lifecycle:**
-```bash
-thresh volume list                  # List all volumes
-thresh volume create app-data       # Pre-create volume
-thresh volume inspect postgres-data # View details
-thresh volume delete old-data       # Remove unused
-```
-
-### 📝 Complete v1.5.0 Example
-
-```json
-{
-  "name": "fullstack-app",
-  "description": "Full-stack application with database",
-  "base": "ubuntu-22.04",
-  "packages": ["nodejs", "npm", "postgresql-14"],
-  "ports": ["3000:3000", "8080:8080", "5432:5432"],
-  "volumes": [
-    {"name": "postgres-data", "mount": "/var/lib/postgresql/data"},
-    {"name": "app-logs", "mount": "/var/log/app"}
-  ],
-  "bind_mounts": [
-    {"host": "C:/projects/myapp", "container": "/app"}
-  ],
-  "tmpfs": ["/tmp"],
-  "network": "bridge",
-  "hostname": "app.local",
-  "wslConfig": "database",
-  "environment": {
-    "NODE_ENV": "development",
-    "DATABASE_URL": "postgresql://localhost:5432/myapp"
-  }
-}
-```
-
-**Access your application:**
-- Frontend: http://localhost:3000
-- API: http://localhost:8080
-- Database: localhost:5432
-- All data persists in named volumes
-- Live code editing via bind mount
 
 ---
 
 ## Contributing
 
-Contributions welcome! Please read our [Contributing Guidelines](.github/CONTRIBUTING.md).
-
-### Development Setup
-
 ```bash
-# Clone repository
 git clone https://github.com/dealer426/thresh.git
-cd thresh
-
-# Install .NET 10 SDK
-# https://dotnet.microsoft.com/download
-
-# Build project
-cd thresh/Thresh
+cd thresh/thresh/Thresh
 dotnet build
-
-# Run tests
-dotnet test
-
-# Run development version
 dotnet run -- --version
 ```
 
----
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/dealer426/thresh/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/dealer426/thresh/discussions)
-- **Documentation**: [https://dealer426.github.io/thresh/](https://dealer426.github.io/thresh/)
+Issues and PRs welcome: [GitHub Issues](https://github.com/dealer426/thresh/issues)
 
 ---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
