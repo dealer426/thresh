@@ -277,7 +277,7 @@ public static class NodeCommands
         {
             Console.ForegroundColor = n.Status == "online" ? ConsoleColor.Green : ConsoleColor.DarkGray;
             var status   = n.Status == "online" ? "online" : "offline";
-            var cpu      = n.CpuPercent.HasValue ? $"{n.CpuPercent:F0}%" : "-";
+            var cpu      = n.CpuPercent.HasValue ? $"{n.CpuPercent:F1}%" : "-";
             var ram      = n.RamUsedGb.HasValue && n.RamTotalGb.HasValue
                            ? $"{n.RamUsedGb:F1}/{n.RamTotalGb}" : n.RamTotalGb.HasValue ? $"-/{n.RamTotalGb}" : "-";
             var disk     = n.DiskTotalGb.HasValue ? $"{n.DiskTotalGb}GB" : "-";
@@ -354,7 +354,7 @@ public static class NodeCommands
             Console.WriteLine($"  {"GPU:",-10} {m.GpuCount}× {m.GpuModel ?? "unknown"}{(m.GpuMemoryTotalGb.HasValue ? $" ({m.GpuMemoryTotalGb} GB VRAM)" : "")}");
 
         Console.WriteLine($"  {"Envs:",-10} {m.EnvironmentCount?.ToString() ?? "-"}");
-        Console.WriteLine($"  {"Updated:",-10} {(m.LastSeenAt.HasValue ? FormatAgo(m.LastSeenAt.Value) + " ago" : "never")}");
+        Console.WriteLine($"  {"Updated:",-10} {(m.LastSeenAt.HasValue ? FormatAgo(m.LastSeenAt.Value) : "never")}");
         Console.WriteLine();
     }
 
