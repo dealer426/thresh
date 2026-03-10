@@ -463,7 +463,18 @@ public static class NodeCommands
     {
         var body = await resp.Content.ReadAsStringAsync();
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.Error.WriteLine($"Hub returned {(int)resp.StatusCode}: {body}");
+
+        // Give a friendlier message for the "not associated with an account" case
+        if ((int)resp.StatusCode == 401 && body.Contains("not associated with an account", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine("Your user account is not linked to a thresh account.");
+            Console.Error.WriteLine("Log in to the hub web interface to complete account setup.");
+        }
+        else
+        {
+            Console.Error.WriteLine($"Hub returned {(int)resp.StatusCode}: {body}");
+        }
+
         Console.ResetColor();
     }
 
