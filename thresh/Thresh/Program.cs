@@ -42,6 +42,7 @@ class Program
         AddTestSdkCommand(rootCommand);
         AuthCommands.Register(rootCommand);
         NodeCommands.Register(rootCommand);
+        ClusterCommands.Register(rootCommand);
         
         // Root handler (when no command specified)
         rootCommand.SetHandler((bool verbose) =>
@@ -82,6 +83,7 @@ class Program
         Console.WriteLine("  serve       Start MCP server");
         Console.WriteLine("  auth        Authenticate with a thresh-hub (login, logout, status, token)");
         Console.WriteLine("  node        Manage nodes connected to your account (list, info, metrics, remove)");
+        Console.WriteLine("  cluster     Manage clusters of nodes (list, create, info, add-node, remove-node, delete)");
         Console.WriteLine();
         Console.WriteLine("Options:");
         Console.WriteLine("  --verbose        Enable verbose logging");
