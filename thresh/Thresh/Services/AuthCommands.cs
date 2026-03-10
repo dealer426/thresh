@@ -512,9 +512,27 @@ public static class AuthCommands
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                // Try Chrome first in --app mode (frameless popup like Microsoft login)
-                var launched = TryLaunchAppWindow("chrome", popupUrl)
-                            || TryLaunchAppWindow("msedge", popupUrl);
+                // Resolve via registry App Paths (same mechanism Windows uses for ShellExecute)
+                // then fall back to well-known install paths, then default browser.
+                var chromePath = GetWindowsBrowserPath("chrome.exe");
+                var edgePath   = GetWindowsBrowserPath("msedge.exe");
+
+                string[] candidates = [
+                    chromePath ?? @"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                    @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+                    edgePath   ?? @"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+                    @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+                ];
+
+                var launched = false;
+                foreach (var path in candidates)
+                {
+                    if (path != null && File.Exists(path) && TryLaunchAppWindow(path, popupUrl))
+                    {
+                        launched = true;
+                        break;
+                    }
+                }
 
                 if (!launched)
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
@@ -543,10 +561,13 @@ public static class AuthCommands
     {
         try
         {
+            // --user-data-dir points to a throw-away profile so Chrome/Edge creates a
+            // fresh standalone app window even when the browser is already running.
+            var tempProfile = Path.Combine(Path.GetTempPath(), "thresh-auth-popup");
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = browser,
-                Arguments = $"--app={url} --window-size=480,640 --window-position=400,150 --disable-extensions",
+                Arguments = $"--app={url} --window-size=480,640 --window-position=400,150 --disable-extensions --user-data-dir=\"{tempProfile}\"",
                 UseShellExecute = false
             };
             var proc = System.Diagnostics.Process.Start(psi);
@@ -556,6 +577,24 @@ public static class AuthCommands
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Looks up the install path for a browser exe via the Windows registry
+    /// HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\{exe}
+    /// This is the same mechanism Windows uses for ShellExecute by name.
+    /// Returns null if the key doesn't exist.
+    /// </summary>
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    private static string? GetWindowsBrowserPath(string exeName)
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                $@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\{exeName}");
+            return key?.GetValue(null) as string;
+        }
+        catch { return null; }
     }
 }
 
