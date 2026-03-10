@@ -1,12 +1,54 @@
 using System.CommandLine;
 using System.Net.Http.Json;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Thresh.Models;
 
 namespace Thresh.Services;
+
+// ---------------------------------------------------------------------------
+// AOT source-generation context for auth HTTP DTOs
+// ---------------------------------------------------------------------------
+[JsonSourceGenerationOptions(
+    WriteIndented = false,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    PropertyNameCaseInsensitive = true,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSerializable(typeof(DeviceStartRequest))]
+[JsonSerializable(typeof(DeviceStartResponse))]
+[JsonSerializable(typeof(DeviceTokenRequest))]
+[JsonSerializable(typeof(DeviceTokenResponse))]
+internal partial class AuthJsonContext : JsonSerializerContext { }
+
+internal class DeviceStartRequest
+{
+    public string DeviceName { get; set; } = string.Empty;
+    public string DeviceOs { get; set; } = string.Empty;
+}
+
+internal class DeviceStartResponse
+{
+    public string DeviceCode { get; set; } = string.Empty;
+    public string UserCode { get; set; } = string.Empty;
+    public int ExpiresIn { get; set; }
+    public int Interval { get; set; }
+}
+
+internal class DeviceTokenRequest
+{
+    public string DeviceCode { get; set; } = string.Empty;
+}
+
+internal class DeviceTokenResponse
+{
+    public string? Status { get; set; }
+    public string? AccessToken { get; set; }
+    public string? UserEmail { get; set; }
+    public string? UserName { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    public List<string>? Roles { get; set; }
+}
 
 /// <summary>
 /// CLI auth commands: login, logout, status, token
@@ -128,10 +170,7 @@ public static class AuthCommands
                 DeviceOs = GetDeviceOs()
             };
 
-            var body = JsonContent.Create(startReq, options: new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            var body = JsonContent.Create(startReq, AuthJsonContext.Default.DeviceStartRequest);
 
             var resp = await client.PostAsync("/api/auth/device/start", body);
             if (!resp.IsSuccessStatusCode)
@@ -142,10 +181,7 @@ public static class AuthCommands
                 return;
             }
 
-            startResp = await resp.Content.ReadFromJsonAsync<DeviceStartResponse>(new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            startResp = await resp.Content.ReadFromJsonAsync(AuthJsonContext.Default.DeviceStartResponse);
 
             if (startResp == null)
             {
@@ -194,19 +230,13 @@ public static class AuthCommands
 
             try
             {
-                var body = JsonContent.Create(pollReq, options: new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
+                var body = JsonContent.Create(pollReq, AuthJsonContext.Default.DeviceTokenRequest);
                 var pollResp = await client.PostAsync("/api/auth/device/token", body);
 
                 if (!pollResp.IsSuccessStatusCode)
                     continue; // transient error, keep polling
 
-                var tokenResp = await pollResp.Content.ReadFromJsonAsync<DeviceTokenResponse>(new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                var tokenResp = await pollResp.Content.ReadFromJsonAsync(AuthJsonContext.Default.DeviceTokenResponse);
 
                 if (tokenResp == null)
                     continue;
@@ -475,51 +505,57 @@ public static class AuthCommands
 
     private static void TryOpenBrowser(string url)
     {
+        // Append ?popup=1 so the hub page hides its nav and closes after approve/deny
+        var popupUrl = url.Contains('?') ? url + "&popup=1" : url + "?popup=1";
+
         try
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = url,
-                    UseShellExecute = true
-                });
+            {
+                // Try Chrome first in --app mode (frameless popup like Microsoft login)
+                var launched = TryLaunchAppWindow("chrome", popupUrl)
+                            || TryLaunchAppWindow("msedge", popupUrl);
+
+                if (!launched)
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = popupUrl,
+                        UseShellExecute = true
+                    });
+            }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                System.Diagnostics.Process.Start("open", url);
+            {
+                // Try Chrome app mode on macOS
+                var launched = TryLaunchAppWindow("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", popupUrl)
+                            || TryLaunchAppWindow("/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge", popupUrl);
+                if (!launched)
+                    System.Diagnostics.Process.Start("open", popupUrl);
+            }
             else
-                System.Diagnostics.Process.Start("xdg-open", url);
+            {
+                System.Diagnostics.Process.Start("xdg-open", popupUrl);
+            }
         }
-        catch { /* If browser open fails, user sees the URL and can open manually */ }
+        catch { /* user sees the URL printed above and can open manually */ }
     }
 
-    // -------------------------------------------------------------------------
-    // DTOs (used only for device flow HTTP calls)
-    // -------------------------------------------------------------------------
-    private class DeviceStartRequest
+    private static bool TryLaunchAppWindow(string browser, string url)
     {
-        public string DeviceName { get; set; } = string.Empty;
-        public string DeviceOs { get; set; } = string.Empty;
-    }
-
-    private class DeviceStartResponse
-    {
-        public string DeviceCode { get; set; } = string.Empty;
-        public string UserCode { get; set; } = string.Empty;
-        public int ExpiresIn { get; set; }
-        public int Interval { get; set; }
-    }
-
-    private class DeviceTokenRequest
-    {
-        public string DeviceCode { get; set; } = string.Empty;
-    }
-
-    private class DeviceTokenResponse
-    {
-        public string? Status { get; set; }
-        public string? AccessToken { get; set; }
-        public string? UserEmail { get; set; }
-        public string? UserName { get; set; }
-        public DateTime? ExpiresAt { get; set; }
-        public List<string>? Roles { get; set; }
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = browser,
+                Arguments = $"--app={url} --window-size=480,640 --window-position=400,150 --disable-extensions",
+                UseShellExecute = false
+            };
+            var proc = System.Diagnostics.Process.Start(psi);
+            return proc != null;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
+

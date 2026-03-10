@@ -219,7 +219,7 @@ local-hostname: {config.Name}
             var downloadThresh = new Command($"{config.Name}-download-thresh", new CommandArgs
             {
                 Connection = keyConnectionInfo,
-                Create = "echo '📦 Downloading latest Thresh build from GitHub...'\nmkdir -p ~/thresh-agent\ncd ~/thresh-agent\ncurl -L -o thresh.tar.gz https://github.com/dealer426/thresh/releases/download/v1.6.0-dev/thresh-linux-x64.tar.gz || echo '⚠️  Release download failed'\nif [ -f thresh.tar.gz ]; then tar -xzf thresh.tar.gz --strip-components=1 && rm thresh.tar.gz; fi\nchmod +x thresh 2>/dev/null || echo 'Setting permissions'\nls -lah ~/thresh-agent/thresh\necho '✅ Thresh downloaded'"
+                Create = "echo '📦 Downloading latest Thresh build from GitHub...'\nmkdir -p ~/thresh-agent\ncd ~/thresh-agent\ncurl -L -o thresh.tar.gz https://github.com/dealer426/thresh/releases/download/v1.6.0-dev/thresh-linux-x64.tar.gz || echo '⚠️  Release download failed'\nif [ -f thresh.tar.gz ]; then tar -xzf thresh.tar.gz && rm thresh.tar.gz; fi\nchmod +x thresh 2>/dev/null || echo 'Setting permissions'\nls -lah ~/thresh-agent/thresh\necho '✅ Thresh downloaded'"
             }, new CustomResourceOptions { DependsOn = { installDocker } });
 
             // Step 5: Configure agent
