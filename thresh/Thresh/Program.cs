@@ -41,6 +41,7 @@ class Program
         AddVersionCommand(rootCommand);
         AddTestSdkCommand(rootCommand);
         AuthCommands.Register(rootCommand);
+        NodeCommands.Register(rootCommand);
         
         // Root handler (when no command specified)
         rootCommand.SetHandler((bool verbose) =>
@@ -80,6 +81,7 @@ class Program
         Console.WriteLine("  metrics     Display host system metrics");
         Console.WriteLine("  serve       Start MCP server");
         Console.WriteLine("  auth        Authenticate with a thresh-hub (login, logout, status, token)");
+        Console.WriteLine("  node        Manage nodes connected to your account (list, info, metrics, remove)");
         Console.WriteLine();
         Console.WriteLine("Options:");
         Console.WriteLine("  --verbose        Enable verbose logging");

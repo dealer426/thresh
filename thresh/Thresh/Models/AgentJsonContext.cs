@@ -25,4 +25,5 @@ namespace Thresh.Models;
 [JsonSerializable(typeof(string))]
 public partial class AgentJsonContext : JsonSerializerContext
 {
+    // Node command DTOs are serialized via NodeJsonContext (in NodeCommands.cs)
 }
