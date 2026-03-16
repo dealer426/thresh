@@ -17,6 +17,8 @@ namespace Thresh.Services;
 [JsonSerializable(typeof(NodeDetail))]
 [JsonSerializable(typeof(NodeMetrics))]
 [JsonSerializable(typeof(NodeRemoveResponse))]
+[JsonSerializable(typeof(NodeCreateEnvironmentRequest))]
+[JsonSerializable(typeof(NodeCommandOutput))]
 internal partial class NodeJsonContext : JsonSerializerContext { }
 
 internal class NodeListResponse
@@ -68,6 +70,18 @@ internal class NodeRemoveResponse
     public string? Error { get; set; }
 }
 
+internal class NodeCreateEnvironmentRequest
+{
+    public string Blueprint { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+}
+
+internal class NodeCommandOutput
+{
+    public string? Output { get; set; }
+    public string? Error { get; set; }
+}
+
 /// <summary>
 /// CLI node commands: list, info, metrics, remove
 /// All require a valid CLI session (thresh auth login).
@@ -82,6 +96,8 @@ public static class NodeCommands
         nodeCommand.AddCommand(BuildInfoCommand());
         nodeCommand.AddCommand(BuildMetricsCommand());
         nodeCommand.AddCommand(BuildRemoveCommand());
+        nodeCommand.AddCommand(BuildUpCommand());
+        nodeCommand.AddCommand(BuildBlueprintsCommand());
 
         rootCommand.AddCommand(nodeCommand);
     }
@@ -246,6 +262,97 @@ public static class NodeCommands
             Console.WriteLine($"✅ Node '{node}' removed.");
             Console.ResetColor();
         }, nodeArg, hubOption, forceOption);
+
+        return cmd;
+    }
+
+    // -------------------------------------------------------------------------
+    // thresh node blueprints <node>
+    // -------------------------------------------------------------------------
+    private static Command BuildBlueprintsCommand()
+    {
+        var cmd = new Command("blueprints", "List blueprints available on a node");
+
+        var nodeArg = new Argument<string>("node", "Node hostname or ID");
+        cmd.AddArgument(nodeArg);
+
+        var hubOption = new Option<string?>("--hub", "Hub URL (overrides stored credentials)");
+        cmd.AddOption(hubOption);
+
+        cmd.SetHandler(async (string node, string? hub) =>
+        {
+            var (hubUrl, token) = GetAuth(hub);
+            if (token == null) { AuthError(); return; }
+
+            using var client = CreateClient(hubUrl, token);
+            var nodeId = await ResolveNodeId(client, node);
+            if (nodeId == null) { NodeNotFound(node); return; }
+
+            HttpResponseMessage resp;
+            try { resp = await client.GetAsync($"/api/v1/me/nodes/{nodeId}/blueprints"); }
+            catch (Exception ex) { NetworkError(ex); return; }
+
+            if (!resp.IsSuccessStatusCode) { await PrintApiError(resp); return; }
+
+            var result = await resp.Content.ReadFromJsonAsync(NodeJsonContext.Default.NodeCommandOutput);
+            Console.WriteLine(result?.Output ?? "(no output)");
+        }, nodeArg, hubOption);
+
+        return cmd;
+    }
+
+    // -------------------------------------------------------------------------
+    // thresh node up <node> <blueprint> [--name <env-name>]
+    // -------------------------------------------------------------------------
+    private static Command BuildUpCommand()
+    {
+        var cmd = new Command("up", "Deploy a blueprint to a node as a new environment");
+
+        var nodeArg = new Argument<string>("node", "Node hostname or ID");
+        var blueprintArg = new Argument<string>("blueprint", "Blueprint name (e.g. alpine-minimal)");
+        cmd.AddArgument(nodeArg);
+        cmd.AddArgument(blueprintArg);
+
+        var nameOption = new Option<string?>(
+            aliases: ["--name", "-n"],
+            description: "Name for the new environment (default: blueprint name)");
+        var hubOption = new Option<string?>("--hub", "Hub URL (overrides stored credentials)");
+        cmd.AddOption(nameOption);
+        cmd.AddOption(hubOption);
+
+        cmd.SetHandler(async (string node, string blueprint, string? name, string? hub) =>
+        {
+            var (hubUrl, token) = GetAuth(hub);
+            if (token == null) { AuthError(); return; }
+
+            using var client = CreateClient(hubUrl, token);
+
+            // Give more time for Docker image pulls
+            client.Timeout = TimeSpan.FromSeconds(130);
+
+            var nodeId = await ResolveNodeId(client, node);
+            if (nodeId == null) { NodeNotFound(node); return; }
+
+            var envName = name ?? blueprint;
+
+            Console.WriteLine($"🚀 Deploying '{blueprint}' → '{envName}' on {node}...");
+
+            var body = JsonContent.Create(
+                new NodeCreateEnvironmentRequest { Blueprint = blueprint, Name = envName },
+                NodeJsonContext.Default.NodeCreateEnvironmentRequest);
+
+            HttpResponseMessage resp;
+            try { resp = await client.PostAsync($"/api/v1/me/nodes/{nodeId}/environments", body); }
+            catch (Exception ex) { NetworkError(ex); return; }
+
+            if (!resp.IsSuccessStatusCode) { await PrintApiError(resp); return; }
+
+            var result = await resp.Content.ReadFromJsonAsync(NodeJsonContext.Default.NodeCommandOutput);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine(result?.Output ?? "Done.");
+            Console.ResetColor();
+        }, nodeArg, blueprintArg, nameOption, hubOption);
 
         return cmd;
     }

@@ -65,7 +65,7 @@ Similar configuration - check Windsurf docs for exact format.
 
 ## 🛠️ Available Tools
 
-thresh exposes 7 MCP tools for AI assistants:
+thresh exposes MCP tools for AI assistants in two modes: **local** (single machine, `thresh serve --stdio`) and **fleet/hub** (`thresh serve --hub`, connects to thresh-hub).
 
 ### 1. `list_environments`
 
@@ -169,11 +169,12 @@ thresh exposes 7 MCP tools for AI assistants:
 
 ### 7. `generate_blueprint`
 
-**Description:** Generate a custom blueprint using AI (coming soon)
+**Description:** Generate a custom blueprint YAML from a natural-language prompt using an AI model. Returns raw YAML ready to save.
 
 **Parameters:**
-- `prompt` (string, required) - Natural language description
+- `prompt` (string, required) - Natural language description of the environment
 - `model` (string, optional) - AI model to use
+- `node_id` (string, optional) - Delegate generation to a specific fleet node
 
 **Example:**
 ```json
@@ -185,6 +186,89 @@ thresh exposes 7 MCP tools for AI assistants:
   }
 }
 ```
+
+---
+
+## 🏭 Fleet Mode (thresh-hub)
+
+When connected to a thresh-hub instance, `thresh serve --hub` proxies the hub's fleet-wide MCP server. All 19 tools below are available in addition to the local tools above.
+
+### VS Code configuration
+
+```json
+{
+  "mcp.servers": {
+    "thresh-hub": {
+      "command": "thresh",
+      "args": ["serve", "--hub"],
+      "description": "thresh fleet — manage environments across all nodes"
+    }
+  }
+}
+```
+
+**Prerequisites:**
+```bash
+# Authenticate first
+thresh login auth --hub https://your-hub.example.com
+
+# Optional: disable TLS verification for self-signed dev certs
+thresh agent config set tls-verify false
+```
+
+### Fleet tool summary
+
+#### Node / Fleet
+| Tool | Description |
+|------|-------------|
+| `list_nodes` | All registered nodes with live CPU/RAM/env metrics |
+| `get_metrics` | Fleet summary or per-node detail |
+| `remove_node` | Deregister a node |
+
+#### Environments
+| Tool | Description |
+|------|-------------|
+| `list_environments` | Envs across all online nodes (or one node) |
+| `create_environment` | Create env; hub auto-picks the best node |
+| `destroy_environment` | Destroy env on a specific node |
+| `start_environment` | Start a stopped env |
+| `stop_environment` | Stop a running env |
+
+**Cluster-scoped placement** — restrict auto-selection to a cluster:
+```json
+{
+  "name": "create_environment",
+  "arguments": {
+    "blueprint": "ubuntu-dev",
+    "name": "backend-api",
+    "cluster": "backend-team"
+  }
+}
+```
+
+#### Blueprints (dispatched to node)
+| Tool | Description |
+|------|-------------|
+| `list_blueprints` | Blueprints on a node |
+| `get_blueprint` | Show blueprint YAML |
+| `save_blueprint` | Write / update a blueprint |
+| `generate_blueprint` | AI → blueprint YAML (hub or agent-side) |
+
+#### Clusters
+| Tool | Description |
+|------|-------------|
+| `list_clusters` | All clusters in the account |
+| `create_cluster` | Create a new cluster |
+| `get_cluster` | Details + live metrics for a cluster |
+| `add_node_to_cluster` | Add node to cluster |
+| `remove_node_from_cluster` | Remove node from cluster |
+| `delete_cluster` | Delete cluster grouping |
+
+#### Utility
+| Tool | Description |
+|------|-------------|
+| `get_version` | Hub version + protocol info |
+| `help` | Concise tool reference |
 
 ---
 

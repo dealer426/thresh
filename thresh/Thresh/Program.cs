@@ -1376,16 +1376,49 @@ class Program
         var portOption = new Option<int>("--port", () => 8080, "Port to listen on (HTTP mode only)");
         var hostOption = new Option<string>("--host", () => "localhost", "Host to bind to (HTTP mode only)");
         var stdioOption = new Option<bool>("--stdio", "Use stdio transport (for VS Code, Cursor, Windsurf)");
+        var hubOption = new Option<bool>("--hub", "Bridge to thresh-hub fleet MCP server (requires active session)");
         
         serveCommand.AddOption(portOption);
         serveCommand.AddOption(hostOption);
         serveCommand.AddOption(stdioOption);
+        serveCommand.AddOption(hubOption);
         
-        serveCommand.SetHandler(async (int port, string host, bool stdio) =>
+        serveCommand.SetHandler(async (int port, string host, bool stdio, bool hub) =>
         {
             try
             {
-                if (stdio)
+                if (hub)
+                {
+                    // HUB BRIDGE MODE: stdio → thresh-hub /mcp
+                    // Reads JSON-RPC from stdin, forwards to hub, writes responses to stdout.
+                    // This is what VS Code points at for fleet-wide MCP.
+                    var credService = new Services.CredentialService();
+                    var configService = new Services.ConfigurationService();
+                    var agentConfig = configService.GetAgentConfiguration();
+
+                    var hubUrl = agentConfig.MidtierUrl?.TrimEnd('/') ?? "https://localhost:7200";
+                    var token = credService.GetEffectiveToken();
+
+                    if (string.IsNullOrEmpty(token))
+                    {
+                        Console.Error.WriteLine("❌ Not logged in. Run 'thresh auth login' first.");
+                        return;
+                    }
+
+                    Console.Error.WriteLine($"🔌 thresh mcp hub bridge → {hubUrl}/mcp");
+                    Console.Error.WriteLine("   Press Ctrl+C to stop");
+
+                    var bridge = new Mcp.HubMcpBridge(hubUrl, token, agentConfig.TlsVerify);
+
+                    Console.CancelKeyPress += (sender, e) =>
+                    {
+                        e.Cancel = true;
+                        bridge.Stop();
+                    };
+
+                    await bridge.RunAsync();
+                }
+                else if (stdio)
                 {
                     // STDIO mode for VS Code and other MCP clients
                     var server = new Mcp.StdioMcpServer();
@@ -1418,7 +1451,7 @@ class Program
             {
                 Console.WriteLine($"❌ MCP server failed: {ex.Message}");
             }
-        }, portOption, hostOption, stdioOption);
+        }, portOption, hostOption, stdioOption, hubOption);
         
         rootCommand.AddCommand(serveCommand);
     }

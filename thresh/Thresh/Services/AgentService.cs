@@ -67,6 +67,7 @@ public class AgentService
     public AgentStatus GetStatus()
     {
         var config = GetConfiguration();
+        var envs = GetContainerService().ListEnvironmentsAsync(false).GetAwaiter().GetResult();
         return new AgentStatus
         {
             IsRunning = _isRunning,
@@ -79,9 +80,9 @@ public class AgentService
             AgentId = _agentId,
             PrimaryUrl = config.MidtierUrl,
             FallbackUrl = config.FallbackUrl,
-            EnvironmentCount = 0, // TODO: Get from container service
-            RunningEnvironments = 0, // TODO: Get from container service
-            StoppedEnvironments = 0 // TODO: Get from container service
+            EnvironmentCount = envs.Count,
+            RunningEnvironments = envs.Count(e => e.Status == Thresh.Models.EnvironmentStatus.Running),
+            StoppedEnvironments = envs.Count(e => e.Status == Thresh.Models.EnvironmentStatus.Stopped)
         };
     }
 
@@ -328,6 +329,7 @@ public class AgentService
         // Register handlers
         connection.On<ProvisionRequest>("ProvisionEnvironment", OnProvisionEnvironmentAsync);
         connection.On<DestroyRequest>("DestroyEnvironment", OnDestroyEnvironmentAsync);
+        connection.On<AgentCommand>("ExecuteCommand", OnExecuteCommandAsync);
         connection.On("Ping", () => Task.CompletedTask);
 
         connection.Reconnecting += error =>
@@ -614,6 +616,296 @@ public class AgentService
     }
 
     /// <summary>
+    /// Handle a generic tool-call command dispatched from the hub MCP server.
+    /// Executes the requested tool locally and reports the result back via SendCommandResult.
+    /// </summary>
+    private async Task OnExecuteCommandAsync(AgentCommand command)
+    {
+        Console.WriteLine($"[agent] ExecuteCommand: {command.Tool} ({command.CommandId[..8]}...)");
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+        string? output = null;
+        string? error = null;
+        var success = true;
+
+        try
+        {
+            output = command.Tool switch
+            {
+                "list_environments" => await AgentToolListEnvironmentsAsync(command.Arguments),
+                "create_environment" => await AgentToolCreateEnvironmentAsync(command.Arguments),
+                "start_environment" => await AgentToolStartStopEnvironmentAsync(command.Arguments, start: true),
+                "stop_environment" => await AgentToolStartStopEnvironmentAsync(command.Arguments, start: false),
+                "destroy_environment" => await AgentToolDestroyEnvironmentAsync(command.Arguments),
+                "list_blueprints" => AgentToolListBlueprints(),
+                "get_blueprint" => AgentToolGetBlueprint(command.Arguments),
+                "save_blueprint" => AgentToolSaveBlueprint(command.Arguments),
+                "get_metrics" => await AgentToolGetMetricsAsync(),
+                "get_version" => "thresh 1.6.0",
+                "help" => AgentToolHelp(),
+                _ => throw new InvalidOperationException($"Unknown tool: {command.Tool}")
+            };
+        }
+        catch (Exception ex)
+        {
+            success = false;
+            error = ex.Message;
+            Console.WriteLine($"[agent] Tool error [{command.Tool}]: {ex.Message}");
+        }
+
+        await SendCommandResultAsync(new CommandResult
+        {
+            AgentId = _agentId,
+            CommandId = command.CommandId,
+            Status = success ? "success" : "error",
+            Success = success,
+            Output = output,
+            Message = output ?? string.Empty,
+            Error = error,
+            Timestamp = DateTime.UtcNow,
+            DurationMs = sw.ElapsedMilliseconds
+        });
+    }
+
+    // ─── Local tool implementations for hub-dispatched commands ──────────────
+
+    private IContainerService GetContainerService()
+        => ContainerServiceFactory.Create();
+
+    private async Task<string> AgentToolListEnvironmentsAsync(System.Text.Json.JsonElement? args)
+    {
+        var includeAll = args?.TryGetProperty("include_all", out var p) == true && p.GetBoolean();
+        var svc = GetContainerService();
+        var envs = await svc.ListEnvironmentsAsync(includeAll);
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"📦 {svc.RuntimeName} Environments ({envs.Count}):");
+        sb.AppendLine();
+
+        if (envs.Count == 0)
+        {
+            sb.AppendLine("  No environments found.");
+        }
+        else
+        {
+            foreach (var env in envs)
+            {
+                var icon = env.Status == Thresh.Models.EnvironmentStatus.Running ? "🟢" :
+                           env.Status == Thresh.Models.EnvironmentStatus.Stopped ? "⚪" : "❓";
+                sb.AppendLine($"  {icon} {env.Name}");
+                sb.AppendLine($"     Status: {env.Status}");
+                if (!string.IsNullOrEmpty(env.Blueprint) && env.Blueprint != "unknown")
+                    sb.AppendLine($"     Blueprint: {env.Blueprint}");
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private async Task<string> AgentToolCreateEnvironmentAsync(System.Text.Json.JsonElement? args)
+    {
+        if (!args.HasValue)
+            throw new ArgumentException("Missing arguments");
+
+        var blueprint = args.Value.TryGetProperty("blueprint", out var bp) ? bp.GetString() : null;
+        var name = args.Value.TryGetProperty("name", out var n) ? n.GetString() : null;
+
+        if (string.IsNullOrEmpty(blueprint))
+            throw new ArgumentException("Missing required argument: blueprint");
+        if (string.IsNullOrEmpty(name))
+            throw new ArgumentException("Missing required argument: name");
+
+        var svc = GetContainerService();
+
+        if (!await svc.IsAvailableAsync())
+            throw new InvalidOperationException($"{svc.RuntimeName} is not available on this node");
+
+        // Locate blueprint file: explicit path → user dir → install dir
+        var userBlueprintDir = Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
+            ".thresh", "blueprints");
+        var installBlueprintDir = Path.Combine(AppContext.BaseDirectory, "blueprints");
+        var blueprintFile = blueprint.EndsWith(".json") ? blueprint : blueprint + ".json";
+
+        var blueprintPath = File.Exists(blueprint) ? blueprint
+            : File.Exists(Path.Combine(userBlueprintDir, blueprintFile)) ? Path.Combine(userBlueprintDir, blueprintFile)
+            : Path.Combine(installBlueprintDir, blueprintFile);
+
+        if (!File.Exists(blueprintPath))
+            throw new FileNotFoundException($"Blueprint not found: {blueprint}");
+
+        if (await svc.EnvironmentExistsAsync(name))
+            throw new InvalidOperationException($"Environment '{name}' already exists. Destroy it first.");
+
+        var configService = new ConfigurationService();
+        var rootfsRegistry = new RootfsRegistry(configService);
+        var blueprintService = new BlueprintService(svc, rootfsRegistry);
+        var bpModel = blueprintService.LoadBlueprint(blueprintPath);
+
+        await blueprintService.ProvisionEnvironmentAsync(name, bpModel, verbose: false);
+
+        return $"✅ Environment '{name}' created from blueprint '{blueprint}'";
+    }
+
+    private async Task<string> AgentToolStartStopEnvironmentAsync(System.Text.Json.JsonElement? args, bool start)
+    {
+        var name = args?.TryGetProperty("name", out var n) == true ? n.GetString()
+            : throw new ArgumentException("Missing argument: name");
+
+        if (string.IsNullOrEmpty(name))
+            throw new ArgumentException("Missing required argument: name");
+
+        var svc = GetContainerService();
+        var ok = start
+            ? await svc.StartEnvironmentAsync(name)
+            : await svc.StopEnvironmentAsync(name);
+
+        var action = start ? "started" : "stopped";
+        return ok
+            ? $"✅ Environment '{name}' {action}"
+            : $"❌ Failed to {(start ? "start" : "stop")} environment '{name}'";
+    }
+
+    private async Task<string> AgentToolDestroyEnvironmentAsync(System.Text.Json.JsonElement? args)
+    {
+        var name = args?.TryGetProperty("name", out var n) == true ? n.GetString()
+            : throw new ArgumentException("Missing argument: name");
+
+        if (string.IsNullOrEmpty(name))
+            throw new ArgumentException("Missing required argument: name");
+
+        var svc = GetContainerService();
+        var ok = await svc.RemoveEnvironmentAsync(name);
+
+        return ok
+            ? $"✅ Environment '{name}' destroyed"
+            : $"❌ Failed to destroy environment '{name}'";
+    }
+
+    private string AgentToolListBlueprints()
+    {
+        var userBlueprintDir = Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
+            ".thresh", "blueprints");
+        var installBlueprintDir = Path.Combine(AppContext.BaseDirectory, "blueprints");
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("📋 Blueprints:");
+        sb.AppendLine();
+
+        // Collect names from both directories, user dir takes precedence
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var names = new List<string>();
+
+        if (Directory.Exists(userBlueprintDir))
+        {
+            foreach (var f in Directory.GetFiles(userBlueprintDir, "*.json"))
+            {
+                var n = Path.GetFileNameWithoutExtension(f);
+                if (seen.Add(n)) names.Add(n);
+            }
+        }
+
+        if (Directory.Exists(installBlueprintDir))
+        {
+            foreach (var f in Directory.GetFiles(installBlueprintDir, "*.json"))
+            {
+                var n = Path.GetFileNameWithoutExtension(f);
+                if (seen.Add(n)) names.Add(n);
+            }
+        }
+
+        if (names.Count == 0)
+        {
+            sb.AppendLine("  No blueprints found.");
+        }
+        else
+        {
+            foreach (var n in names.OrderBy(x => x))
+                sb.AppendLine($"  • {n}");
+        }
+
+        return sb.ToString();
+    }
+
+    private string AgentToolGetBlueprint(System.Text.Json.JsonElement? args)
+    {
+        var name = args?.TryGetProperty("name", out var n) == true ? n.GetString()
+            : throw new ArgumentException("Missing argument: name");
+
+        if (string.IsNullOrEmpty(name))
+            throw new ArgumentException("Missing required argument: name");
+
+        var userBlueprintDir = Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
+            ".thresh", "blueprints");
+        var installBlueprintDir = Path.Combine(AppContext.BaseDirectory, "blueprints");
+        var blueprintFile = name.EndsWith(".json") ? name : name + ".json";
+
+        var path = File.Exists(Path.Combine(userBlueprintDir, blueprintFile))
+            ? Path.Combine(userBlueprintDir, blueprintFile)
+            : Path.Combine(installBlueprintDir, blueprintFile);
+
+        if (!File.Exists(path))
+            throw new FileNotFoundException($"Blueprint not found: {name}");
+
+        return File.ReadAllText(path);
+    }
+
+    private string AgentToolSaveBlueprint(System.Text.Json.JsonElement? args)
+    {
+        var name = args?.TryGetProperty("name", out var n) == true ? n.GetString()
+            : throw new ArgumentException("Missing argument: name");
+        var blueprintJson = args?.TryGetProperty("blueprint_json", out var bj) == true ? bj.GetString()
+            : throw new ArgumentException("Missing argument: blueprint_json");
+
+        if (string.IsNullOrEmpty(name))
+            throw new ArgumentException("Missing required argument: name");
+        if (string.IsNullOrEmpty(blueprintJson))
+            throw new ArgumentException("Missing required argument: blueprint_json");
+
+        var blueprintDir = Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
+            ".thresh", "blueprints");
+
+        Directory.CreateDirectory(blueprintDir);
+
+        var fileName = name.EndsWith(".json") ? name : name + ".json";
+        var path = Path.Combine(blueprintDir, fileName);
+        File.WriteAllText(path, blueprintJson);
+
+        return $"✅ Blueprint '{name}' saved to {path}";
+    }
+
+    private static string AgentToolHelp()
+        => """
+            thresh agent — supported tools
+
+            list_environments   List running containers
+            create_environment  Create container from a blueprint
+            start_environment   Start a stopped container
+            stop_environment    Stop a running container
+            destroy_environment Remove container(s)
+            list_blueprints     List blueprints in ~/.thresh/blueprints/
+            get_blueprint       Get blueprint JSON by name
+            save_blueprint      Save blueprint JSON to ~/.thresh/blueprints/
+            get_metrics         Show CPU / RAM / disk metrics for this node
+            get_version         Show thresh agent version
+            """;
+
+    private async Task<string> AgentToolGetMetricsAsync()
+    {
+        var metrics = await _metricsService.CollectMetricsAsync();
+
+        return $"""
+            📊 Node Metrics ({System.Environment.MachineName}):
+              CPU    : {metrics.CpuPercent:F1}% ({metrics.CpuCores} cores)
+              RAM    : {metrics.MemoryUsedGb:F1}/{metrics.MemoryTotalGb:F1} GB
+              Disk   : {metrics.StorageFreeGb:F1} GB free of {metrics.StorageTotalGb:F1} GB
+            """;
+    }
+
+    /// <summary>
     /// Send command result to hub
     /// </summary>
     private async Task SendCommandResultAsync(CommandResult result)
@@ -679,6 +971,8 @@ public class AgentService
         }
         catch { /* GPU detection is optional */ }
         
+        var environments = await GetContainerService().ListEnvironmentsAsync(false);
+        
         return new MetricsData
         {
             AgentId = _agentId,
@@ -688,11 +982,11 @@ public class AgentService
             MemoryTotalMB = (long)(hostMetrics.MemoryTotalGb * 1024),
             DiskUsedGB = (long)(hostMetrics.StorageTotalGb - hostMetrics.StorageFreeGb),
             DiskTotalGB = (long)hostMetrics.StorageTotalGb,
-            EnvironmentCount = 0, // TODO: Get from container service
+            EnvironmentCount = environments.Count,
             GpuCount = gpuCount,
             GpuModel = gpuModel,
             GpuMemoryTotalGb = gpuMemoryGb,
-            Environments = new List<EnvironmentSummary>() // TODO: Get from container service
+            Environments = environments.Select(e => new EnvironmentSummary { Name = e.Name, Status = e.Status.ToString() }).ToList()
         };
     }
 }

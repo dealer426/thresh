@@ -14,6 +14,7 @@ namespace Thresh.Models;
 [JsonSerializable(typeof(EnvironmentSummary))]
 [JsonSerializable(typeof(ProvisionRequest))]
 [JsonSerializable(typeof(DestroyRequest))]
+[JsonSerializable(typeof(AgentCommand))]
 [JsonSerializable(typeof(CommandResult))]
 [JsonSerializable(typeof(AgentHeartbeat))]
 [JsonSerializable(typeof(AgentConfiguration))]

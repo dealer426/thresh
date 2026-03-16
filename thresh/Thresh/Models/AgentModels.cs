@@ -169,6 +169,22 @@ public class EnvironmentSummary
 }
 
 /// <summary>
+/// Command dispatched from hub to this agent via SignalR.
+/// The agent runs the specified tool locally and returns the result via SendCommandResult.
+/// </summary>
+public class AgentCommand
+{
+    /// <summary>Unique ID for correlating this command with its result.</summary>
+    public string CommandId { get; set; } = string.Empty;
+
+    /// <summary>MCP tool name to execute (e.g. "list_environments", "create_environment").</summary>
+    public string Tool { get; set; } = string.Empty;
+
+    /// <summary>JSON arguments for the tool, forwarded as-is from the hub MCP call.</summary>
+    public System.Text.Json.JsonElement? Arguments { get; set; }
+}
+
+/// <summary>
 /// Provision request from hub to agent
 /// </summary>
 public class ProvisionRequest
@@ -216,38 +232,36 @@ public class DestroyRequest
 }
 
 /// <summary>
-/// Command result sent back to hub
+/// Command result sent back to hub.
+/// Supports both legacy format (Success+Message) and hub-compatible format (Status+Output).
 /// </summary>
 public class CommandResult
 {
-    /// <summary>
-    /// Command ID
-    /// </summary>
+    /// <summary>Agent ID (sent so hub can identify the source for dashboard notifications).</summary>
+    public string AgentId { get; set; } = string.Empty;
+
+    /// <summary>Command ID matching the originating AgentCommand.</summary>
     public string CommandId { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// Whether command succeeded
-    /// </summary>
+
+    /// <summary>Status string: "success" or "error" (hub-compatible format).</summary>
+    public string? Status { get; set; }
+
+    /// <summary>Whether command succeeded (legacy format — kept for backward compat).</summary>
     public bool Success { get; set; }
-    
-    /// <summary>
-    /// Result message
-    /// </summary>
+
+    /// <summary>Output text from the command (hub-compatible format).</summary>
+    public string? Output { get; set; }
+
+    /// <summary>Result message (legacy format — alias for Output).</summary>
     public string Message { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// Error message if failed
-    /// </summary>
+
+    /// <summary>Error message if failed.</summary>
     public string? Error { get; set; }
-    
-    /// <summary>
-    /// Command execution timestamp
-    /// </summary>
+
+    /// <summary>Command execution timestamp.</summary>
     public DateTime Timestamp { get; set; }
-    
-    /// <summary>
-    /// Command execution duration (milliseconds)
-    /// </summary>
+
+    /// <summary>Command execution duration (milliseconds).</summary>
     public long DurationMs { get; set; }
 }
 
