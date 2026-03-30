@@ -29,6 +29,7 @@
 - 📊 **System Metrics** - Monitor CPU, memory, storage, and container usage
 - 🔧 **MCP Server** - Model Context Protocol for VS Code, Cursor, Windsurf
 - 🖧 **Agent Mode** *(v1.6.0+)* - Connect nodes to Thresh Hub for centralized fleet management
+- 🏗️ **Stacks** *(v1.7.0+)* - Deploy multi-service apps (postgres + app + grafana) in one command
 
 ---
 
@@ -483,6 +484,37 @@ thresh/
 ---
 
 ## What's New
+
+### v1.7.0 — Stacks (In Progress, Jul 2026)
+
+**thresh stack** CLI commands are now shipped and connected to the thresh-hub Stacks API. Multi-service deployments that bring Docker Compose-style orchestration to your thresh fleet, backed by the thresh-hub orchestration engine.
+
+```bash
+# Deploy postgres + app + grafana in one command
+thresh stack up my-app-stack.json
+
+# Check per-service status
+thresh stack info my-app-stack
+
+# List all stacks
+thresh stack list
+
+# Rolling update of one service
+thresh stack update my-app-stack --service app --image docker:my-org/my-app:v2
+
+# Stop (keep volumes)
+thresh stack down my-app-stack
+
+# Stop + remove volumes
+thresh stack destroy my-app-stack --yes
+```
+
+Stacks use OCI image bases (`docker:postgres:16-alpine`) so you get the full Docker Hub ecosystem without needing a custom blueprint. Node-level Traefik is auto-deployed when a stack is deployed with `"traefik": true`.
+
+**Requires:** thresh-hub v1.5+  
+**Status:** CLI + hub API ✅ | Deployment dispatch ✅ | Env var injection ✅ | OCI image bases ✅ | Traefik sidecar ✅
+
+---
 
 ### v1.6.0 — Agent Mode & Hub Connectivity
 

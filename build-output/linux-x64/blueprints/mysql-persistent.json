@@ -1,0 +1,24 @@
+{
+  "name": "mysql-persistent",
+  "description": "MySQL 8.0 with automatic backups to persistent storage",
+  "base": "ubuntu-22.04",
+  "wslConfig": "database",
+  "packages": [
+    "mysql-server"
+  ],
+  "volumes": [
+    {
+      "name": "mysql-backups",
+      "mount": "/mnt/mysql-backups"
+    }
+  ],
+  "scripts": {
+    "setup": "# MySQL will use native Linux filesystem for data (better permission support)\n# Volume is used for backups accessible from Windows\n\n# Initialize MySQL if needed\nif [ ! -d \"/var/lib/mysql/mysql\" ]; then\n  echo \"Initializing MySQL database...\"\n  mysqld --initialize-insecure --user=mysql --datadir=/var/lib/mysql\nfi\n\n# Configure MySQL to bind all interfaces\nsed -i 's/bind-address.*/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf || true\n\n# Start MySQL\nservice mysql start\n\n# Wait for MySQL to be ready\necho \"Waiting for MySQL to start...\"\nfor i in {1..30}; do\n  if mysqladmin ping -h localhost --silent 2>/dev/null; then\n    echo \"MySQL is ready!\"\n    break\n  fi\n  sleep 1\ndone\n\n# Set root password and create dev user\n# First try with auth_socket (sudo), then with password\nmysql -u root <<MYSQL_SCRIPT\nALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'devpassword';\nCREATE USER IF NOT EXISTS 'dev'@'%' IDENTIFIED BY 'devpassword';\nCREATE USER IF NOT EXISTS 'dev'@'localhost' IDENTIFIED BY 'devpassword';\nGRANT ALL PRIVILEGES ON *.* TO 'dev'@'%' WITH GRANT OPTION;\nGRANT ALL PRIVILEGES ON *.* TO 'dev'@'localhost' WITH GRANT OPTION;\nFLUSH PRIVILEGES;\nMYSQL_SCRIPT\n\necho \"MySQL users configured\"\n\n# Check if backup exists and restore it\nif [ -f /mnt/mysql-backups/all_databases_latest.sql ]; then\n  echo \"Restoring from backup...\"\n  mysql -u root -pdevpassword < /mnt/mysql-backups/all_databases_latest.sql 2>/dev/null || echo \"Note: Backup restore attempted\"\nfi\n\n# Create backup script\ncat > /mnt/mysql-backups/backup.sh << 'BACKUP_EOF'\n#!/bin/bash\n# MySQL Backup Script\nBACKUP_DIR=\"/mnt/mysql-backups\"\nDATE=$(date +%Y%m%d_%H%M%S)\n\n# Create archives directory\nmkdir -p \"$BACKUP_DIR/archives\"\n\n# Backup all databases (redirect stderr to avoid password warning in SQL)\nmysqldump -u root -pdevpassword --all-databases --single-transaction --routines --triggers 2>/dev/null > \"$BACKUP_DIR/all_databases_$DATE.sql\"\n\n# Create latest symlink\nrm -f \"$BACKUP_DIR/all_databases_latest.sql\"\nln -s \"all_databases_$DATE.sql\" \"$BACKUP_DIR/all_databases_latest.sql\"\n\n# Move old backups to archives (keep last 5)\nfind \"$BACKUP_DIR\" -maxdepth 1 -name \"all_databases_*.sql\" -type f | sort -r | tail -n +6 | xargs -I {} mv {} \"$BACKUP_DIR/archives/\" 2>/dev/null\n\necho \"Backup completed: $DATE\"\necho \"Location: $BACKUP_DIR/all_databases_$DATE.sql\"\nBACKUP_EOF\n\nchmod +x /mnt/mysql-backups/backup.sh\n\n# Create initial backup\necho \"Creating initial backup...\"\n/mnt/mysql-backups/backup.sh\n\necho \"\"\necho \"==============================================\"\necho \"MySQL 8.0 Ready!\"\necho \"==============================================\"\necho \"Root Password: devpassword\"\necho \"Dev User: dev / devpassword\"\necho \"\"\necho \"Connect as root: mysql -u root -pdevpassword\"\necho \"Connect as dev:  mysql -u dev -pdevpassword\"\necho \"Connect from host: mysql -h localhost -P 3306 -u dev -pdevpassword\"\necho \"\"\necho \"Backups located: /mnt/mysql-backups/\"\necho \"  (accessible from Windows Explorer)\"\necho \"\"\necho \"Create backup: /mnt/mysql-backups/backup.sh\"\necho \"Restore: mysql -u root -pdevpassword < /mnt/mysql-backups/all_databases_latest.sql\"\necho \"==============================================\"\n"
+  },
+  "environment": {
+    "DEBIAN_FRONTEND": "noninteractive"
+  },
+  "ports": [
+    "3306:3306"
+  ]
+}

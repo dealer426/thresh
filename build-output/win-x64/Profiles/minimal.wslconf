@@ -1,0 +1,13 @@
+# Minimal Profile
+# Lightweight, isolated environment with minimal overhead
+# No systemd, no Windows integration, fast startup
+
+[boot]
+systemd=false
+
+[interop]
+enabled=false
+appendWindowsPath=false
+
+[automount]
+enabled=false

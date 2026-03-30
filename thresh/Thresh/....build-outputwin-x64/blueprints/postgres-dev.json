@@ -1,0 +1,16 @@
+{
+  "name": "postgres-dev",
+  "description": "PostgreSQL development environment with persistent data volume",
+  "base": "ubuntu-22.04",
+  "ports": ["5432:5432"],
+  "volumes": [
+    {
+      "name": "postgres-data",
+      "mount": "/var/lib/postgresql/data"
+    }
+  ],
+  "packages": [
+    "postgresql",
+    "postgresql-contrib"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "redis-persistent",
+  "description": "Redis with automatic backups to persistent storage",
+  "base": "ubuntu-22.04",
+  "wslConfig": "database",
+  "packages": [
+    "redis-server",
+    "redis-tools"
+  ],
+  "volumes": [
+    {
+      "name": "redis-backups",
+      "mount": "/mnt/redis-backups"
+    }
+  ],
+  "scripts": {
+    "setup": "# Redis uses native Linux filesystem for data\n# Volume is used for backups accessible from Windows\n\n# Configure Redis with custom settings\ncat >> /etc/redis/redis.conf << 'EOF'\n\n# Custom persistence settings\nbind 0.0.0.0\nappendonly yes\nappendfilename \"appendonly.aof\"\nappendfsync everysec\nsave 900 1\nsave 300 10\nsave 60 10000\nmaxmemory 256mb\nmaxmemory-policy allkeys-lru\nEOF\n\n# Set permissions\nmkdir -p /var/lib/redis\nchown -R redis:redis /var/lib/redis\n\n# Restart Redis with new config\nservice redis-server restart\nsleep 2\n\n# Check if backup exists and restore it\nif [ -f /mnt/redis-backups/dump_latest.rdb ]; then\n  echo \"Restoring from RDB backup...\"\n  service redis-server stop\n  cp /mnt/redis-backups/dump_latest.rdb /var/lib/redis/dump.rdb\n  chown redis:redis /var/lib/redis/dump.rdb\n  service redis-server start\n  sleep 2\nfi\n\n# Create backup script\ncat > /mnt/redis-backups/backup.sh << 'BACKUP_EOF'\n#!/bin/bash\nBACKUP_DIR=\"/mnt/redis-backups\"\nDATE=$(date +%Y%m%d_%H%M%S)\nmkdir -p \"$BACKUP_DIR/archives\"\n\nredis-cli BGSAVE\nsleep 3\n\nif [ -f /var/lib/redis/dump.rdb ]; then\n  cp /var/lib/redis/dump.rdb \"$BACKUP_DIR/dump_$DATE.rdb\"\n  rm -f \"$BACKUP_DIR/dump_latest.rdb\"\n  ln -s \"dump_$DATE.rdb\" \"$BACKUP_DIR/dump_latest.rdb\"\n  echo \"RDB backup: $DATE\"\nfi\n\nif [ -f /var/lib/redis/appendonly.aof ]; then\n  cp /var/lib/redis/appendonly.aof \"$BACKUP_DIR/aof_$DATE.aof\"\n  echo \"AOF backup: $DATE\"\nfi\n\nfind \"$BACKUP_DIR\" -maxdepth 1 \\( -name \"dump_*.rdb\" -o -name \"aof_*.aof\" \\) -type f | sort -r | tail -n +6 | xargs -I {} mv {} \"$BACKUP_DIR/archives/\" 2>/dev/null\nBACKUP_EOF\n\nchmod +x /mnt/redis-backups/backup.sh\n\n# Create initial backup\n/mnt/redis-backups/backup.sh\n\necho \"\"\necho \"==============================================\"\necho \"Redis Ready!\"\necho \"==============================================\"\necho \"Connect: redis-cli\"\necho \"Backups: /mnt/redis-backups/\"\necho \"Create backup: /mnt/redis-backups/backup.sh\"\necho \"==============================================\"\n"
+  },
+  "ports": [
+    "6379:6379"
+  ]
+}

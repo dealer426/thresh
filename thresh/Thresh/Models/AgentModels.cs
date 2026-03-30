@@ -265,6 +265,42 @@ public class CommandResult
     public long DurationMs { get; set; }
 }
 
+/// <summary>Stack service definition received in a deploy_stack command from hub.</summary>
+public class StackServiceDefAgent
+{
+    public string Name { get; set; } = string.Empty;
+    /// <summary>OCI image reference — may be prefixed with "docker:" (e.g., "docker:postgres:16-alpine").</summary>
+    public string Image { get; set; } = string.Empty;
+    public List<string>? Ports { get; set; }
+    /// <summary>Volume specs in "name:mountPath" or "hostPath:containerPath" format.</summary>
+    public List<string>? Volumes { get; set; }
+    /// <summary>Matches "env" property sent by hub (already resolved by hub before dispatch).</summary>
+    public Dictionary<string, string>? Env { get; set; }
+    public List<string>? DependsOn { get; set; }
+    /// <summary>Traefik routing rule — when set, agent writes a dynamic config file after service starts.</summary>
+    public string? Route { get; set; }
+}
+
+/// <summary>Full payload for the deploy_stack command, sent by hub.</summary>
+public class StackDeployPayloadAgent
+{
+    public string StackId { get; set; } = string.Empty;
+    public string StackName { get; set; } = string.Empty;
+    /// <summary>When true, the agent writes Traefik dynamic config files for services that have a Route.</summary>
+    public bool Traefik { get; set; }
+    public List<StackServiceDefAgent> Services { get; set; } = [];
+}
+
+/// <summary>Per-service status update sent to hub during a stack deployment.</summary>
+public class StackServiceStatusArgs
+{
+    public string StackId { get; set; } = string.Empty;
+    public string ServiceName { get; set; } = string.Empty;
+    /// <summary>pending | deploying | running | stopped | error</summary>
+    public string Status { get; set; } = string.Empty;
+    public string? ErrorMessage { get; set; }
+}
+
 /// <summary>
 /// Agent heartbeat
 /// </summary>

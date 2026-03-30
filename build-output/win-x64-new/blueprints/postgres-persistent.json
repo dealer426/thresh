@@ -1,0 +1,22 @@
+{
+  "name": "postgres-persistent",
+  "description": "PostgreSQL 14 with automatic backups to persistent storage",
+  "base": "ubuntu-22.04",
+  "wslConfig": "database",
+  "packages": [
+    "postgresql",
+    "postgresql-contrib"
+  ],
+  "volumes": [
+    {
+      "name": "postgres-backups",
+      "mount": "/mnt/postgres-backups"
+    }
+  ],
+  "scripts": {
+    "setup": "# Initialize PostgreSQL in standard location (better permission support)\nif [ ! -d /var/lib/postgresql/14/main/base ]; then\n  echo \"Initializing PostgreSQL database...\"\n  service postgresql start\n  sleep 3\n  service postgresql stop\n  sleep 2\nelse\n  echo \"Database already initialized\"\nfi\n\n# Configure PostgreSQL for external access\necho \"host all all 0.0.0.0/0 md5\" >> /etc/postgresql/14/main/pg_hba.conf\nsed -i \"s/#listen_addresses = 'localhost'/listen_addresses = '*'/\" /etc/postgresql/14/main/postgresql.conf\n\n# Start PostgreSQL\nservice postgresql start\nsleep 3\n\n# Create dev user and database (check if exists first)\nsu - postgres -c \"psql -tc \\\"SELECT 1 FROM pg_user WHERE usename = 'dev'\\\" | grep -q 1 || psql -c \\\"CREATE USER dev WITH PASSWORD 'devpassword';\\\"\"\nsu - postgres -c \"psql -tc \\\"SELECT 1 FROM pg_database WHERE datname = 'devdb'\\\" | grep -q 1 || psql -c \\\"CREATE DATABASE devdb OWNER dev;\\\"\"\nsu - postgres -c \"psql -c \\\"GRANT ALL PRIVILEGES ON DATABASE devdb TO dev;\\\"\"\n\n# Check if backup exists and restore it\nif [ -f /mnt/postgres-backups/devdb_latest.sql ]; then\n  echo \"Restoring from backup...\"\n  su - postgres -c \"psql -d devdb -f /mnt/postgres-backups/devdb_latest.sql\" 2>/dev/null || echo \"Note: Backup restore attempted (may have been empty)\"\nfi\n\n# Create backup script in volume\ncat > /mnt/postgres-backups/backup.sh << 'BACKUP_EOF'\n#!/bin/bash\n# PostgreSQL Backup Script\nBACKUP_DIR=\"/mnt/postgres-backups\"\nDATE=$(date +%Y%m%d_%H%M%S)\n\n# Create backups directory\nmkdir -p \"$BACKUP_DIR/archives\"\n\n# Backup all databases\nsu - postgres -c \"pg_dumpall\" > \"$BACKUP_DIR/all_databases_$DATE.sql\"\n\n# Backup devdb specifically\nsu - postgres -c \"pg_dump devdb\" > \"$BACKUP_DIR/devdb_$DATE.sql\"\n\n# Create/update latest symlinks\nln -sf \"$BACKUP_DIR/devdb_$DATE.sql\" \"$BACKUP_DIR/devdb_latest.sql\"\nln -sf \"$BACKUP_DIR/all_databases_$DATE.sql\" \"$BACKUP_DIR/all_latest.sql\"\n\n# Move old backups to archives (keep last 5)\nfind \"$BACKUP_DIR\" -maxdepth 1 -name \"*.sql\" -type f | sort -r | tail -n +6 | xargs -I {} mv {} \"$BACKUP_DIR/archives/\"\n\necho \"Backup completed: $DATE\"\nBACKUP_EOF\n\nchmod +x /mnt/postgres-backups/backup.sh\n\n# Create initial backup\necho \"Creating initial backup...\"\n/mnt/postgres-backups/backup.sh\n\necho \"\"\necho \"==============================================\" \necho \"PostgreSQL 14 Ready!\"\necho \"==============================================\" \necho \"Database: devdb\"\necho \"User: dev\"\necho \"Password: devpassword\"\necho \"\"\necho \"Connect from WSL:\"\necho \"  psql -h localhost -U dev -d devdb\"\necho \"\"\necho \"Connect from Windows:\"\necho \"  psql -h localhost -p 5432 -U dev -d devdb\"\necho \"\"\necho \"Backups located: /mnt/postgres-backups/\"\necho \"  (accessible from Windows Explorer)\"\necho \"\"\necho \"Create backup: /mnt/postgres-backups/backup.sh\"\necho \"Restore: psql -d devdb -f /mnt/postgres-backups/devdb_latest.sql\"\necho \"==============================================\" \n"
+  },
+  "ports": [
+    "5432:5432"
+  ]
+}

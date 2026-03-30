@@ -1,0 +1,5 @@
+# systemd Profile
+# Enables systemd for modern Linux services
+
+[boot]
+systemd=true

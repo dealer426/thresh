@@ -1,0 +1,20 @@
+{
+  "name": "azure-cli",
+  "description": "Azure CLI development environment with tools",
+  "base": "ubuntu-22.04",
+  "packages": [
+    "curl",
+    "apt-transport-https",
+    "lsb-release",
+    "gnupg",
+    "git",
+    "vim"
+  ],
+  "scripts": {
+    "setup": "# Update package lists\napt-get update\n\n# Install Azure CLI\ncurl -sL https://aka.ms/InstallAzureCLIDeb | bash\n\n# Create workspace\nmkdir -p /workspace\n",
+    "postInstall": "# Clean up\napt-get clean\napt-get autoremove -y\n\n# Show Azure CLI version\naz version\n\necho \"Azure CLI environment ready!\"\n"
+  },
+  "environment": {
+    "WORKSPACE": "/workspace"
+  }
+}

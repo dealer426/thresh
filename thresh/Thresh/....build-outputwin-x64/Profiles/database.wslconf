@@ -1,0 +1,18 @@
+# Database Profile
+# Optimized for database servers (PostgreSQL, MySQL, MongoDB, Redis)
+# Disables Windows interop and drive mounting for performance
+# Uses native Linux filesystem only
+
+[boot]
+systemd=true
+
+[interop]
+enabled=false
+appendWindowsPath=false
+
+[automount]
+enabled=false
+
+[network]
+generateHosts=true
+generateResolvConf=true

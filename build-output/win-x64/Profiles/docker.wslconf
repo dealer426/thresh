@@ -1,0 +1,10 @@
+# Docker Profile
+# Optimized for Docker development environments
+# Auto-starts Docker service on boot
+
+[boot]
+systemd=true
+command=service docker start
+
+[user]
+default=developer

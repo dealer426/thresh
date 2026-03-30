@@ -641,6 +641,7 @@ public class AgentService
                 "get_blueprint" => AgentToolGetBlueprint(command.Arguments),
                 "save_blueprint" => AgentToolSaveBlueprint(command.Arguments),
                 "get_metrics" => await AgentToolGetMetricsAsync(),
+                "deploy_stack" => await AgentToolDeployStackAsync(command.Arguments),
                 "get_version" => "thresh 1.6.0",
                 "help" => AgentToolHelp(),
                 _ => throw new InvalidOperationException($"Unknown tool: {command.Tool}")
@@ -668,6 +669,227 @@ public class AgentService
     }
 
     // ─── Local tool implementations for hub-dispatched commands ──────────────
+
+    /// <summary>
+    /// Deploys a stack: pulls/imports each service image in dependency order and starts containers.
+    /// Reports per-service progress to hub via StackServiceStatusUpdate.
+    /// </summary>
+    private async Task<string> AgentToolDeployStackAsync(System.Text.Json.JsonElement? args)
+    {
+        if (args == null)
+            throw new InvalidOperationException("deploy_stack: no arguments provided");
+
+        var opts = new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true
+        };
+
+        var payload = System.Text.Json.JsonSerializer.Deserialize<Thresh.Models.StackDeployPayloadAgent>(
+            args.Value.GetRawText(), opts)
+            ?? throw new InvalidOperationException("deploy_stack: failed to parse payload");
+
+        if (payload.Services.Count == 0)
+            return $"Stack '{payload.StackName}' has no services defined.";
+
+        var svc = GetContainerService();
+        if (!await svc.IsAvailableAsync())
+            throw new InvalidOperationException($"Container runtime ({svc.RuntimeName}) is not available on this node.");
+
+        Console.WriteLine($"[stack] Deploying '{payload.StackName}' ({payload.Services.Count} services) via {svc.RuntimeName}");
+
+        // Sort services by depends_on (put dependencies first)
+        var ordered = TopologicalSortServices(payload.Services);
+        var results = new System.Text.StringBuilder();
+        var failed = 0;
+
+        foreach (var service in ordered)
+        {
+            // Notify hub this service is starting
+            await SendStackServiceStatusAsync(payload.StackId, service.Name, "deploying", null);
+
+            try
+            {
+                // Strip "docker:" prefix — hub sends "docker:postgres:16-alpine", containerd wants "postgres:16-alpine"
+                var imageRef = service.Image.StartsWith("docker:", StringComparison.OrdinalIgnoreCase)
+                    ? service.Image["docker:".Length..]
+                    : service.Image;
+
+                // Build a Blueprint from the service definition
+                var blueprint = new Thresh.Models.Blueprint
+                {
+                    Name = service.Name,
+                    Base = imageRef,
+                    Ports = service.Ports,
+                    Volumes = ParseVolumes(service.Volumes),
+                    Environment = service.Env
+                };
+
+                Console.WriteLine($"[stack]   → {service.Name} ({imageRef})");
+                await svc.ImportEnvironmentAsync(service.Name, imageRef, "", payload.StackName, blueprint);
+
+                // Phase C: register service with Traefik if it has a route
+                if (payload.Traefik && !string.IsNullOrEmpty(service.Route))
+                    WriteTraefikDynamicConfig(payload.StackName, service);
+
+                await SendStackServiceStatusAsync(payload.StackId, service.Name, "running", null);
+                results.AppendLine($"  ✅ {service.Name}");
+            }
+            catch (Exception ex)
+            {
+                failed++;
+                var msg = ex.Message;
+                Console.WriteLine($"[stack]   ✗ {service.Name}: {msg}");
+                await SendStackServiceStatusAsync(payload.StackId, service.Name, "error", msg);
+                results.AppendLine($"  ❌ {service.Name}: {msg}");
+            }
+        }
+
+        var total = payload.Services.Count;
+        var summary = $"Stack '{payload.StackName}': {total - failed}/{total} services deployed.";
+        Console.WriteLine($"[stack] {summary}");
+
+        if (failed > 0)
+            throw new InvalidOperationException($"{summary}\n{results}");
+
+        return $"{summary}\n{results}";
+    }
+
+    /// <summary>Reports per-service deployment status to hub mid-deployment.</summary>
+    private async Task SendStackServiceStatusAsync(string stackId, string serviceName, string status, string? error)
+    {
+        try
+        {
+            if (_hubConnection?.State == HubConnectionState.Connected)
+            {
+                var update = new Thresh.Models.StackServiceStatusArgs
+                {
+                    StackId = stackId,
+                    ServiceName = serviceName,
+                    Status = status,
+                    ErrorMessage = error
+                };
+                await _hubConnection.InvokeAsync("StackServiceStatusUpdate", update);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[stack] Failed to send service status ({serviceName} → {status}): {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Writes a Traefik dynamic configuration YAML file for a service so Traefik
+    /// automatically starts routing to it. Files are placed in /etc/thresh/traefik-dynamic/
+    /// which is bind-mounted into the Traefik container as its file provider directory.
+    /// Traefik watches this directory and picks up changes without restart.
+    /// </summary>
+    private static void WriteTraefikDynamicConfig(string stackName, Thresh.Models.StackServiceDefAgent service)
+    {
+        try
+        {
+            const string dynamicDir = "/etc/thresh/traefik-dynamic";
+            Directory.CreateDirectory(dynamicDir);
+
+            // Extract the host port from the service's first port mapping (e.g. "3000:3000" → 3000)
+            var hostPort = ExtractFirstHostPort(service.Ports);
+            if (string.IsNullOrEmpty(hostPort))
+            {
+                Console.WriteLine($"[traefik] Skipping {service.Name} — no host port defined");
+                return;
+            }
+
+            var routerName = $"{stackName}-{service.Name}".Replace("_", "-").ToLowerInvariant();
+            var serviceName = $"{routerName}-svc";
+
+            // Traefik file provider dynamic config (YAML)
+            var yaml = $"""
+http:
+  routers:
+    {routerName}:
+      rule: "{service.Route}"
+      service: {serviceName}
+      entryPoints:
+        - web
+        - websecure
+  services:
+    {serviceName}:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:{hostPort}"
+""";
+
+            var filePath = Path.Combine(dynamicDir, $"{routerName}.yml");
+            File.WriteAllText(filePath, yaml);
+            Console.WriteLine($"[traefik] Registered {service.Name} → {service.Route} (port {hostPort})");
+        }
+        catch (Exception ex)
+        {
+            // Non-fatal — service is running even if Traefik registration fails
+            Console.WriteLine($"[traefik] Failed to write config for {service.Name}: {ex.Message}");
+        }
+    }
+
+    /// <summary>Simple topological sort by depends_on — puts dependencies before dependents.</summary>
+    private static List<Thresh.Models.StackServiceDefAgent> TopologicalSortServices(
+        List<Thresh.Models.StackServiceDefAgent> services)
+    {
+        var remaining = new List<Thresh.Models.StackServiceDefAgent>(services);
+        var sorted = new List<Thresh.Models.StackServiceDefAgent>();
+        var resolved = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var maxPasses = services.Count + 1;
+        while (remaining.Count > 0 && maxPasses-- > 0)
+        {
+            var added = false;
+            for (int i = remaining.Count - 1; i >= 0; i--)
+            {
+                var svc = remaining[i];
+                var deps = svc.DependsOn ?? [];
+                if (deps.All(d => resolved.Contains(d)))
+                {
+                    sorted.Add(svc);
+                    resolved.Add(svc.Name);
+                    remaining.RemoveAt(i);
+                    added = true;
+                }
+            }
+            // Break cycle: add anything remaining in original order
+            if (!added) break;
+        }
+
+        // Anything left (circular deps) — append in original order
+        sorted.AddRange(remaining);
+        return sorted;
+    }
+
+    /// <summary>Parses "name:mountPath" or "hostPath:containerPath" strings into BlueprintVolume list.</summary>
+    private static List<Thresh.Models.BlueprintVolume>? ParseVolumes(List<string>? volumeSpecs)
+    {
+        if (volumeSpecs == null || volumeSpecs.Count == 0) return null;
+
+        var result = new List<Thresh.Models.BlueprintVolume>();
+        foreach (var spec in volumeSpecs)
+        {
+            var parts = spec.Split(':', 2);
+            result.Add(new Thresh.Models.BlueprintVolume
+            {
+                Name = parts[0],
+                Mount = parts.Length > 1 ? parts[1] : parts[0]
+            });
+        }
+        return result;
+    }
+
+    /// <summary>Extracts the host-side port from the first "hostPort:containerPort" mapping.</summary>
+    private static string ExtractFirstHostPort(List<string>? ports)
+    {
+        if (ports == null || ports.Count == 0) return string.Empty;
+        var first = ports[0];
+        // formats: "8080:80", "0.0.0.0:8080:80", "8080"
+        var parts = first.Split(':');
+        return parts.Length >= 2 ? parts[^2] : parts[0];
+    }
 
     private IContainerService GetContainerService()
         => ContainerServiceFactory.Create();

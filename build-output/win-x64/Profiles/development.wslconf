@@ -1,0 +1,19 @@
+# Development Profile (Default)
+# General development with full Windows integration
+# Balanced configuration for most scenarios
+
+[boot]
+systemd=true
+
+[interop]
+enabled=true
+appendWindowsPath=true
+
+[automount]
+enabled=true
+root=/mnt
+options=metadata,uid=1000,gid=1000,umask=022
+
+[network]
+generateHosts=true
+generateResolvConf=true

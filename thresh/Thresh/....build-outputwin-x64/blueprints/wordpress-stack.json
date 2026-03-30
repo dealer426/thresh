@@ -1,0 +1,37 @@
+{
+  "name": "wordpress-stack",
+  "description": "WordPress with MySQL - full LAMP stack with persistent storage",
+  "base": "ubuntu-22.04",
+  "packages": [
+    "apache2",
+    "php",
+    "php-mysql",
+    "php-curl",
+    "php-gd",
+    "php-mbstring",
+    "php-xml",
+    "php-xmlrpc",
+    "php-soap",
+    "php-intl",
+    "php-zip",
+    "mysql-server",
+    "wget",
+    "curl"
+  ],
+  "volumes": [
+    {
+      "name": "mysql-wordpress-data",
+      "mount": "/var/lib/mysql"
+    },
+    {
+      "name": "wordpress-files",
+      "mount": "/var/www/html"
+    }
+  ],
+  "scripts": {
+    "setup": "# Start MySQL\nservice mysql start\nsleep 3\n\n# Create WordPress database and user\nmysql -e \"CREATE DATABASE IF NOT EXISTS wordpress;\"\nmysql -e \"CREATE USER IF NOT EXISTS 'wpuser'@'localhost' IDENTIFIED BY 'wppassword';\"\nmysql -e \"GRANT ALL PRIVILEGES ON wordpress.* TO 'wpuser'@'localhost';\"\nmysql -e \"FLUSH PRIVILEGES;\"\n\n# Download WordPress if not already present\nif [ ! -f /var/www/html/wp-config.php ]; then\n  cd /tmp\n  wget https://wordpress.org/latest.tar.gz\n  tar xzf latest.tar.gz\n  cp -r wordpress/* /var/www/html/\n  rm -rf wordpress latest.tar.gz\n  \n  # Create wp-config.php\n  cd /var/www/html\n  cp wp-config-sample.php wp-config.php\n  sed -i \"s/database_name_here/wordpress/\" wp-config.php\n  sed -i \"s/username_here/wpuser/\" wp-config.php\n  sed -i \"s/password_here/wppassword/\" wp-config.php\n  \n  # Set ownership\n  chown -R www-data:www-data /var/www/html\nfi\n\n# Configure Apache\na2enmod rewrite\nservice apache2 restart\n\necho \"WordPress stack ready!\"\necho \"MySQL Database: wordpress\"\necho \"MySQL User: wpuser / Password: wppassword\"\necho \"Access WordPress at: http://localhost:8080\"\n"
+  },
+  "ports": [
+    "8080:80"
+  ]
+}

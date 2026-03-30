@@ -1,0 +1,22 @@
+{
+  "name": "alpine-postgresql",
+  "description": "Alpine Linux with PostgreSQL database server",
+  "base": "alpine-3.19",
+  "packages": [
+    "postgresql",
+    "postgresql-client",
+    "postgresql-contrib",
+    "bash",
+    "sudo",
+    "shadow"
+  ],
+  "environment": {
+    "PGDATA": "/var/lib/postgresql/data",
+    "POSTGRES_USER": "postgres",
+    "POSTGRES_DB": "postgres"
+  },
+  "scripts": {
+    "setup": "#!/bin/bash\nset -e\n\n# Initialize PostgreSQL data directory\nmkdir -p /var/lib/postgresql/data\nmkdir -p /var/log/postgresql\nchown -R postgres:postgres /var/lib/postgresql /var/log/postgresql\n\n# Create the Unix socket directory required by PostgreSQL in WSL2\nmkdir -p /run/postgresql\nchown postgres:postgres /run/postgresql\n\n# Initialize database cluster\nsu - postgres -c 'initdb -D /var/lib/postgresql/data'\n\n# Configure PostgreSQL to listen on all interfaces (TCP + Unix socket)\necho \"listen_addresses = '*'\" >> /var/lib/postgresql/data/postgresql.conf\necho \"port = 5432\" >> /var/lib/postgresql/data/postgresql.conf\n\n# Allow password-authenticated TCP connections from any host\necho \"host all all 0.0.0.0/0 md5\" >> /var/lib/postgresql/data/pg_hba.conf\n\n# Start PostgreSQL using pg_ctl (WSL2-compatible, no OpenRC needed)\nsu - postgres -c 'pg_ctl -D /var/lib/postgresql/data -l /var/log/postgresql/postgresql.log start'\n\n# Wait for postgres to be ready\nuntil su - postgres -c 'pg_isready -q'; do sleep 1; done\n\necho \"PostgreSQL setup complete.\"",
+    "postInstall": "#!/bin/bash\nset -e\n\n# Ensure socket directory exists\nmkdir -p /run/postgresql && chown postgres:postgres /run/postgresql\n\n# Start postgres if not already running\nif ! su - postgres -c 'pg_isready -q' 2>/dev/null; then\n  su - postgres -c 'pg_ctl -D /var/lib/postgresql/data -l /var/log/postgresql/postgresql.log start'\n  until su - postgres -c 'pg_isready -q'; do sleep 1; done\nfi\n\necho \"PostgreSQL is ready!\"\necho \"Connect with: psql -U postgres\""
+  }
+}

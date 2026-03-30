@@ -1,0 +1,21 @@
+{
+  "name": "ubuntu-dev",
+  "description": "Ubuntu development environment with common tools",
+  "base": "ubuntu-22.04",
+  "packages": [
+    "git",
+    "curl",
+    "wget",
+    "vim",
+    "build-essential",
+    "software-properties-common"
+  ],
+  "scripts": {
+    "setup": "# Update package lists\napt-get update\n\n# Set timezone (optional)\necho \"America/New_York\" > /etc/timezone\n\n# Create development directory\nmkdir -p /workspace\n",
+    "postInstall": "# Clean up\napt-get clean\napt-get autoremove -y\n\necho \"Ubuntu Dev environment ready!\"\n"
+  },
+  "environment": {
+    "EDITOR": "vim",
+    "WORKSPACE": "/workspace"
+  }
+}

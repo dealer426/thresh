@@ -1,0 +1,18 @@
+{
+  "name": "node-dev",
+  "description": "Node.js development environment with npm and common tools",
+  "base": "ubuntu-22.04",
+  "packages": [
+    "curl",
+    "git",
+    "build-essential"
+  ],
+  "scripts": {
+    "setup": "# Update package lists\napt-get update\n\n# Install Node.js 20.x\ncurl -fsSL https://deb.nodesource.com/setup_20.x | bash -\napt-get install -y nodejs\n\n# Install common global packages\nnpm install -g yarn pnpm typescript\n\n# Create workspace\nmkdir -p /workspace\n",
+    "postInstall": "# Clean up\napt-get clean\napt-get autoremove -y\n\n# Show versions\nnode --version\nnpm --version\nyarn --version\n\necho \"Node.js Dev environment ready!\"\n"
+  },
+  "environment": {
+    "NODE_ENV": "development",
+    "WORKSPACE": "/workspace"
+  }
+}

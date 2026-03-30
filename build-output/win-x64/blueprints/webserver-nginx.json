@@ -1,0 +1,20 @@
+{
+  "name": "webserver-nginx",
+  "description": "Nginx web server with port mapping (8080:80)",
+  "base": "ubuntu-22.04",
+  "ports": [
+    "8080:80",
+    "8443:443"
+  ],
+  "expose": [
+    "9090"
+  ],
+  "network": "bridge",
+  "hostname": "web-dev",
+  "packages": [
+    "nginx",
+    "curl"
+  ],
+  "setupScript": "#!/bin/bash\nset -e\nsystemctl enable nginx\nsystemctl start nginx\necho 'Nginx installed and started'\n",
+  "postInstallScript": "#!/bin/bash\necho '<html><body><h1>Thresh Web Server Test</h1><p>Port mapping is working!</p></body></html>' > /var/www/html/index.html\necho 'Custom index page created'\ncurl -s http://localhost || echo 'Nginx test request sent'\n"
+}

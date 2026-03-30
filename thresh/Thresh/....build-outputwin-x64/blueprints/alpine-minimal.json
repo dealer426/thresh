@@ -1,0 +1,20 @@
+{
+  "name": "alpine-minimal",
+  "description": "Alpine Linux minimal environment (extremely lightweight)",
+  "base": "alpine-3.19",
+  "packages": [
+    "git",
+    "curl",
+    "bash",
+    "vim",
+    "build-base"
+  ],
+  "scripts": {
+    "setup": "# Alpine uses ash by default, set bash as default shell\nsed -i 's|/bin/ash|/bin/bash|g' /etc/passwd\n\n# Create development directory\nmkdir -p /workspace\n",
+    "postInstall": "# Clean up cache\nrm -rf /var/cache/apk/*\n\necho \"Alpine Minimal environment ready!\"\n"
+  },
+  "environment": {
+    "EDITOR": "vim",
+    "WORKSPACE": "/workspace"
+  }
+}

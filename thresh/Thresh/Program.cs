@@ -43,6 +43,7 @@ class Program
         AuthCommands.Register(rootCommand);
         NodeCommands.Register(rootCommand);
         ClusterCommands.Register(rootCommand);
+        StackCommands.Register(rootCommand);
         
         // Root handler (when no command specified)
         rootCommand.SetHandler((bool verbose) =>

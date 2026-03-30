@@ -22,6 +22,10 @@ namespace Thresh.Models;
 [JsonSerializable(typeof(StoredCredentials))]
 [JsonSerializable(typeof(List<EnvironmentSummary>))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
+[JsonSerializable(typeof(StackDeployPayloadAgent))]
+[JsonSerializable(typeof(StackServiceDefAgent))]
+[JsonSerializable(typeof(List<StackServiceDefAgent>))]
+[JsonSerializable(typeof(StackServiceStatusArgs))]
 [JsonSerializable(typeof(object))]
 [JsonSerializable(typeof(string))]
 public partial class AgentJsonContext : JsonSerializerContext

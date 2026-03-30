@@ -1,0 +1,19 @@
+{
+  "name": "debian-stable",
+  "description": "Debian stable (bookworm) development environment",
+  "base": "debian-12",
+  "packages": [
+    "git",
+    "curl",
+    "vim",
+    "build-essential"
+  ],
+  "scripts": {
+    "setup": "# Update package lists\napt-get update\n\n# Create workspace\nmkdir -p /workspace\n",
+    "postInstall": "# Clean up\napt-get clean\napt-get autoremove -y\n\necho \"Debian Stable environment ready!\"\n"
+  },
+  "environment": {
+    "EDITOR": "vim",
+    "WORKSPACE": "/workspace"
+  }
+}
