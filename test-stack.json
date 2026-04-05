@@ -1,0 +1,22 @@
+{
+  "name": "validation-stack",
+  "services": [
+    {
+      "name": "db",
+      "image": "docker:postgres:16-alpine",
+      "ports": ["5433:5432"],
+      "env": {
+        "POSTGRES_DB": "testdb",
+        "POSTGRES_USER": "testuser",
+        "POSTGRES_PASSWORD": "testpass"
+      },
+      "volumes": ["/var/lib/postgresql/data"]
+    },
+    {
+      "name": "app",
+      "image": "docker:nginx:alpine",
+      "ports": ["8081:80"],
+      "dependsOn": ["db"]
+    }
+  ]
+}

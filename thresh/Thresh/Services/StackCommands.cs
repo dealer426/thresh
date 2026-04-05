@@ -498,15 +498,30 @@ public static class StackCommands
     {
         var body = await resp.Content.ReadAsStringAsync();
         Console.ForegroundColor = ConsoleColor.Red;
-        if ((int)resp.StatusCode == 401 && body.Contains("not associated with an account", StringComparison.OrdinalIgnoreCase))
+
+        switch ((int)resp.StatusCode)
         {
-            Console.Error.WriteLine("Your user account is not linked to a thresh account.");
-            Console.Error.WriteLine("Log in to the hub web interface to complete account setup.");
+            case 401 when body.Contains("not associated with an account", StringComparison.OrdinalIgnoreCase):
+                Console.Error.WriteLine("Your user account is not linked to a thresh account.");
+                Console.Error.WriteLine("Log in to the hub web interface to complete account setup.");
+                break;
+            case 401:
+                Console.Error.WriteLine("Authentication failed. Run 'thresh auth login' to refresh your session.");
+                break;
+            case 403:
+                Console.Error.WriteLine("Permission denied. Your account may not have access to this stack.");
+                break;
+            case 404:
+                Console.Error.WriteLine("Stack not found. Use 'thresh stack list' to see available stacks.");
+                break;
+            case 409:
+                Console.Error.WriteLine($"Conflict: {body}");
+                break;
+            default:
+                Console.Error.WriteLine($"Hub returned {(int)resp.StatusCode}: {body}");
+                break;
         }
-        else
-        {
-            Console.Error.WriteLine($"Hub returned {(int)resp.StatusCode}: {body}");
-        }
+
         Console.ResetColor();
     }
 

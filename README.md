@@ -487,10 +487,14 @@ thresh/
 
 ### v1.7.0 — Stacks (In Progress, Jul 2026)
 
-**thresh stack** CLI commands are now shipped and connected to the thresh-hub Stacks API. Multi-service deployments that bring Docker Compose-style orchestration to your thresh fleet, backed by the thresh-hub orchestration engine.
+**thresh stack** CLI commands are now shipped and connected to the thresh-hub Stacks API. Multi-service deployments that replace Docker Compose with thresh-native orchestration across your fleet, backed by the thresh-hub orchestration engine.
 
+**Prerequisites:** Authenticate first, then deploy stacks:
 ```bash
-# Deploy postgres + app + grafana in one command
+# 1. Log in to your hub (one-time device code flow)
+thresh auth login --hub https://your-hub:7200
+
+# 2. Deploy postgres + app + grafana in one command
 thresh stack up my-app-stack.json
 
 # Check per-service status

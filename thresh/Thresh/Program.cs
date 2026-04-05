@@ -85,6 +85,7 @@ class Program
         Console.WriteLine("  auth        Authenticate with a thresh-hub (login, logout, status, token)");
         Console.WriteLine("  node        Manage nodes connected to your account (list, info, metrics, remove)");
         Console.WriteLine("  cluster     Manage clusters of nodes (list, create, info, add-node, remove-node, delete)");
+        Console.WriteLine("  stack       Manage multi-service stacks (up, down, destroy, list, info, update)");
         Console.WriteLine();
         Console.WriteLine("Options:");
         Console.WriteLine("  --verbose        Enable verbose logging");
