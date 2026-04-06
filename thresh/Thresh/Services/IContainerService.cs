@@ -68,7 +68,7 @@ public interface IContainerService
     /// <param name="installPath">Installation path (may be ignored by some runtimes)</param>
     /// <param name="blueprintName">Optional blueprint name for metadata tracking</param>
     /// <param name="blueprint">Optional blueprint for networking/storage configuration</param>
-    Task<bool> ImportEnvironmentAsync(string environmentName, string sourcePath, string installPath, string? blueprintName = null, Blueprint? blueprint = null);
+    Task<bool> ImportEnvironmentAsync(string environmentName, string sourcePath, string installPath, string? blueprintName = null, Blueprint? blueprint = null, bool serviceMode = false);
 
     /// <summary>
     /// Execute a command in an environment

@@ -27,6 +27,9 @@ public class AgentService
     private DateTime _lastFailoverTime = DateTime.MinValue;
     private readonly HttpClient _httpClient = new();
 
+    private static readonly string PidFilePath = Path.Combine(
+        System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), ".thresh", "agent.pid");
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         TypeInfoResolver = AgentJsonContext.Default
@@ -109,6 +112,9 @@ public class AgentService
             Console.WriteLine($"Fallback URL: {config.FallbackUrl}");
         }
 
+        // Write PID file so `thresh agent stop` can signal this process
+        WritePidFile();
+
         // Start connection in background
         _ = Task.Run(async () => await RunAgentLoopAsync(_cts.Token), _cts.Token);
 
@@ -142,7 +148,74 @@ public class AgentService
         }
 
         _currentTier = ConnectionTier.Offline;
+        DeletePidFile();
         Console.WriteLine("Agent stopped");
+    }
+
+    /// <summary>
+    /// Write current process ID to ~/.thresh/agent.pid
+    /// </summary>
+    private static void WritePidFile()
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(PidFilePath)!;
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(PidFilePath, System.Environment.ProcessId.ToString());
+        }
+        catch { }
+    }
+
+    /// <summary>
+    /// Delete the PID file on clean shutdown
+    /// </summary>
+    private static void DeletePidFile()
+    {
+        try { if (File.Exists(PidFilePath)) File.Delete(PidFilePath); } catch { }
+    }
+
+    /// <summary>
+    /// Stop a running agent from another process by reading the PID file and killing 
+    /// the process. Returns true if the agent was stopped.
+    /// </summary>
+    public static bool StopRunningAgent()
+    {
+        if (!File.Exists(PidFilePath))
+        {
+            Console.WriteLine("No agent PID file found — agent may not be running.");
+            return false;
+        }
+
+        try
+        {
+            var pidText = File.ReadAllText(PidFilePath).Trim();
+            if (!int.TryParse(pidText, out var pid))
+            {
+                Console.WriteLine($"Invalid PID file content: {pidText}");
+                File.Delete(PidFilePath);
+                return false;
+            }
+
+            var process = Process.GetProcessById(pid);
+            Console.WriteLine($"Sending stop signal to agent (PID {pid})...");
+            process.Kill(entireProcessTree: true);
+            process.WaitForExit(5000);
+            File.Delete(PidFilePath);
+            Console.WriteLine("✅ Agent stopped");
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            // Process not found — stale PID file
+            Console.WriteLine("Agent process not found (stale PID file). Cleaning up.");
+            try { File.Delete(PidFilePath); } catch { }
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to stop agent: {ex.Message}");
+            return false;
+        }
     }
 
     /// <summary>
@@ -679,14 +752,8 @@ public class AgentService
         if (args == null)
             throw new InvalidOperationException("deploy_stack: no arguments provided");
 
-        var opts = new System.Text.Json.JsonSerializerOptions
-        {
-            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true
-        };
-
-        var payload = System.Text.Json.JsonSerializer.Deserialize<Thresh.Models.StackDeployPayloadAgent>(
-            args.Value.GetRawText(), opts)
+        var payload = System.Text.Json.JsonSerializer.Deserialize(
+            args.Value.GetRawText(), Thresh.Models.AgentJsonContext.Default.StackDeployPayloadAgent)
             ?? throw new InvalidOperationException("deploy_stack: failed to parse payload");
 
         if (payload.Services.Count == 0)
@@ -726,7 +793,7 @@ public class AgentService
                 };
 
                 Console.WriteLine($"[stack]   → {service.Name} ({imageRef})");
-                await svc.ImportEnvironmentAsync(service.Name, imageRef, "", payload.StackName, blueprint);
+                await svc.ImportEnvironmentAsync(service.Name, imageRef, "", payload.StackName, blueprint, serviceMode: true);
 
                 // Phase C: register service with Traefik if it has a route
                 if (payload.Traefik && !string.IsNullOrEmpty(service.Route))

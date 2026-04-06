@@ -1,0 +1,30 @@
+{
+  "name": "thresh-hub-dogfood",
+  "targetNode": "thresh-node-3",
+  "services": [
+    {
+      "name": "postgres",
+      "image": "docker:postgres:16-alpine",
+      "ports": ["5433:5432"],
+      "env": {
+        "POSTGRES_USER": "hubuser",
+        "POSTGRES_PASSWORD": "hubpass",
+        "POSTGRES_DB": "threshhub"
+      },
+      "volumes": ["pg-dogfood-data:/var/lib/postgresql/data"],
+      "dependsOn": []
+    },
+    {
+      "name": "hub",
+      "image": "docker:thresh-hub:latest",
+      "ports": ["7201:7200"],
+      "env": {
+        "ConnectionStrings__DefaultConnection": "Host=192.168.4.44;Port=5433;Database=threshhub;Username=hubuser;Password=hubpass",
+        "Database__Provider": "postgres",
+        "ASPNETCORE_URLS": "http://+:7200",
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dependsOn": ["postgres"]
+    }
+  ]
+}

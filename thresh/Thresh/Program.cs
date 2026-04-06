@@ -1614,7 +1614,7 @@ class Program
         var stopCmd = new Command("stop", "Stop the agent daemon");
         stopCmd.SetHandler(async () =>
         {
-            Console.WriteLine("⚠️ Use Ctrl+C in the running agent terminal to stop");
+            AgentService.StopRunningAgent();
         });
 
         // agent status

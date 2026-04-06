@@ -286,7 +286,7 @@ public class ContainerdService : IContainerService
     /// <summary>
     /// Import/create a new environment from an image or rootfs tarball
     /// </summary>
-    public async Task<bool> ImportEnvironmentAsync(string environmentName, string sourcePath, string installPath, string? blueprintName = null, Blueprint? blueprint = null)
+    public async Task<bool> ImportEnvironmentAsync(string environmentName, string sourcePath, string installPath, string? blueprintName = null, Blueprint? blueprint = null, bool serviceMode = false)
     {
         var containerName = ThreshPrefix + environmentName;
         var tool = await GetAvailableToolAsync();
@@ -328,7 +328,17 @@ public class ContainerdService : IContainerService
         {
             // Assume it's a Docker image name (e.g., "ubuntu:22.04")
             createArgs.Add(tool);
-            createArgs.AddRange(new[] { "create", "--name", containerName, "-it" });
+
+            if (serviceMode)
+            {
+                // Service mode: use detached mode, use image's default entrypoint
+                createArgs.AddRange(new[] { "run", "-d", "--name", containerName });
+            }
+            else
+            {
+                // Interactive mode: create with -it and /bin/sh for interactive environments
+                createArgs.AddRange(new[] { "create", "--name", containerName, "-it" });
+            }
             
             // Add blueprint label if provided
             if (!string.IsNullOrEmpty(blueprintName))
@@ -339,9 +349,17 @@ public class ContainerdService : IContainerService
             // Add networking configuration from blueprint
             AddContainerArgs(createArgs, blueprint);
             
-            // Add image name and shell command
-            // Use /bin/sh for compatibility (works on Alpine, Ubuntu, Debian, etc.)
-            createArgs.AddRange(new[] { sourcePath, "/bin/sh" });
+            if (serviceMode)
+            {
+                // Service mode: just add image, use its default CMD
+                createArgs.Add(sourcePath);
+            }
+            else
+            {
+                // Interactive mode: add image and shell command
+                createArgs.AddRange(new[] { sourcePath, "/bin/sh" });
+            }
+
             result = await ProcessHelper.ExecuteAsync(createArgs.ToArray());
         }
         
@@ -415,6 +433,15 @@ public class ContainerdService : IContainerService
             foreach (var tmpfs in blueprint.Tmpfs)
             {
                 args.AddRange(new[] { "--tmpfs", tmpfs });
+            }
+        }
+
+        // Add environment variables (-e KEY=VALUE)
+        if (blueprint.Environment != null && blueprint.Environment.Count > 0)
+        {
+            foreach (var (key, value) in blueprint.Environment)
+            {
+                args.AddRange(new[] { "-e", $"{key}={value}" });
             }
         }
     }

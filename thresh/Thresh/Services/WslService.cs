@@ -325,7 +325,7 @@ public partial class WslService : IContainerService
     /// <summary>
     /// Import a new WSL distribution from a tar file
     /// </summary>
-    public async Task<bool> ImportEnvironmentAsync(string environmentName, string tarPath, string installPath, string? blueprintName = null, Blueprint? blueprint = null)
+    public async Task<bool> ImportEnvironmentAsync(string environmentName, string tarPath, string installPath, string? blueprintName = null, Blueprint? blueprint = null, bool serviceMode = false)
     {
         var distributionName = ThreshPrefix + environmentName;
         var result = await ProcessHelper.ExecuteAsync("wsl", "--import", distributionName, installPath, tarPath);
