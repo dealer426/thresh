@@ -45,7 +45,7 @@ thresh version
 
 Expected output:
 ```
-thresh version 1.3.0
+thresh version 1.7.0
 Runtime: WSL 2
 ```
 
@@ -83,7 +83,7 @@ dotnet build -c Release
 
 # Publish standalone binary
 dotnet publish -c Release -r win-x64 --self-contained
-# Output: bin/Release/net9.0/win-x64/publish/thresh.exe
+# Output: bin/Release/net10.0/win-x64/publish/thresh.exe
 
 # Or use build script
 cd ../../
@@ -92,7 +92,7 @@ python cleanup_and_build.py
 
 ### Prerequisites for Building
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - Git
 
 ## Update thresh

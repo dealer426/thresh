@@ -51,7 +51,7 @@ import TabItem from '@theme/TabItem';
 # Create installation directory
 New-Item -ItemType Directory -Force -Path C:\thresh
 
-# Download latest release (v1.6.0)
+# Download latest release (v1.7.0)
 Invoke-WebRequest -Uri "https://github.com/dealer426/thresh/releases/latest/download/thresh.exe" -OutFile "C:\thresh\thresh.exe"
 
 # Add to PATH for current session

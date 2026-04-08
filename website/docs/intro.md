@@ -10,18 +10,21 @@ import Admonition from '@theme/Admonition';
 
 **AI-powered container environment manager for Windows, Linux, and macOS**
 
-:::tip What's New in v1.6.0 — Agent Mode & Hub Connectivity
-🖧 **Agent Mode** is here! Connect any thresh node to a centralized [Thresh Hub](/docs/cli-reference/agent) for real-time fleet visibility, live metrics, and centralized management — all over SignalR WebSocket.
+:::tip What's New in v1.7.0 — Stack Orchestration
+📦 **Stack orchestration** is here! Deploy multi-service applications from a single JSON definition with dependency ordering, rolling updates, and automatic Traefik reverse-proxy.
 
 ```bash
-# Register and connect to your Thresh Hub in one command
-thresh agent start --hub https://hub.example.com --node my-workstation
+# Deploy a full-stack app in one command
+thresh stack up my-app.json
+
+# Rolling update a single service
+thresh stack update my-app --service api --image myregistry/api:v2.1
 ```
 
-➡️ [Read the full v1.6.0 blog post →](/blog/thresh-1.6.0-agent-hub) &nbsp;|&nbsp; [Agent CLI reference →](/docs/cli-reference/agent)
+➡️ [Read the full v1.7.0 blog post →](/blog/thresh-1.7.0-stacks) &nbsp;|&nbsp; [Stack CLI reference →](/docs/cli-reference/stack)
 :::
 
-thresh is a **.NET 10 Native AOT** command-line tool that provisions container-based development environments using AI-generated blueprints. Create development environments in seconds with natural language prompts, and optionally connect nodes to a centralized **Thresh Hub** for fleet-wide visibility and management.
+thresh is a **.NET 10 Native AOT** command-line tool that provisions container-based development environments using AI-generated blueprints. Create development environments in seconds with natural language prompts, deploy multi-service stacks with dependency ordering, and connect nodes to a centralized **Thresh Hub** for fleet-wide visibility and management.
 
 ## Architecture Overview
 
@@ -58,6 +61,11 @@ graph TB
         E4[ubuntu-dev]
     end
 
+    subgraph Stacks["Stack Orchestration"]
+        S1[web + api + db]
+        S2[traefik + services]
+    end
+
     subgraph Hub["Thresh Hub (optional)"]
         H[Hub :7200]
         UI[Web UI]
@@ -66,6 +74,7 @@ graph TB
     Platforms --> CLI
     CLI --> Runtime
     Runtime --> Envs
+    Runtime --> Stacks
     Blueprints -.->|AI Generate| AI
     Agent -->|SignalR WS| H
     H --> UI
@@ -75,6 +84,7 @@ graph TB
     style Envs fill:#FF9800,stroke:#E65100,color:#fff
     style Platforms fill:#9C27B0,stroke:#6A1B9A,color:#fff
     style AI fill:#E91E63,stroke:#C2185B,color:#fff
+    style Stacks fill:#FF5722,stroke:#BF360C,color:#fff
     style Hub fill:#607D8B,stroke:#37474F,color:#fff
 ```
 
@@ -88,6 +98,8 @@ graph TB
 - 📦 **Persistent Volumes** - Data persistence across environment lifecycle (v1.5.0)
 - 🗄️ **Database Optimization** - WSL configuration profiles fix Plan9 filesystem issues (v1.5.0)
 - 🖧 **Agent Mode** - Connect nodes to Thresh Hub for fleet management (v1.6.0)
+- 📦 **Stack Orchestration** - Deploy multi-service stacks with dependency ordering (v1.7.0)
+- 🔄 **Rolling Updates** - Update individual services without redeploying entire stacks (v1.7.0)
 - ⚡ **Parallel Creation** - Create multiple environments simultaneously (10x faster)
 - 📦 **Built-in Blueprints** - Alpine, Ubuntu, Debian, Python, Node.js, and more
 - 🗑️ **Blueprint Management** - List, generate, and delete blueprints
@@ -173,6 +185,39 @@ thresh chat
 
 ---
 
+## What's New in v1.7.0
+
+### 📦 Stack Orchestration
+
+Deploy multi-service applications from a single JSON definition file:
+
+```bash
+# Deploy a stack
+thresh stack up my-app.json
+
+# Check status
+thresh stack list
+thresh stack info my-app
+
+# Rolling update a single service
+thresh stack update my-app --service api --image myregistry/api:v2.1
+
+# Tear down
+thresh stack down my-app
+thresh stack destroy my-app --yes
+```
+
+**Features:**
+- JSON-based stack definitions with services, ports, volumes, and env vars
+- `depends_on` for correct service startup ordering
+- Automatic Traefik reverse-proxy injection
+- Rolling updates for zero-downtime deployments
+- Hub integration via `--hub` for remote orchestration
+
+[Stack CLI reference →](/docs/cli-reference/stack) &nbsp;|&nbsp; [Stack tutorial →](/docs/tutorials/stacks) &nbsp;|&nbsp; [Blog post →](/blog/thresh-1.7.0-stacks)
+
+---
+
 ## What's New in v1.6.0
 
 ### 🖧 Agent Mode & Hub Connectivity
@@ -204,7 +249,7 @@ thresh agent config set hub-url https://new-hub.example.com
 - 🏷️ Custom node name and region tags
 - 🔗 Agent version and platform info
 
-**Coming soon in v1.6.x:** remote command dispatch, fleet blueprints, RBAC access control, and node group policies.
+**Shipped in v1.7.0:** remote stack orchestration, mid-tier key auth, config-driven TLS. **Coming in v2.0:** fleet blueprints, RBAC access control, node group policies, and stack templates.
 
 [Agent CLI reference →](/docs/cli-reference/agent) &nbsp;|&nbsp; [Blog post →](/blog/thresh-1.6.0-agent-hub)
 

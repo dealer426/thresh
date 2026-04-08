@@ -26,6 +26,8 @@ graph TB
         Blueprints[Blueprints]
         Config[Configuration]
         AI[AI Assistant]
+        Agent[Agent Mode]
+        Stacks[Stack Orchestration]
     end
     
     subgraph Runtime["Container Runtime"]

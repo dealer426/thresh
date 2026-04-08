@@ -43,6 +43,72 @@ Build your own environment templates tailored to your exact workflow.
 
 ---
 
+## Networking & Storage
+
+### [Networking & Port Mapping](/docs/tutorials/networking)
+
+Configure port mapping, exposed ports, and network settings for containerized workloads.
+
+**You'll learn:**
+- Map host ports to container ports
+- Bind to specific network interfaces
+- Configure container hostnames
+- Automatic netsh forwarding on Windows
+
+**Time:** 15 minutes  
+**Difficulty:** Intermediate
+
+### [Persistent Volumes](/docs/tutorials/volumes)
+
+Set up persistent storage for data that survives environment recreation.
+
+**You'll learn:**
+- Named volumes for database data
+- Bind mounts for live code editing
+- Tmpfs for fast temporary storage
+- Volume lifecycle management
+
+**Time:** 15 minutes  
+**Difficulty:** Intermediate
+
+---
+
+## Stack Orchestration
+
+### [Deploying Multi-Service Stacks](/docs/tutorials/stacks)
+
+Deploy complete multi-service applications from a single JSON definition file.
+
+**You'll learn:**
+- Write stack definition JSON files
+- Define service dependencies with `depends_on`
+- Configure environment variables, ports, and volumes
+- Perform rolling updates on individual services
+- Orchestrate stacks through Thresh Hub
+
+**Time:** 20 minutes  
+**Difficulty:** Intermediate
+
+---
+
+## Fleet Management
+
+### [Fleet Management with Thresh Hub](/docs/tutorials/fleet-management)
+
+Connect your thresh nodes to a centralized Hub for fleet-wide visibility and orchestration.
+
+**You'll learn:**
+- Deploy and configure Thresh Hub
+- Connect agents with API key authentication
+- Monitor node health and metrics in real-time
+- Orchestrate remote stack deployments
+- Mid-tier architecture and key types
+
+**Time:** 30 minutes  
+**Difficulty:** Advanced
+
+---
+
 ## AI Integration
 
 ### [GitHub Copilot SDK Configuration](/docs/tutorials/copilot-sdk)
@@ -84,20 +150,30 @@ Deep dive into Model Context Protocol integration for advanced AI workflows.
 
 **Total: 35 minutes**
 
+### Intermediate Track
+
+1. [Networking & Port Mapping](/docs/tutorials/networking) - Networking (15 min)
+2. [Persistent Volumes](/docs/tutorials/volumes) - Storage (15 min)
+3. [Deploying Multi-Service Stacks](/docs/tutorials/stacks) - Stacks (20 min)
+
+**Total: 50 minutes**
+
 ### Advanced Track
 
 1. [Creating Custom Blueprints](/docs/tutorials/custom-blueprints) - Blueprint development (20 min)
 2. [VS Code MCP Integration](/docs/tutorials/vscode-mcp) - Advanced AI (30 min)
+3. [Fleet Management](/docs/tutorials/fleet-management) - Hub & fleet (30 min)
 
-**Total: 50 minutes**
+**Total: 80 minutes**
 
 ### Team Onboarding
 
 1. [Quick Start](/docs/tutorials/quick-start) - Everyone (5 min)
 2. [Creating Custom Blueprints](/docs/tutorials/custom-blueprints) - Team leads (20 min)
-3. [GitHub Copilot SDK](/docs/tutorials/copilot-sdk) - AI integration (10 min)
+3. [Deploying Stacks](/docs/tutorials/stacks) - DevOps (20 min)
+4. [Fleet Management](/docs/tutorials/fleet-management) - Infra team (30 min)
 
-**Total: 35 minutes**
+**Total: 75 minutes**
 
 ---
 
@@ -105,6 +181,8 @@ Deep dive into Model Context Protocol integration for advanced AI workflows.
 
 **CLI Reference:**
 - [thresh up](/docs/cli-reference/up) - Provision environments
+- [thresh stack](/docs/cli-reference/stack) - Stack orchestration
+- [thresh agent](/docs/cli-reference/agent) - Fleet management
 - [thresh blueprints](/docs/cli-reference/blueprints) - List blueprints
 - [thresh generate](/docs/cli-reference/generate) - AI blueprint generation
 
