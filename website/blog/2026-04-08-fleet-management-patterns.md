@@ -181,6 +181,6 @@ Already running thresh? Adding fleet management takes about 10 minutes:
 
 1. [Deploy Thresh Hub](/docs/tutorials/fleet-management#setting-up-thresh-hub)
 2. [Connect your first agent](/docs/tutorials/fleet-management#connecting-nodes)
-3. [Deploy a stack remotely](/docs/tutorials/stacks#hub-integration)
+3. [Deploy a stack remotely](/docs/tutorials/stacks#cli-workflow)
 
 **Happy fleet managing!** 🖧

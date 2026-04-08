@@ -73,18 +73,18 @@ Set up persistent storage for data that survives environment recreation.
 
 ---
 
-## Stack Orchestration
+## Stack Orchestration (Hub-Managed)
 
 ### [Deploying Multi-Service Stacks](/docs/tutorials/stacks)
 
-Deploy complete multi-service applications from a single JSON definition file.
+Deploy multi-service applications through the Thresh Hub dashboard and API.
 
 **You'll learn:**
-- Write stack definition JSON files
-- Define service dependencies with `depends_on`
-- Configure environment variables, ports, and volumes
+- Write stack definition JSON files with dependency ordering
+- Use `${service.host}` / `${service.port}` variable injection
+- Deploy stacks through the Hub UI and REST API
 - Perform rolling updates on individual services
-- Orchestrate stacks through Thresh Hub
+- Use CLI commands (`thresh auth`, `thresh node`, `thresh cluster`) alongside Hub-managed stacks
 
 **Time:** 20 minutes  
 **Difficulty:** Intermediate
@@ -98,11 +98,11 @@ Deploy complete multi-service applications from a single JSON definition file.
 Connect your thresh nodes to a centralized Hub for fleet-wide visibility and orchestration.
 
 **You'll learn:**
-- Deploy and configure Thresh Hub
-- Connect agents with API key authentication
+- Deploy and configure Thresh Hub and mid-tier
+- Connect agents with API key authentication (`thresh_live_*` / `thresh_mid_*`)
 - Monitor node health and metrics in real-time
-- Orchestrate remote stack deployments
-- Mid-tier architecture and key types
+- Manage remote nodes with `thresh node` and `thresh cluster`
+- Three-tier architecture (Hub → Mid-Tier → Agents)
 
 **Time:** 30 minutes  
 **Difficulty:** Advanced
@@ -181,8 +181,10 @@ Deep dive into Model Context Protocol integration for advanced AI workflows.
 
 **CLI Reference:**
 - [thresh up](/docs/cli-reference/up) - Provision environments
-- [thresh stack](/docs/cli-reference/stack) - Stack orchestration
-- [thresh agent](/docs/cli-reference/agent) - Fleet management
+- [thresh auth](/docs/cli-reference/auth) - Hub authentication
+- [thresh node](/docs/cli-reference/node) - Remote node management
+- [thresh cluster](/docs/cli-reference/cluster) - Cluster management
+- [thresh agent](/docs/cli-reference/agent) - Fleet agent connectivity
 - [thresh blueprints](/docs/cli-reference/blueprints) - List blueprints
 - [thresh generate](/docs/cli-reference/generate) - AI blueprint generation
 

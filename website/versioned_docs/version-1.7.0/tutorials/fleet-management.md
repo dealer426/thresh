@@ -179,30 +179,69 @@ Metrics stream at a configurable interval (default: 30 seconds).
 
 ---
 
-## Remote Stack Orchestration
+## Remote Deployment & Management
 
-With agents connected, you can deploy and manage stacks remotely using the `--hub` flag:
+With agents connected, you can manage fleet nodes and deploy to them remotely using CLI commands:
+
+### Node Management
 
 ```bash
-# Deploy a stack to a remote node
-thresh stack up webapp.json --hub https://your-hub:7200
+# Authenticate with your Hub
+thresh auth login --hub https://your-hub:7200
 
-# List all stacks across the fleet
-thresh stack list --hub https://your-hub:7200
+# List all connected nodes
+thresh node list
 
-# Rolling update through Hub
-thresh stack update webapp --service api --image myregistry/api:v2.1 --hub https://your-hub:7200
+# View details for a specific node
+thresh node info thresh-node-1
 
-# Remote teardown
-thresh stack destroy webapp --yes --hub https://your-hub:7200
+# Check real-time metrics
+thresh node metrics thresh-node-1
+
+# Deploy a blueprint to a remote node
+thresh node up thresh-node-1 python-dev --name ml-training
+
+# List available blueprints on a node
+thresh node blueprints thresh-node-1
 ```
 
-The command flow:
+### Cluster Management
 
-1. CLI sends the request to the Hub
-2. Hub routes through the mid-tier to the target agent
-3. Agent executes the operation locally
-4. Result propagates back through the chain
+```bash
+# Create a cluster to group related nodes
+thresh cluster create staging --description "Staging environment"
+
+# Add nodes to the cluster
+thresh cluster add-node staging thresh-node-1
+thresh cluster add-node staging thresh-node-2
+
+# View cluster details
+thresh cluster info staging
+
+# Remove a node from the cluster
+thresh cluster remove-node staging thresh-node-2
+```
+
+### Stack Deployment (Hub-Managed)
+
+For multi-service stacks with dependency ordering, deploy through the Hub UI or API:
+
+```bash
+# Get an auth token for API calls
+TOKEN=$(thresh auth token)
+
+# Deploy a stack to a target node
+curl -X POST https://your-hub:7200/api/stacks/deploy \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d @webapp.json
+
+# List deployed stacks
+curl -H "Authorization: Bearer $TOKEN" \
+  https://your-hub:7200/api/stacks
+```
+
+See the [Deploying Stacks tutorial](/docs/tutorials/stacks) for full details on stack definitions and deployment.
 
 ---
 
@@ -304,6 +343,8 @@ The mid-tier requires a `thresh_mid_*` key. If you see 403 errors:
 ## Next Steps
 
 - [Agent CLI Reference](/docs/cli-reference/agent) — Agent command documentation
-- [Stack CLI Reference](/docs/cli-reference/stack) — Stack orchestration commands
-- [Stacks Tutorial](/docs/tutorials/stacks) — Multi-service deployment guide
+- [Auth CLI Reference](/docs/cli-reference/auth) — Hub authentication commands
+- [Node CLI Reference](/docs/cli-reference/node) — Remote node management commands
+- [Cluster CLI Reference](/docs/cli-reference/cluster) — Organize nodes into clusters
+- [Stacks Tutorial](/docs/tutorials/stacks) — Multi-service deployment through Hub
 - [Blog: Fleet Management Patterns](/blog/fleet-management-patterns) — Real-world fleet architectures

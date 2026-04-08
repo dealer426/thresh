@@ -9,11 +9,11 @@ description: Complete reference for all thresh commands
 thresh provides a comprehensive set of commands for managing WSL development environments, AI-powered blueprint generation, MCP server integration, and fleet management via Thresh Hub.
 
 :::info New in v1.7.0
-Thresh v1.7.0 introduces **stack orchestration** for multi-service deployments:
-- `thresh stack up/down/destroy` — deploy and tear down stacks from JSON definitions
-- `thresh stack list/info` — monitor running stacks and per-service status
-- `thresh stack update` — rolling updates for individual services
-- Dependency ordering with `depends_on`, environment variable injection, and automatic Traefik reverse-proxy
+Thresh v1.7.0 introduces **Hub authentication, remote node management, and cluster orchestration**:
+- `thresh auth login/logout/status/token` — authenticate the CLI with Thresh Hub
+- `thresh node list/info/metrics/up/blueprints/remove` — manage fleet nodes remotely
+- `thresh cluster list/create/info/add-node/remove-node/delete` — organize nodes into clusters
+- **Hub-managed stacks** — deploy multi-service stacks through the Hub dashboard and API
 :::
 
 :::info New in v1.6.0
@@ -53,8 +53,10 @@ Thresh v1.4.0 introduces **grouped blueprint commands** for better organization:
 | [`blueprint generate`](/docs/cli-reference/generate) | Generate custom blueprint using AI |
 | [`blueprint delete`](/docs/cli-reference/blueprint-delete) | Delete a generated blueprint |
 | [`chat`](/docs/cli-reference/chat) | Interactive AI chat for environment planning |
+| [`auth`](/docs/cli-reference/auth) | Authenticate CLI with Thresh Hub (v1.7.0) |
 | [`agent`](/docs/cli-reference/agent) | Connect node to Thresh Hub (v1.6.0) |
-| [`stack`](/docs/cli-reference/stack) | Deploy and manage multi-service stacks (v1.7.0) |
+| [`node`](/docs/cli-reference/node) | Manage remote fleet nodes (v1.7.0) |
+| [`cluster`](/docs/cli-reference/cluster) | Organize nodes into clusters (v1.7.0) |
 | [`distros`](/docs/cli-reference/distros) | List available distributions |
 | [`distro`](/docs/cli-reference/distro) | Manage custom distributions |
 | [`config`](/docs/cli-reference/config) | Manage configuration settings |
@@ -92,10 +94,13 @@ Thresh v1.4.0 introduces **grouped blueprint commands** for better organization:
 - **[volume](/docs/cli-reference/volume)** - Manage persistent volumes (v1.5.0)
 
 ### Fleet Management
+- **[auth](/docs/cli-reference/auth)** - Authenticate with Thresh Hub (v1.7.0)
 - **[agent](/docs/cli-reference/agent)** - Connect to Thresh Hub (v1.6.0)
+- **[node](/docs/cli-reference/node)** - Manage remote fleet nodes (v1.7.0)
+- **[cluster](/docs/cli-reference/cluster)** - Organize nodes into clusters (v1.7.0)
 
-### Stack Management
-- **[stack](/docs/cli-reference/stack)** - Deploy and manage multi-service stacks (v1.7.0)
+### Stacks (Hub-Managed)
+- **[Stacks](/docs/cli-reference/stack)** - Deploy multi-service stacks via Hub dashboard and API (v1.7.0)
 
 ### Integration
 - **[serve](/docs/cli-reference/serve)** - MCP server for AI editors

@@ -10,21 +10,28 @@ import Admonition from '@theme/Admonition';
 
 **AI-powered container environment manager for Windows, Linux, and macOS**
 
-:::tip What's New in v1.7.0 — Stack Orchestration
-📦 **Stack orchestration** is here! Deploy multi-service applications from a single JSON definition with dependency ordering, rolling updates, and automatic Traefik reverse-proxy.
+:::tip What's New in v1.7.0 — Fleet Management & Stacks
+🛠️ **Full fleet management** is here! Authenticate with Thresh Hub, manage remote nodes, organize clusters, and deploy multi-service stacks — all from the CLI or Hub dashboard.
 
 ```bash
-# Deploy a full-stack app in one command
-thresh stack up my-app.json
+# Authenticate with your Hub
+thresh auth login --hub https://your-hub:7200
 
-# Rolling update a single service
-thresh stack update my-app --service api --image myregistry/api:v2.1
+# List your fleet
+thresh node list
+
+# Deploy to a remote node
+thresh node up thresh-node-1 python-dev
+
+# Organize nodes into clusters
+thresh cluster create production
+thresh cluster add-node production thresh-node-1
 ```
 
-➡️ [Read the full v1.7.0 blog post →](/blog/thresh-1.7.0-stacks) &nbsp;|&nbsp; [Stack CLI reference →](/docs/cli-reference/stack)
+➡️ [Read the full v1.7.0 blog post →](/blog/thresh-1.7.0-stacks) &nbsp;|&nbsp; [Node CLI reference →](/docs/cli-reference/node) &nbsp;|&nbsp; [Cluster CLI reference →](/docs/cli-reference/cluster)
 :::
 
-thresh is a **.NET 10 Native AOT** command-line tool that provisions container-based development environments using AI-generated blueprints. Create development environments in seconds with natural language prompts, deploy multi-service stacks with dependency ordering, and connect nodes to a centralized **Thresh Hub** for fleet-wide visibility and management.
+thresh is a **.NET 10 Native AOT** command-line tool that provisions container-based development environments using AI-generated blueprints. Create development environments in seconds with natural language prompts, manage remote nodes and clusters through **Thresh Hub**, and deploy multi-service stacks with dependency ordering.
 
 ## Architecture Overview
 
@@ -45,6 +52,7 @@ graph TB
         Config[Configuration]
         AI[AI Assistant]
         Agent[Agent Mode]
+        NodeCmd[Node / Cluster]
     end
     
     subgraph Runtime["Container Runtime"]
@@ -61,31 +69,42 @@ graph TB
         E4[ubuntu-dev]
     end
 
-    subgraph Stacks["Stack Orchestration"]
-        S1[web + api + db]
-        S2[traefik + services]
+    subgraph HubStack["Thresh Hub"]
+        H[Hub API :7200]
+        UI[Web Dashboard]
+        Stacks[Stacks Engine]
     end
 
-    subgraph Hub["Thresh Hub (optional)"]
-        H[Hub :7200]
-        UI[Web UI]
+    subgraph MidTier["Mid-Tier (optional)"]
+        MT[Aggregator]
+    end
+
+    subgraph Fleet["Fleet Nodes"]
+        A1[Agent 1]
+        A2[Agent 2]
+        A3[Agent N]
     end
     
     Platforms --> CLI
     CLI --> Runtime
     Runtime --> Envs
-    Runtime --> Stacks
     Blueprints -.->|AI Generate| AI
-    Agent -->|SignalR WS| H
+    NodeCmd -->|REST API| H
     H --> UI
+    H --> Stacks
+    H -->|SignalR| MT
+    MT -->|SignalR| A1
+    MT -->|SignalR| A2
+    H -->|SignalR direct| A3
     
     style CLI fill:#4CAF50,stroke:#2E7D32,color:#fff
     style Runtime fill:#2196F3,stroke:#1565C0,color:#fff
     style Envs fill:#FF9800,stroke:#E65100,color:#fff
     style Platforms fill:#9C27B0,stroke:#6A1B9A,color:#fff
     style AI fill:#E91E63,stroke:#C2185B,color:#fff
-    style Stacks fill:#FF5722,stroke:#BF360C,color:#fff
-    style Hub fill:#607D8B,stroke:#37474F,color:#fff
+    style HubStack fill:#607D8B,stroke:#37474F,color:#fff
+    style MidTier fill:#FF9800,stroke:#E65100,color:#fff
+    style Fleet fill:#795548,stroke:#4E342E,color:#fff
 ```
 
 ---
@@ -98,8 +117,10 @@ graph TB
 - 📦 **Persistent Volumes** - Data persistence across environment lifecycle (v1.5.0)
 - 🗄️ **Database Optimization** - WSL configuration profiles fix Plan9 filesystem issues (v1.5.0)
 - 🖧 **Agent Mode** - Connect nodes to Thresh Hub for fleet management (v1.6.0)
-- 📦 **Stack Orchestration** - Deploy multi-service stacks with dependency ordering (v1.7.0)
-- 🔄 **Rolling Updates** - Update individual services without redeploying entire stacks (v1.7.0)
+- �️ **Hub Authentication** - Device-code and token-based CLI login (v1.7.0)
+- 💻 **Remote Node Management** - Deploy, inspect, and monitor fleet nodes from CLI (v1.7.0)
+- 🏢 **Cluster Orchestration** - Group nodes by region, team, or purpose (v1.7.0)
+- 📦 **Hub-Managed Stacks** - Multi-service deployments via Hub dashboard and API (v1.7.0)
 - ⚡ **Parallel Creation** - Create multiple environments simultaneously (10x faster)
 - 📦 **Built-in Blueprints** - Alpine, Ubuntu, Debian, Python, Node.js, and more
 - 🗑️ **Blueprint Management** - List, generate, and delete blueprints
@@ -187,34 +208,90 @@ thresh chat
 
 ## What's New in v1.7.0
 
-### 📦 Stack Orchestration
+### �️ Hub Authentication & Remote Management
 
-Deploy multi-service applications from a single JSON definition file:
+Authenticate the CLI with Thresh Hub and manage your entire fleet without SSH:
 
 ```bash
-# Deploy a stack
-thresh stack up my-app.json
+# Authenticate
+thresh auth login --hub https://your-hub:7200
 
-# Check status
-thresh stack list
-thresh stack info my-app
+# List fleet nodes
+thresh node list
 
-# Rolling update a single service
-thresh stack update my-app --service api --image myregistry/api:v2.1
+# Deploy a blueprint to a remote node
+thresh node up thresh-node-1 python-dev --name ml-training
 
-# Tear down
-thresh stack down my-app
-thresh stack destroy my-app --yes
+# Check remote node metrics
+thresh node metrics thresh-node-1
+
+# Organize nodes into clusters
+thresh cluster create production
+thresh cluster add-node production thresh-node-1
+thresh cluster info production
 ```
 
 **Features:**
-- JSON-based stack definitions with services, ports, volumes, and env vars
-- `depends_on` for correct service startup ordering
-- Automatic Traefik reverse-proxy injection
-- Rolling updates for zero-downtime deployments
-- Hub integration via `--hub` for remote orchestration
+- `thresh auth` — device-code and token-based login with Thresh Hub
+- `thresh node` — list, inspect, deploy to, and remove remote nodes
+- `thresh cluster` — group nodes by region, team, or purpose
+- Hub-managed stacks — multi-service deployments via Hub dashboard and API
 
-[Stack CLI reference →](/docs/cli-reference/stack) &nbsp;|&nbsp; [Stack tutorial →](/docs/tutorials/stacks) &nbsp;|&nbsp; [Blog post →](/blog/thresh-1.7.0-stacks)
+[Auth CLI reference →](/docs/cli-reference/auth) &nbsp;|&nbsp; [Node CLI reference →](/docs/cli-reference/node) &nbsp;|&nbsp; [Cluster CLI reference →](/docs/cli-reference/cluster) &nbsp;|&nbsp; [Blog post →](/blog/thresh-1.7.0-stacks)
+
+### 🏗️ Three-Tier Architecture with Mid-Tier
+
+v1.7.0 ships a production-ready **mid-tier aggregator** for large fleets:
+
+```mermaid
+graph LR
+    subgraph "CLI Users"
+        C1["thresh auth login"]
+        C2["thresh node list"]
+    end
+
+    subgraph "Thresh Hub"
+        Hub["Hub API<br/>:7200"]
+        DB["PostgreSQL"]
+        UI["Web Dashboard"]
+    end
+
+    subgraph "Mid-Tier"
+        MT["Mid-Tier<br/>Aggregator"]
+    end
+
+    subgraph "Fleet"
+        A1["Agent<br/>node-1"]
+        A2["Agent<br/>node-2"]
+        A3["Agent<br/>node-3"]
+    end
+
+    C1 & C2 -->|REST| Hub
+    Hub --- DB
+    Hub --- UI
+    Hub -->|SignalR| MT
+    MT -->|SignalR| A1
+    MT -->|SignalR| A2
+    MT -->|SignalR| A3
+
+    style Hub fill:#2196F3,stroke:#1565C0,color:#fff
+    style MT fill:#FF9800,stroke:#E65100,color:#fff
+    style A1 fill:#607D8B,stroke:#37474F,color:#fff
+    style A2 fill:#607D8B,stroke:#37474F,color:#fff
+    style A3 fill:#607D8B,stroke:#37474F,color:#fff
+```
+
+**Mid-tier benefits:**
+- Agents connect locally instead of across the internet
+- Batched metrics reduce Hub connection count and bandwidth
+- Deploy on-prem for air-gapped or restricted networks
+- Scales from 3 nodes (direct) to hundreds (with mid-tier)
+
+**Shipped in v1.7.0:** `thresh_mid_*` key authentication, config-driven TLS, stale-agent cleanup.
+
+**Coming in v2.0:** fleet blueprints, RBAC access control, node group policies, and stack templates.
+
+[Stacks reference →](/docs/cli-reference/stack) &nbsp;|&nbsp; [Fleet management tutorial →](/docs/tutorials/fleet-management)
 
 ---
 
@@ -225,14 +302,16 @@ thresh stack destroy my-app --yes
 Connect any thresh node to a centralized **Thresh Hub** instance for real-time fleet-wide visibility and management. Agent Mode is the foundational feature for multi-node workflows.
 
 ```bash
-# Start the agent and connect to your hub
-thresh agent start --hub https://hub.example.com --node-name my-workstation
+# Configure and start the agent
+thresh agent config set midtier-url https://your-hub:7200
+thresh agent config set api-key thresh_live_xxxxxxxxxxxx
+thresh agent start
 
 # Check connection health
 thresh agent status
 
-# Update hub URL without restarting
-thresh agent config set hub-url https://new-hub.example.com
+# Update hub URL
+thresh agent config set midtier-url https://new-hub:7200
 ```
 
 **Transport options:**
@@ -249,7 +328,7 @@ thresh agent config set hub-url https://new-hub.example.com
 - 🏷️ Custom node name and region tags
 - 🔗 Agent version and platform info
 
-**Shipped in v1.7.0:** remote stack orchestration, mid-tier key auth, config-driven TLS. **Coming in v2.0:** fleet blueprints, RBAC access control, node group policies, and stack templates.
+**Shipped in v1.7.0:** remote node/cluster management, Hub authentication, mid-tier key auth, config-driven TLS, Hub-managed stacks. **Coming in v2.0:** fleet blueprints, RBAC access control, node group policies, stack templates.
 
 [Agent CLI reference →](/docs/cli-reference/agent) &nbsp;|&nbsp; [Blog post →](/blog/thresh-1.6.0-agent-hub)
 
