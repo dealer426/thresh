@@ -51,12 +51,42 @@ const FeatureList: FeatureItem[] = [
     ),
   },
   {
-    title: '8 Ready-to-Use Environments',
+    title: 'Stack Orchestration',
+    Emoji: '🗂️',
+    description: (
+      <>
+        Define multi-service stacks with dependencies and rolling updates.
+        Deploy interconnected environments from a single YAML definition.
+      </>
+    ),
+  },
+  {
+    title: 'Agent Mode & Fleet Management',
+    Emoji: '🖧',
+    description: (
+      <>
+        Connect agents to Thresh Hub for centralized fleet management.
+        Real-time metrics, remote commands, and multi-node orchestration.
+      </>
+    ),
+  },
+  {
+    title: '10+ Ready-to-Use Environments',
     Emoji: '📦',
     description: (
       <>
-        Python, Node.js, Alpine, Ubuntu, Debian, Azure CLI - all pre-configured.
+        Python, Node.js, Alpine, Ubuntu, Debian, Azure CLI, and more - all pre-configured.
         Or create your own custom blueprints.
+      </>
+    ),
+  },
+  {
+    title: 'Volume Management',
+    Emoji: '💾',
+    description: (
+      <>
+        Persistent storage that survives environment rebuilds. Mount volumes
+        across environments with snapshot and restore support.
       </>
     ),
   },

@@ -30,7 +30,7 @@ function HomepageHeader() {
           <Link
             className="button button--primary button--lg"
             to="https://github.com/dealer426/thresh/releases/latest">
-            Download v1.6.0
+            Download v1.7.0
           </Link>
         </div>
         <div className={styles.installCommand}>

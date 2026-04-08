@@ -516,8 +516,13 @@ Success indicators:
 
 ## Future Enhancements
 
-**Planned for v1.4.0+:**
-- `delete_blueprint` tool - Delete user-generated blueprints (new CLI command)
+**Shipped in v1.4.0–v1.7.0:**
+- ✅ `delete_blueprint` tool — delete user-generated blueprints
+- ✅ Stack orchestration — multi-service deployments via MCP
+- ✅ Agent mode — fleet management and remote orchestration
+- ✅ Volume management — persistent storage across environments
+
+**Planned for v2.0:**
 - Streaming progress updates for long-running operations
 - Resource/prompt capabilities
 - Multi-step workflows

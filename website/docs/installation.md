@@ -302,7 +302,7 @@ thresh --version
 
 **Expected output:**
 ```
-thresh v1.6.0
+thresh v1.7.0
 Runtime: .NET 10.0.0
 Platform: Windows/WSL (or Linux, macOS)
 Binary Size: 5.0 MB
