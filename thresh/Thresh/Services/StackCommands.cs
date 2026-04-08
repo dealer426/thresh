@@ -34,6 +34,8 @@ internal class StackResponse
     public string Name { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string? TargetNodeId { get; set; }
+    public string? TargetClusterId { get; set; }
+    public bool Traefik { get; set; }
     public string? ErrorMessage { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
@@ -49,6 +51,11 @@ internal class StackServiceDef
     public List<string> Volumes { get; set; } = [];
     public Dictionary<string, string> Env { get; set; } = [];
     public List<string> DependsOn { get; set; } = [];
+    public string? Route { get; set; }
+    public string? NodeId { get; set; }
+    public string? NodeHostname { get; set; }
+    public string? PreferNode { get; set; }
+    public bool RequireGpu { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? ErrorMessage { get; set; }
 }
@@ -57,6 +64,8 @@ internal class StackCreateRequest
 {
     public string Name { get; set; } = string.Empty;
     public string? TargetNode { get; set; }
+    public string? TargetCluster { get; set; }
+    public bool Traefik { get; set; }
     public List<StackServiceDef> Services { get; set; } = [];
 }
 
@@ -137,8 +146,12 @@ public static class StackCommands
             }
 
             Console.WriteLine($"🚀 Deploying stack '{request.Name}'...");
-            if (!string.IsNullOrEmpty(request.TargetNode))
+            if (!string.IsNullOrEmpty(request.TargetCluster))
+                Console.WriteLine($"   Cluster:     {request.TargetCluster}");
+            else if (!string.IsNullOrEmpty(request.TargetNode))
                 Console.WriteLine($"   Target node: {request.TargetNode}");
+            if (request.Traefik)
+                Console.WriteLine("   Traefik:     enabled");
             Console.WriteLine($"   Services:    {string.Join(", ", request.Services.Select(s => s.Name))}");
             Console.WriteLine();
 
@@ -160,7 +173,12 @@ public static class StackCommands
             Console.WriteLine($"✓ Stack '{result.Name}' created (status: {result.Status})");
             Console.ResetColor();
             Console.WriteLine($"  ID:      {result.Id}");
-            Console.WriteLine($"  Node:    {result.TargetNodeId ?? "unassigned"}");
+            if (!string.IsNullOrEmpty(result.TargetClusterId))
+                Console.WriteLine($"  Cluster: {result.TargetClusterId}");
+            else
+                Console.WriteLine($"  Node:    {result.TargetNodeId ?? "unassigned"}");
+            if (result.Traefik)
+                Console.WriteLine("  Traefik: enabled");
             Console.WriteLine($"  Run 'thresh stack info {result.Name}' to track deployment.");
         }, fileArg, hubOption);
 
@@ -371,22 +389,25 @@ public static class StackCommands
     {
         const int nameW   = 24;
         const int statusW = 12;
-        const int nodeW   = 24;
+        const int targetW = 24;
         const int svcsW   = 8;
         const int ageW    = 12;
 
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.WriteLine($"{"NAME",-nameW} {"STATUS",-statusW} {"NODE",-nodeW} {"SVCS",-svcsW} {"AGE",-ageW}");
+        Console.WriteLine($"{"NAME",-nameW} {"STATUS",-statusW} {"TARGET",-targetW} {"SVCS",-svcsW} {"AGE",-ageW}");
         Console.ResetColor();
-        Console.WriteLine(new string('-', nameW + statusW + nodeW + svcsW + ageW + 4));
+        Console.WriteLine(new string('-', nameW + statusW + targetW + svcsW + ageW + 4));
 
         foreach (var s in stacks)
         {
             Console.ForegroundColor = StatusColor(s.Status);
-            var node = Truncate(s.TargetNodeId ?? "-", nodeW - 1);
-            var age  = FormatAgo(s.CreatedAt);
-            Console.WriteLine($"{Truncate(s.Name, nameW - 1),-nameW} {s.Status,-statusW} {node,-nodeW} {s.Services.Count,-svcsW} {age,-ageW}");
+            // Show cluster name if multi-node, otherwise node
+            var target = !string.IsNullOrEmpty(s.TargetClusterId)
+                ? $"⚙ {Truncate(s.TargetClusterId, targetW - 3)}"
+                : Truncate(s.TargetNodeId ?? "-", targetW - 1);
+            var age = FormatAgo(s.CreatedAt);
+            Console.WriteLine($"{Truncate(s.Name, nameW - 1),-nameW} {s.Status,-statusW} {target,-targetW} {s.Services.Count,-svcsW} {age,-ageW}");
         }
 
         Console.ResetColor();
@@ -396,17 +417,27 @@ public static class StackCommands
 
     private static void PrintStackDetail(StackResponse s)
     {
+        var isMultiNode = !string.IsNullOrEmpty(s.TargetClusterId);
+
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine($"  {s.Name}");
         Console.ResetColor();
         Console.WriteLine($"  {"ID:",-18} {s.Id}");
-        Console.WriteLine($"  {"Status:",-18} ");
+        Console.Write($"  {"Status:",-18} ");
         Console.ForegroundColor = StatusColor(s.Status);
         Console.Write(s.Status);
         Console.ResetColor();
         Console.WriteLine();
-        Console.WriteLine($"  {"Node:",-18} {s.TargetNodeId ?? "unassigned"}");
+
+        if (isMultiNode)
+            Console.WriteLine($"  {"Cluster:",-18} {s.TargetClusterId}");
+        else
+            Console.WriteLine($"  {"Node:",-18} {s.TargetNodeId ?? "unassigned"}");
+
+        if (s.Traefik)
+            Console.WriteLine($"  {"Traefik:",-18} enabled");
+
         Console.WriteLine($"  {"Created:",-18} {s.CreatedAt:yyyy-MM-dd HH:mm} UTC");
         if (s.DeployedAt.HasValue)
             Console.WriteLine($"  {"Deployed:",-18} {s.DeployedAt:yyyy-MM-dd HH:mm} UTC");
@@ -419,19 +450,54 @@ public static class StackCommands
 
         Console.WriteLine();
         Console.WriteLine("  Services:");
-        Console.WriteLine($"  {"  NAME",-20} {"IMAGE",-40} {"STATUS",-12} {"PORTS"}");
-        Console.WriteLine("  " + new string('-', 90));
 
-        foreach (var svc in s.Services)
+        if (isMultiNode)
         {
-            Console.ForegroundColor = StatusColor(svc.Status);
-            var ports = svc.Ports.Count > 0 ? string.Join(", ", svc.Ports) : "-";
-            var img   = Truncate(svc.Image, 38);
-            Console.WriteLine($"  {Truncate(svc.Name, 18),-20} {img,-40} {svc.Status,-12} {ports}");
-            if (!string.IsNullOrEmpty(svc.ErrorMessage))
+            // Multi-node: show which node each service is on
+            Console.WriteLine($"  {"  NAME",-18} {"IMAGE",-34} {"NODE",-18} {"STATUS",-10} {"PORTS"}");
+            Console.WriteLine("  " + new string('-', 100));
+
+            foreach (var svc in s.Services)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"    ↳ error: {svc.ErrorMessage}");
+                Console.ForegroundColor = StatusColor(svc.Status);
+                var ports = svc.Ports.Count > 0 ? string.Join(", ", svc.Ports) : "-";
+                var img   = Truncate(svc.Image, 32);
+                var node  = Truncate(svc.NodeHostname ?? svc.NodeId ?? "-", 16);
+                Console.WriteLine($"  {Truncate(svc.Name, 16),-18} {img,-34} {node,-18} {svc.Status,-10} {ports}");
+                if (!string.IsNullOrEmpty(svc.Route))
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                    Console.WriteLine($"    ↳ route: {svc.Route}");
+                }
+                if (!string.IsNullOrEmpty(svc.ErrorMessage))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"    ↳ error: {svc.ErrorMessage}");
+                }
+            }
+        }
+        else
+        {
+            // Single-node: compact layout
+            Console.WriteLine($"  {"  NAME",-20} {"IMAGE",-40} {"STATUS",-12} {"PORTS"}");
+            Console.WriteLine("  " + new string('-', 90));
+
+            foreach (var svc in s.Services)
+            {
+                Console.ForegroundColor = StatusColor(svc.Status);
+                var ports = svc.Ports.Count > 0 ? string.Join(", ", svc.Ports) : "-";
+                var img   = Truncate(svc.Image, 38);
+                Console.WriteLine($"  {Truncate(svc.Name, 18),-20} {img,-40} {svc.Status,-12} {ports}");
+                if (!string.IsNullOrEmpty(svc.Route))
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                    Console.WriteLine($"    ↳ route: {svc.Route}");
+                }
+                if (!string.IsNullOrEmpty(svc.ErrorMessage))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"    ↳ error: {svc.ErrorMessage}");
+                }
             }
         }
         Console.ResetColor();
