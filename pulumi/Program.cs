@@ -28,7 +28,7 @@ class Program
         var resourcePoolName = Environment.GetEnvironmentVariable("VSPHERE_RESOURCE_POOL") 
             ?? "Resources";
         var ubuntuTemplate = Environment.GetEnvironmentVariable("UBUNTU_TEMPLATE") 
-            ?? "packer-ubuntu-22.04";
+            ?? "ubuntu-noble-24.04-cloudimg";
         var sshPublicKeyPath = Environment.GetEnvironmentVariable("SSH_PUBLIC_KEY_PATH") 
             ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh", "id_ed25519.pub");
         var sshPrivateKeyPath = Environment.GetEnvironmentVariable("SSH_PRIVATE_KEY_PATH") 
@@ -103,6 +103,15 @@ class Program
 
         var vmOutputs = new Dictionary<string, object?>();
 
+        // Check if devbox-only mode is requested
+        var devboxOnly = Environment.GetEnvironmentVariable("PULUMI_DEVBOX")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+
+        if (devboxOnly)
+        {
+            // Deploy only the dev workstation
+            return DevBox.Deploy(vsphereProvider, datacenter, resourcePool, datastore, network, template, sshPublicKey, sshPrivateKey);
+        }
+
         foreach (var config in vmConfigs)
         {
             // Minimal cloud-init just for user/network setup - NO installation commands
@@ -119,7 +128,7 @@ users:
     ssh_authorized_keys:
       - {sshPublicKey}
     lock_passwd: false
-    passwd: $6$rounds=4096$saltsalt$YhqzaxVGdMns3v0IgYPJ3eILqWLzqJBqFdVLNvFx6K9gk5GvDEI9vGMqnVVzB7NR9lv6RtdTSvW7xRvx81xDj0
+    passwd: $6$rounds=4096$saltsalt$uBIMAEzlaQE7jwIqNZ4TT8iZGN3tS.LHOz.M5WvO93V13I5oWyGpQSnDHolb3Gwk9sh0r97PXZWXWF5qr.IGg.
 
 # Enable SSH password authentication for initial setup
 ssh_pwauth: true
