@@ -2,11 +2,138 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://thresh.sh/blog</id>
     <title>thresh Blog</title>
-    <updated>2026-04-08T00:00:00.000Z</updated>
+    <updated>2026-04-09T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://thresh.sh/blog"/>
     <subtitle>thresh Blog</subtitle>
     <icon>https://thresh.sh/img/favicon.ico</icon>
+    <entry>
+        <title type="html"><![CDATA[Why Thresh Hub Uses Opaque Tokens Instead of JWT]]></title>
+        <id>https://thresh.sh/blog/opaque-tokens-vs-jwt</id>
+        <link href="https://thresh.sh/blog/opaque-tokens-vs-jwt"/>
+        <updated>2026-04-09T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[How Thresh Hub's opaque token architecture with server-side validation delivers instant revocation, scoped key types, and graceful rotation — and why that matters more than stateless JWTs for fleet management.]]></summary>
+        <content type="html"><![CDATA[<p>When we designed Thresh Hub's authentication, we made a deliberate choice: <strong>opaque tokens with server-side validation</strong> instead of JWTs. The three key families (<code>thresh_live_*</code>, <code>thresh_mid_*</code>, <code>thresh_cli_*</code>) are random hex/base64 strings with no embedded claims. Every request validates against a SHA-256 hash stored in the database.</p>
+<p>Here's why — and how the whole system fits together.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-architecture-at-a-glance">The Architecture at a Glance<a href="https://thresh.sh/blog/opaque-tokens-vs-jwt#the-architecture-at-a-glance" class="hash-link" aria-label="Direct link to The Architecture at a Glance" title="Direct link to The Architecture at a Glance" translate="no">​</a></h2>
+<!-- -->
+<p>The mid-tier adds a critical validation layer: it calls <code>POST /api/v1/keys/validate</code> on the Hub with its own <code>thresh_mid_*</code> key to validate agent keys. The Hub verifies <strong>both tokens belong to the same account</strong> — cross-account access is blocked.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="key-security-advantages-over-jwt">Key Security Advantages Over JWT<a href="https://thresh.sh/blog/opaque-tokens-vs-jwt#key-security-advantages-over-jwt" class="hash-link" aria-label="Direct link to Key Security Advantages Over JWT" title="Direct link to Key Security Advantages Over JWT" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="1-instant-revocation">1. Instant Revocation<a href="https://thresh.sh/blog/opaque-tokens-vs-jwt#1-instant-revocation" class="hash-link" aria-label="Direct link to 1. Instant Revocation" title="Direct link to 1. Instant Revocation" translate="no">​</a></h3>
+<p>When you revoke a key (<code>IsRevoked = true</code>) or set a rotation grace period (<code>RevokeAfter</code>), it takes effect on the next request — worst case, after the 5-minute cache expires.</p>
+<p>JWTs are stateless: once signed, they're valid until expiry. Revoking a JWT means maintaining a server-side blocklist, which defeats the purpose of JWTs being self-contained.</p>
+<!-- -->
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="2-no-secrets-in-the-token">2. No Secrets in the Token<a href="https://thresh.sh/blog/opaque-tokens-vs-jwt#2-no-secrets-in-the-token" class="hash-link" aria-label="Direct link to 2. No Secrets in the Token" title="Direct link to 2. No Secrets in the Token" translate="no">​</a></h3>
+<p>JWTs contain base64-encoded claims (user ID, roles, expiry) that <strong>anyone can decode</strong> — they're signed, not encrypted. Open <a href="https://jwt.io/" target="_blank" rel="noopener noreferrer" class="">jwt.io</a> and paste any JWT to see everything inside.</p>
+<p>Thresh tokens are opaque random bytes. A captured token reveals <strong>nothing</strong> about the user, account, or permissions without hitting the Hub database.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="3-sha-256-hashed-storage">3. SHA-256 Hashed Storage<a href="https://thresh.sh/blog/opaque-tokens-vs-jwt#3-sha-256-hashed-storage" class="hash-link" aria-label="Direct link to 3. SHA-256 Hashed Storage" title="Direct link to 3. SHA-256 Hashed Storage" translate="no">​</a></h3>
+<p>Raw keys are <strong>never stored</strong> in the database — only their SHA-256 hash. If the database is compromised, the attacker gets hashes, not usable keys.</p>
+<p>JWTs typically require the signing key (HMAC secret or RSA private key) to be stored on the server. If that <strong>one key</strong> leaks, every token in circulation can be forged.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="4-scoped-key-types-with-prefix-isolation">4. Scoped Key Types with Prefix Isolation<a href="https://thresh.sh/blog/opaque-tokens-vs-jwt#4-scoped-key-types-with-prefix-isolation" class="hash-link" aria-label="Direct link to 4. Scoped Key Types with Prefix Isolation" title="Direct link to 4. Scoped Key Types with Prefix Isolation" translate="no">​</a></h3>
+<p>The <code>ApiKeyAuthenticationHandler</code> routes by prefix:</p>
+<table><thead><tr><th>Prefix</th><th>Scope</th><th>Can Access</th></tr></thead><tbody><tr><td><code>thresh_live_*</code></td><td>Agent keys</td><td>Agent registration, heartbeats, command results</td></tr><tr><td><code>thresh_mid_*</code></td><td>Mid-tier keys</td><td>Key validation, metrics relay, command dispatch</td></tr><tr><td><code>thresh_cli_*</code></td><td>CLI user keys</td><td>Dashboard, fleet management, key rotation</td></tr></tbody></table>
+<p>A compromised agent key <strong>cannot escalate</strong> to mid-tier management APIs. The <code>KeysController</code> also enforces same-account validation — a mid-tier can only validate keys belonging to its own account.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="5-graceful-key-rotation">5. Graceful Key Rotation<a href="https://thresh.sh/blog/opaque-tokens-vs-jwt#5-graceful-key-rotation" class="hash-link" aria-label="Direct link to 5. Graceful Key Rotation" title="Direct link to 5. Graceful Key Rotation" translate="no">​</a></h3>
+<p>When you rotate an agent key, the old key gets <code>RevokeAfter = now + 24 hours</code>. Both keys work during the grace window, then the old one dies automatically.</p>
+<p>No need to coordinate signing key rotation across multiple services like you would with JWT key pairs.</p>
+<!-- -->
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-full-authentication-flow">The Full Authentication Flow<a href="https://thresh.sh/blog/opaque-tokens-vs-jwt#the-full-authentication-flow" class="hash-link" aria-label="Direct link to The Full Authentication Flow" title="Direct link to The Full Authentication Flow" translate="no">​</a></h2>
+<!-- -->
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-tradeoff">The Tradeoff<a href="https://thresh.sh/blog/opaque-tokens-vs-jwt#the-tradeoff" class="hash-link" aria-label="Direct link to The Tradeoff" title="Direct link to The Tradeoff" translate="no">​</a></h2>
+<p>The cost is that every validation requires a <strong>database round-trip</strong> (mitigated by the 5-minute caches on both Hub and mid-tier). JWTs avoid this by being self-verifying, but that's exactly what makes them hard to revoke.</p>
+<p>For a fleet management system where you need to <strong>instantly lock out a compromised node</strong>, server-side validation is the right call.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="summary">Summary<a href="https://thresh.sh/blog/opaque-tokens-vs-jwt#summary" class="hash-link" aria-label="Direct link to Summary" title="Direct link to Summary" translate="no">​</a></h2>
+<table><thead><tr><th></th><th>Thresh Hub (Opaque)</th><th>JWT</th></tr></thead><tbody><tr><td><strong>Revocation</strong></td><td>Instant (next request)</td><td>Requires blocklist or wait for expiry</td></tr><tr><td><strong>Token contents</strong></td><td>Opaque — reveals nothing</td><td>Base64 claims visible to anyone</td></tr><tr><td><strong>Key storage</strong></td><td>SHA-256 hashed</td><td>Signing key must be stored</td></tr><tr><td><strong>Scope isolation</strong></td><td>Built-in via prefix routing</td><td>Requires custom claims logic</td></tr><tr><td><strong>Key rotation</strong></td><td>Graceful 24h overlap</td><td>Coordinate across all services</td></tr><tr><td><strong>Validation cost</strong></td><td>DB round-trip (cached 5 min)</td><td>None (self-verifying)</td></tr></tbody></table>
+<p>The bottom line: for thresh's threat model — managing a fleet of dev environments across potentially untrusted networks — the ability to instantly revoke access to any node outweighs the performance benefit of stateless tokens.</p>]]></content>
+        <author>
+            <name>thresh Team</name>
+            <uri>https://github.com/dealer426/thresh</uri>
+        </author>
+        <category label="Security" term="Security"/>
+        <category label="hub" term="hub"/>
+        <category label="architecture" term="architecture"/>
+        <category label="guide" term="guide"/>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Why We Chose SignalR as the Primary Transport for Thresh]]></title>
+        <id>https://thresh.sh/blog/why-signalr-primary-transport</id>
+        <link href="https://thresh.sh/blog/why-signalr-primary-transport"/>
+        <updated>2026-04-09T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[A deep dive into thresh's real-time communication architecture — why SignalR over WebSockets, how REST serves as automatic failover, and the resilience patterns that keep a fleet connected.]]></summary>
+        <content type="html"><![CDATA[<p>When you're managing a fleet of development environments across a network, the transport layer isn't just plumbing — it's the nervous system. Every heartbeat, every command dispatch, every metrics payload depends on it. We needed something that was real-time, resilient, and could degrade gracefully when the network couldn't cooperate.</p>
+<p>We chose <strong>ASP.NET SignalR</strong> as the primary transport, with <strong>REST polling as automatic failover</strong>. Here's why, and exactly how it works under the hood.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-problem-fleet-communication-at-scale">The Problem: Fleet Communication at Scale<a href="https://thresh.sh/blog/why-signalr-primary-transport#the-problem-fleet-communication-at-scale" class="hash-link" aria-label="Direct link to The Problem: Fleet Communication at Scale" title="Direct link to The Problem: Fleet Communication at Scale" translate="no">​</a></h2>
+<p>A thresh deployment looks like this: agents running on dev machines, optionally connecting through a mid-tier relay, all reporting back to a central Hub. The communication needs are:</p>
+<ul>
+<li class=""><strong>Real-time command dispatch</strong> — push a command to an agent and get results back without polling</li>
+<li class=""><strong>Live metrics streaming</strong> — CPU, RAM, disk, GPU every 60 seconds from every node</li>
+<li class=""><strong>Instant status changes</strong> — node goes offline, dashboard updates immediately</li>
+<li class=""><strong>Bidirectional</strong> — the Hub needs to push commands <em>down</em> to agents, not just receive data</li>
+</ul>
+<p>HTTP polling can do all of this, but at the cost of latency and unnecessary traffic. We needed push semantics.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="why-signalr-over-raw-websockets">Why SignalR Over Raw WebSockets<a href="https://thresh.sh/blog/why-signalr-primary-transport#why-signalr-over-raw-websockets" class="hash-link" aria-label="Direct link to Why SignalR Over Raw WebSockets" title="Direct link to Why SignalR Over Raw WebSockets" translate="no">​</a></h2>
+<p>Raw WebSockets would give us push semantics, but SignalR gives us much more:</p>
+<!-- -->
+<p>The killer feature is <strong>transport negotiation</strong>. SignalR automatically tries WebSocket first, falls back to Server-Sent Events, then to long-polling — all transparently. This matters because agents can be behind corporate firewalls, NATs, or proxies that block WebSocket upgrades. The agent doesn't need to know or care.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-full-connection-architecture">The Full Connection Architecture<a href="https://thresh.sh/blog/why-signalr-primary-transport#the-full-connection-architecture" class="hash-link" aria-label="Direct link to The Full Connection Architecture" title="Direct link to The Full Connection Architecture" translate="no">​</a></h2>
+<p>Here's how the entire transport layer fits together across all three tiers:</p>
+<!-- -->
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="agent-connection-the-tiered-fallback">Agent Connection: The Tiered Fallback<a href="https://thresh.sh/blog/why-signalr-primary-transport#agent-connection-the-tiered-fallback" class="hash-link" aria-label="Direct link to Agent Connection: The Tiered Fallback" title="Direct link to Agent Connection: The Tiered Fallback" translate="no">​</a></h2>
+<p>When an agent starts up, it doesn't just try one connection method. It walks through a <strong>tiered fallback chain</strong>, trying the best option first and degrading gracefully:</p>
+<!-- -->
+<p>Each tier has a transport label that's recorded in the database and visible on the dashboard:</p>
+<table><thead><tr><th>Tier</th><th>Transport Label</th><th>Capabilities</th></tr></thead><tbody><tr><td>Primary SignalR</td><td><code>SignalR</code> or <code>SignalR-MidTier</code></td><td>Full real-time push, instant commands</td></tr><tr><td>Primary REST</td><td><code>REST</code> or <code>REST-MidTier</code></td><td>Polling-based, 30-sec command check</td></tr><tr><td>Cloud SignalR</td><td><code>SignalR</code> (via fallback URL)</td><td>Full real-time through cloud DR</td></tr><tr><td>Cloud REST</td><td><code>REST</code> (via fallback URL)</td><td>Polling through cloud DR</td></tr><tr><td>Offline</td><td>—</td><td>Local cache, forward when reconnected</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="reconnection--exponential-backoff">Reconnection &amp; Exponential Backoff<a href="https://thresh.sh/blog/why-signalr-primary-transport#reconnection--exponential-backoff" class="hash-link" aria-label="Direct link to Reconnection &amp; Exponential Backoff" title="Direct link to Reconnection &amp; Exponential Backoff" translate="no">​</a></h2>
+<p>SignalR's built-in reconnection is good, but we layer our own retry policies on top for the initial connection and for mid-tier-to-hub resilience.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="mid-tier--hub-retry-policy">Mid-Tier → Hub Retry Policy<a href="https://thresh.sh/blog/why-signalr-primary-transport#mid-tier--hub-retry-policy" class="hash-link" aria-label="Direct link to Mid-Tier → Hub Retry Policy" title="Direct link to Mid-Tier → Hub Retry Policy" translate="no">​</a></h3>
+<p>The mid-tier's <code>HubClient</code> uses a custom <code>IRetryPolicy</code> with escalating delays:</p>
+<!-- -->
+<p>Before the reconnect policy even kicks in, the initial connection has its own retry loop — <strong>5 attempts</strong> with <code>attempt × 5</code> second delays (5s, 10s, 15s, 20s, 25s). This handles the common case where the Hub hasn't finished booting yet when the mid-tier starts.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="agent--hubmidtier-reconnection">Agent → Hub/MidTier Reconnection<a href="https://thresh.sh/blog/why-signalr-primary-transport#agent--hubmidtier-reconnection" class="hash-link" aria-label="Direct link to Agent → Hub/MidTier Reconnection" title="Direct link to Agent → Hub/MidTier Reconnection" translate="no">​</a></h3>
+<p>Agents use SignalR's <code>WithAutomaticReconnect</code> with delays of <code>[0s, 2s, 5s, 10s, ...]</code>. If the automatic reconnect exhausts its retries, the agent falls through to the next tier in the fallback chain.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="command-dispatch-the-real-time-advantage">Command Dispatch: The Real-Time Advantage<a href="https://thresh.sh/blog/why-signalr-primary-transport#command-dispatch-the-real-time-advantage" class="hash-link" aria-label="Direct link to Command Dispatch: The Real-Time Advantage" title="Direct link to Command Dispatch: The Real-Time Advantage" translate="no">​</a></h2>
+<p>This is where SignalR truly shines. When you dispatch a command to an agent, it's <strong>pushed immediately</strong> — no waiting for the next poll cycle.</p>
+<!-- -->
+<p>With SignalR, command dispatch is <strong>sub-second</strong>. With REST failover, there's up to a 30-second delay waiting for the next poll. Both work — but SignalR is the experience we want.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="heartbeat--liveness-detection">Heartbeat &amp; Liveness Detection<a href="https://thresh.sh/blog/why-signalr-primary-transport#heartbeat--liveness-detection" class="hash-link" aria-label="Direct link to Heartbeat &amp; Liveness Detection" title="Direct link to Heartbeat &amp; Liveness Detection" translate="no">​</a></h2>
+<p>Keeping track of which nodes are actually alive requires two layers:</p>
+<!-- -->
+<p><strong>Layer 1</strong> is SignalR's built-in keep-alive — ping/pong frames that detect dropped TCP connections. <strong>Layer 2</strong> is our application-level heartbeat: every agent sends metrics every 60 seconds, and a background service sweeps every 30 seconds looking for agents that haven't reported in 90 seconds.</p>
+<p>If an agent goes silent for 90 seconds, it's marked offline and the dashboard is notified in real-time (via SignalR, naturally). If it's been gone for 14 days, the stale record is purged entirely.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="metrics-flow-batching-at-the-mid-tier">Metrics Flow: Batching at the Mid-Tier<a href="https://thresh.sh/blog/why-signalr-primary-transport#metrics-flow-batching-at-the-mid-tier" class="hash-link" aria-label="Direct link to Metrics Flow: Batching at the Mid-Tier" title="Direct link to Metrics Flow: Batching at the Mid-Tier" translate="no">​</a></h2>
+<p>Raw metrics from every agent every 60 seconds would overwhelm the Hub in a large fleet. The mid-tier solves this with <strong>batched aggregation</strong>:</p>
+<!-- -->
+<p>Individual agents send metrics every 60 seconds to their local mid-tier via SignalR (or REST if SignalR is unavailable). The <code>MetricsBatcher</code> service aggregates all local agent metrics and sends a single <code>SendAggregatedMetrics()</code> call to the Hub every 5 minutes. This reduces Hub-bound traffic by roughly <code>N × 5</code> (where N is agents per mid-tier).</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="failover--failback-self-healing-connectivity">Failover &amp; Failback: Self-Healing Connectivity<a href="https://thresh.sh/blog/why-signalr-primary-transport#failover--failback-self-healing-connectivity" class="hash-link" aria-label="Direct link to Failover &amp; Failback: Self-Healing Connectivity" title="Direct link to Failover &amp; Failback: Self-Healing Connectivity" translate="no">​</a></h2>
+<p>The agent doesn't just failover — it <strong>automatically fails back</strong> when the primary becomes available again:</p>
+<!-- -->
+<p>Key configuration that controls this behavior:</p>
+<table><thead><tr><th>Setting</th><th>Default</th><th>What It Does</th></tr></thead><tbody><tr><td><code>FailoverEnabled</code></td><td><code>true</code></td><td>Allow falling through to cloud DR tiers</td></tr><tr><td><code>FailoverTimeoutSeconds</code></td><td><code>30</code></td><td>How long to wait before declaring a tier dead</td></tr><tr><td><code>FailbackEnabled</code></td><td><code>true</code></td><td>Automatically try to return to primary</td></tr><tr><td><code>FailbackDelaySeconds</code></td><td><code>300</code> (5 min)</td><td>Wait before attempting failback to avoid flapping</td></tr><tr><td><code>ConnectTimeoutSeconds</code></td><td><code>10</code></td><td>Per-connection attempt timeout</td></tr><tr><td><code>OfflineCacheEnabled</code></td><td><code>true</code></td><td>Cache data locally when fully disconnected</td></tr></tbody></table>
+<p>The 5-minute failback delay prevents <strong>connection flapping</strong> — if the primary is unstable, the agent stays on cloud DR long enough to confirm the primary is actually healthy before switching back.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-tradeoff-why-not-just-rest">The Tradeoff: Why Not Just REST?<a href="https://thresh.sh/blog/why-signalr-primary-transport#the-tradeoff-why-not-just-rest" class="hash-link" aria-label="Direct link to The Tradeoff: Why Not Just REST?" title="Direct link to The Tradeoff: Why Not Just REST?" translate="no">​</a></h2>
+<p>REST-only would be simpler. No WebSocket upgrade negotiation, no connection state management, no reconnection logic. But the costs are real:</p>
+<table><thead><tr><th></th><th>SignalR (Primary)</th><th>REST (Failover)</th></tr></thead><tbody><tr><td><strong>Command latency</strong></td><td>Sub-second push</td><td>Up to 30s (poll interval)</td></tr><tr><td><strong>Dashboard updates</strong></td><td>Instant via push</td><td>Would require polling</td></tr><tr><td><strong>Network overhead</strong></td><td>One persistent connection</td><td>New TCP + TLS handshake per request</td></tr><tr><td><strong>Metrics delivery</strong></td><td>Stream as available</td><td>Batch on timer</td></tr><tr><td><strong>Bidirectional</strong></td><td>Native</td><td>Simulated (client polls)</td></tr><tr><td><strong>Firewall compat</strong></td><td>WebSocket → SSE → long-poll</td><td>Always works</td></tr></tbody></table>
+<p>We get the best of both: SignalR for the real-time experience when the network allows it, REST as a reliable fallback when it doesn't. The agent handles the transition transparently — the user never has to configure or think about it.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="summary">Summary<a href="https://thresh.sh/blog/why-signalr-primary-transport#summary" class="hash-link" aria-label="Direct link to Summary" title="Direct link to Summary" translate="no">​</a></h2>
+<p>SignalR gives thresh three things that matter for fleet management:</p>
+<ol>
+<li class=""><strong>Real-time push</strong> — commands and status changes arrive instantly, not on the next poll</li>
+<li class=""><strong>Transport negotiation</strong> — works behind firewalls that block WebSockets by automatically falling back to SSE or long-polling</li>
+<li class=""><strong>Built-in reconnection</strong> — combined with our tiered failover chain, agents self-heal through network disruptions without operator intervention</li>
+</ol>
+<p>REST is always there as the safety net. The system is designed so that <strong>no single transport failure takes a node offline</strong> — it just degrades gracefully until connectivity recovers.</p>]]></content>
+        <author>
+            <name>thresh Team</name>
+            <uri>https://github.com/dealer426/thresh</uri>
+        </author>
+        <category label="architecture" term="architecture"/>
+        <category label="hub" term="hub"/>
+        <category label="agent" term="agent"/>
+        <category label="mid-tier" term="mid-tier"/>
+        <category label="signalr" term="signalr"/>
+        <category label="Security" term="Security"/>
+        <category label="guide" term="guide"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Fleet Management Patterns: Running thresh at Scale]]></title>
         <id>https://thresh.sh/blog/fleet-management-patterns</id>
