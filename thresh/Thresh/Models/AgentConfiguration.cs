@@ -91,6 +91,16 @@ public class AgentConfiguration
     public string? TlsCaCert { get; set; }
     
     /// <summary>
+    /// Client certificate path for mTLS (PFX or PEM)
+    /// </summary>
+    public string? TlsClientCert { get; set; }
+    
+    /// <summary>
+    /// Client certificate private key path (PEM, required if TlsClientCert is PEM)
+    /// </summary>
+    public string? TlsClientKey { get; set; }
+    
+    /// <summary>
     /// HTTP proxy URL (optional)
     /// </summary>
     public string? Proxy { get; set; }

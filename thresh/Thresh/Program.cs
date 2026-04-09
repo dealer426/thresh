@@ -1706,6 +1706,12 @@ class Program
                 case "tls-verify":
                     config.TlsVerify = bool.Parse(value);
                     break;
+                case "tls-client-cert":
+                    config.TlsClientCert = value;
+                    break;
+                case "tls-client-key":
+                    config.TlsClientKey = value;
+                    break;
                 default:
                     Console.WriteLine($"❌ Unknown configuration key: {key}");
                     return;
@@ -1738,6 +1744,8 @@ class Program
                 "failback-enabled" => config.FailbackEnabled.ToString(),
                 "failback-delay" => config.FailbackDelaySeconds.ToString(),
                 "tls-verify" => config.TlsVerify.ToString(),
+                "tls-client-cert" => config.TlsClientCert ?? "(not set)",
+                "tls-client-key" => config.TlsClientKey ?? "(not set)",
                 _ => null
             };
 
@@ -1777,6 +1785,8 @@ class Program
             Console.WriteLine($"failback-delay:      {config.FailbackDelaySeconds}s");
             Console.WriteLine($"offline-cache:       {config.OfflineCacheEnabled}");
             Console.WriteLine($"tls-verify:          {config.TlsVerify}");
+            Console.WriteLine($"tls-client-cert:     {config.TlsClientCert ?? "(not set)"}");
+            Console.WriteLine($"tls-client-key:      {config.TlsClientKey ?? "(not set)"}");
             Console.WriteLine();
         });
 

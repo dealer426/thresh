@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using System.Net.Http.Json;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Thresh.Models;
 
@@ -384,9 +385,15 @@ public class AgentService
                 }
                 options.HttpMessageHandlerFactory = handler =>
                 {
-                    if (handler is HttpClientHandler clientHandler && !config.TlsVerify)
+                    if (handler is HttpClientHandler clientHandler)
                     {
-                        clientHandler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+                        if (!config.TlsVerify)
+                            clientHandler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+
+                        // mTLS: attach client certificate if configured
+                        var clientCert = LoadClientCertificate(config);
+                        if (clientCert != null)
+                            clientHandler.ClientCertificates.Add(clientCert);
                     }
                     return handler;
                 };
@@ -1277,5 +1284,38 @@ http:
             GpuMemoryTotalGb = gpuMemoryGb,
             Environments = environments.Select(e => new EnvironmentSummary { Name = e.Name, Status = e.Status.ToString() }).ToList()
         };
+    }
+
+    /// <summary>
+    /// Loads client certificate for mTLS from config paths.
+    /// Supports PFX (single file) or PEM cert+key pair.
+    /// </summary>
+    private static X509Certificate2? LoadClientCertificate(AgentConfiguration config)
+    {
+        if (string.IsNullOrEmpty(config.TlsClientCert))
+            return null;
+
+        try
+        {
+            if (config.TlsClientCert.EndsWith(".pfx", StringComparison.OrdinalIgnoreCase) ||
+                config.TlsClientCert.EndsWith(".p12", StringComparison.OrdinalIgnoreCase))
+            {
+                return X509CertificateLoader.LoadPkcs12FromFile(config.TlsClientCert, null);
+            }
+
+            // PEM cert + key
+            if (!string.IsNullOrEmpty(config.TlsClientKey))
+            {
+                return X509Certificate2.CreateFromPemFile(config.TlsClientCert, config.TlsClientKey);
+            }
+
+            // PEM with embedded key
+            return X509Certificate2.CreateFromPemFile(config.TlsClientCert);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Warning: Could not load client certificate: {ex.Message}");
+            return null;
+        }
     }
 }

@@ -8,6 +8,15 @@ description: Complete reference for all thresh commands
 
 thresh provides a comprehensive set of commands for managing WSL development environments, AI-powered blueprint generation, MCP server integration, and fleet management via Thresh Hub.
 
+:::info New in v2.0
+Thresh v2.0 introduces **multi-node stacks, rolling updates, historical analytics, and mTLS**:
+- `thresh stack up/down/destroy/list/info/update` — full CLI stack management
+- Multi-node deployment with cluster targeting and per-service placement hints
+- Rolling service updates via `thresh stack update --service <svc> --image <img>`
+- Historical metrics and analytics API (`/api/v1/analytics`)
+- mTLS between agents and hub with client certificate authentication
+:::
+
 :::info New in v1.7.0
 Thresh v1.7.0 introduces **Hub authentication, remote node management, and cluster orchestration**:
 - `thresh auth login/logout/status/token` — authenticate the CLI with Thresh Hub
@@ -57,6 +66,7 @@ Thresh v1.4.0 introduces **grouped blueprint commands** for better organization:
 | [`agent`](/docs/cli-reference/agent) | Connect node to Thresh Hub (v1.6.0) |
 | [`node`](/docs/cli-reference/node) | Manage remote fleet nodes (v1.7.0) |
 | [`cluster`](/docs/cli-reference/cluster) | Organize nodes into clusters (v1.7.0) |
+| [`stack`](/docs/cli-reference/stack) | Deploy and manage multi-service stacks (v2.0) |
 | [`distros`](/docs/cli-reference/distros) | List available distributions |
 | [`distro`](/docs/cli-reference/distro) | Manage custom distributions |
 | [`config`](/docs/cli-reference/config) | Manage configuration settings |
@@ -100,7 +110,13 @@ Thresh v1.4.0 introduces **grouped blueprint commands** for better organization:
 - **[cluster](/docs/cli-reference/cluster)** - Organize nodes into clusters (v1.7.0)
 
 ### Stacks (Hub-Managed)
-- **[Stacks](/docs/cli-reference/stack)** - Deploy multi-service stacks via Hub dashboard and API (v1.7.0)
+- **[stack](/docs/cli-reference/stack)** - Deploy and manage multi-service stacks (v2.0)
+- `thresh stack up` — deploy from JSON definition
+- `thresh stack list` — list all stacks
+- `thresh stack info` — per-service status
+- `thresh stack down` — stop (preserve volumes)
+- `thresh stack destroy` — stop and remove volumes
+- `thresh stack update` — rolling image update
 
 ### Integration
 - **[serve](/docs/cli-reference/serve)** - MCP server for AI editors
