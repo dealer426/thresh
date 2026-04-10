@@ -69,7 +69,9 @@ try {
             'Machine'
         )
         # Also update the current session PATH so thresh is immediately usable
-        $env:Path += ";$InstallDir"
+        if ($env:Path -notlike "*$InstallDir*") {
+            $env:Path = $env:Path.TrimEnd(';') + ";$InstallDir"
+        }
     }
 
     Write-Host ""

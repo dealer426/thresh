@@ -41,9 +41,14 @@ esac
 
 # Fetch the latest release version tag from GitHub
 echo "Fetching latest thresh release..."
-LATEST_TAG="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-  | grep '"tag_name"' \
-  | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')"
+RELEASE_JSON="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest")"
+if command -v jq >/dev/null 2>&1; then
+  LATEST_TAG="$(printf '%s' "$RELEASE_JSON" | jq -r '.tag_name')"
+else
+  LATEST_TAG="$(printf '%s' "$RELEASE_JSON" \
+    | grep '"tag_name"' \
+    | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')"
+fi
 
 if [ -z "$LATEST_TAG" ]; then
   echo "Failed to determine the latest release version." >&2
@@ -79,7 +84,7 @@ fi
 echo ""
 echo "thresh ${LATEST_TAG} installed successfully!"
 echo ""
-thresh version 2>/dev/null || true
+thresh version || true
 echo ""
 echo "Get started: thresh --help"
 echo "Documentation: https://thresh.sh/docs"
