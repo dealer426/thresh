@@ -125,6 +125,11 @@ public class MetricsData
     /// Total GPU memory in GB
     /// </summary>
     public int? GpuMemoryTotalGb { get; set; }
+
+    /// <summary>
+    /// GPU utilization percentage (average across all GPUs)
+    /// </summary>
+    public double? GpuUtilizationPercent { get; set; }
     
     /// <summary>
     /// Environment details

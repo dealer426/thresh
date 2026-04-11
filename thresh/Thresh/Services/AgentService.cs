@@ -1249,24 +1249,26 @@ http:
     private async Task<MetricsData> GetMetricsDataAsync()
     {
         var hostMetrics = await _metricsService.CollectMetricsAsync();
-        
-        // Try to detect GPU (basic detection for now)
+
+        // Detect GPUs via nvidia-smi, rocm-smi, or WMI
         int? gpuCount = null;
         string? gpuModel = null;
         int? gpuMemoryGb = null;
-        
+        double? gpuUtilization = null;
+
         try
         {
-            // TODO: Implement proper GPU detection using nvidia-smi, rocm-smi, etc.
-            // For now, just check if nvidia-smi is available
-            var gpuInfo = System.Environment.GetEnvironmentVariable("GPU_INFO");
-            if (!string.IsNullOrEmpty(gpuInfo))
+            var gpu = await GpuDetector.DetectAsync();
+            if (gpu != null)
             {
-                // Parse GPU_INFO if set
+                gpuCount = gpu.Count;
+                gpuModel = gpu.Model;
+                gpuMemoryGb = gpu.MemoryTotalGb;
+                gpuUtilization = gpu.UtilizationPercent;
             }
         }
         catch { /* GPU detection is optional */ }
-        
+
         var environments = await GetContainerService().ListEnvironmentsAsync(false);
         
         return new MetricsData
@@ -1282,6 +1284,7 @@ http:
             GpuCount = gpuCount,
             GpuModel = gpuModel,
             GpuMemoryTotalGb = gpuMemoryGb,
+            GpuUtilizationPercent = gpuUtilization,
             Environments = environments.Select(e => new EnvironmentSummary { Name = e.Name, Status = e.Status.ToString() }).ToList()
         };
     }
