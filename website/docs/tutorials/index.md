@@ -107,6 +107,21 @@ Connect your thresh nodes to a centralized Hub for fleet-wide visibility and orc
 **Time:** 30 minutes  
 **Difficulty:** Advanced
 
+### [Midtier ELF Migration — Test Plan](/docs/tutorials/midtier-elf-test-plan)
+
+Full test plan for validating thresh-midtier after conversion to a native ELF binary (Native AOT).
+
+**You'll learn:**
+- Verify ELF binary format, size, and trimming requirements
+- Test Hub connectivity and mid-tier API key enforcement
+- Validate agent handshake, metrics routing, and command dispatch
+- Run resilience and failover scenarios
+- Confirm the platform matrix (x86-64, arm64, Alpine musl)
+- Integrate ELF validation into CI
+
+**Time:** Reference document  
+**Difficulty:** Advanced
+
 ---
 
 ## AI Integration
