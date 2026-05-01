@@ -53,26 +53,27 @@ class Program
         var threshGitHubRepo = Environment.GetEnvironmentVariable("THRESH_GITHUB_REPO") 
             ?? "https://github.com/dealer426/thresh.git";
 
-        // Pre-built binary paths (SCP from local machine instead of GitHub download)
-        var agentTarballPath = (Environment.GetEnvironmentVariable("THRESH_AGENT_TARBALL") 
-            ?? Path.GetFullPath(Path.Combine(".", "..", "build-output", "thresh-agent-deploy.tar.gz")))
-            .Replace('\\', '/');
-        var midtierTarballPath = (Environment.GetEnvironmentVariable("THRESH_MIDTIER_TARBALL") 
-            ?? Path.GetFullPath(Path.Combine(".", "..", "..", "thresh-midtier", "build-output", "thresh-midtier-deploy.tar.gz")))
-            .Replace('\\', '/');
-        
         // Agent is downloaded from GitHub releases (latest) on each node — small + fast.
         // Override with THRESH_AGENT_RELEASE_URL if you need a specific version.
         var agentReleaseUrl = Environment.GetEnvironmentVariable("THRESH_AGENT_RELEASE_URL")
             ?? "https://github.com/dealer426/thresh/releases/latest/download/thresh-linux-x64.tar.gz";
-        
-        if (!System.IO.File.Exists(agentTarballPath))
-            Console.Error.WriteLine($"ℹ️  Local agent tarball not found at {agentTarballPath} — nodes will download from GitHub releases ({agentReleaseUrl})");
-        if (!System.IO.File.Exists(midtierTarballPath))
-            Console.Error.WriteLine($"⚠️  Midtier tarball not found at {midtierTarballPath} — node-3 midtier deployment will be skipped");
-        
-        var wslAgentTarball = ToWslPath(agentTarballPath);
-        var wslMidtierTarball = ToWslPath(midtierTarballPath);
+
+        // Mid-tier: prefer local tarball + install.sh from sibling thresh-midtier repo,
+        // fall back to GitHub release URL when the local build isn't present.
+        var midtierTarballPath = (Environment.GetEnvironmentVariable("THRESH_MIDTIER_TARBALL")
+            ?? Path.GetFullPath(Path.Combine(".", "..", "..", "thresh-midtier", "dist", "thresh-midtier-linux-x64.tar.gz")))
+            .Replace('\\', '/');
+        var midtierInstallScriptPath = (Environment.GetEnvironmentVariable("THRESH_MIDTIER_INSTALL_SH")
+            ?? Path.GetFullPath(Path.Combine(".", "..", "..", "thresh-midtier", "deploy", "install.sh")))
+            .Replace('\\', '/');
+        var midtierReleaseUrl = Environment.GetEnvironmentVariable("THRESH_MIDTIER_RELEASE_URL")
+            ?? "https://github.com/dealer426/thresh-midtier/releases/latest/download/thresh-midtier-linux-x64.tar.gz";
+
+        var midtierLocalAvailable = System.IO.File.Exists(midtierTarballPath) && System.IO.File.Exists(midtierInstallScriptPath);
+        if (!midtierLocalAvailable)
+            Console.Error.WriteLine($"ℹ️  Local midtier build not found ({midtierTarballPath} or install.sh) — node-3 will curl from {midtierReleaseUrl}");
+        var wslMidtierTarball = midtierLocalAvailable ? ToWslPath(midtierTarballPath) : "";
+        var wslMidtierInstallSh = midtierLocalAvailable ? ToWslPath(midtierInstallScriptPath) : "";
 
         // GPU Node configuration (optional - set ENABLE_GPU_NODE=true to deploy)
         var enableGpuNode = Environment.GetEnvironmentVariable("ENABLE_GPU_NODE")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
@@ -299,8 +300,14 @@ local-hostname: {config.Name}
 
         // ══════════════════════════════════════════════════════════════════
         // Mid-tier deployment on node-3 (relay for GPU and remote nodes)
+        // v0.9: relies on deploy/install.sh from thresh-midtier (MT-P1/MT-P2).
+        // - If local tarball + install.sh exist, scp them; else node-3 curls
+        //   THRESH_MIDTIER_RELEASE_URL.
+        // - install.sh handles extraction, /opt/thresh-midtier layout,
+        //   appsettings.json (with HubUrl/HubToken/MidTierId), systemd unit
+        //   (with DOTNET_BUNDLE_EXTRACT_BASE_DIR), enable + start.
         // ══════════════════════════════════════════════════════════════════
-        if (System.IO.File.Exists(midtierTarballPath) && vmInstances.ContainsKey("thresh-node-3"))
+        if (vmInstances.ContainsKey("thresh-node-3"))
         {
             var node3Vm = vmInstances["thresh-node-3"];
             var node3Connection = node3Vm.DefaultIpAddress.Apply(ip => new ConnectionArgs
@@ -312,31 +319,50 @@ local-hostname: {config.Name}
                 DialErrorLimit = 60,
             });
 
-            var copyMidtier = new Pulumi.Command.Local.Command("thresh-node-3-copy-midtier", new Pulumi.Command.Local.CommandArgs
+            Pulumi.Command.Remote.CopyToRemote? copyMidtierTar = null;
+            Pulumi.Command.Remote.CopyToRemote? copyMidtierSh = null;
+            if (midtierLocalAvailable)
             {
-                Create = node3Vm.DefaultIpAddress.Apply(ip =>
-                    $"wsl bash -c \"install -m 600 {wslKeyPath} /tmp/thresh_pulumi_key && scp -i /tmp/thresh_pulumi_key -o StrictHostKeyChecking=no {wslMidtierTarball} thresh@{ip}:/tmp/thresh-midtier-deploy.tar.gz\"")
-            }, new CustomResourceOptions { DependsOn = { vmLastSteps["thresh-node-3"] } });
+                var tarAsset = new Pulumi.FileAsset(midtierTarballPath);
+                var shAsset = new Pulumi.FileAsset(midtierInstallScriptPath);
+                copyMidtierTar = new Pulumi.Command.Remote.CopyToRemote("thresh-node-3-copy-midtier-tar", new Pulumi.Command.Remote.CopyToRemoteArgs
+                {
+                    Connection = node3Connection,
+                    Source = tarAsset,
+                    RemotePath = "/tmp/thresh-midtier-linux-x64.tar.gz",
+                }, new CustomResourceOptions { DependsOn = { vmLastSteps["thresh-node-3"] } });
+                copyMidtierSh = new Pulumi.Command.Remote.CopyToRemote("thresh-node-3-copy-midtier-sh", new Pulumi.Command.Remote.CopyToRemoteArgs
+                {
+                    Connection = node3Connection,
+                    Source = shAsset,
+                    RemotePath = "/tmp/install.sh",
+                }, new CustomResourceOptions { DependsOn = { vmLastSteps["thresh-node-3"] } });
+            }
+
+            // install.sh fail-fast usage: requires --hub-url, --hub-token, --midtier-id.
+            // Token redacted in startup banner; partial config exits 1 with critical log.
+            var installMidtierScript = midtierLocalAvailable
+                ? $"set -e\necho '📦 Installing Thresh Mid-tier via install.sh (local tarball)...'\ncd /tmp\nchmod +x install.sh\nsudo ./install.sh \\\n    --tarball=/tmp/thresh-midtier-linux-x64.tar.gz \\\n    --hub-url={threshHubUrl} \\\n    --hub-token={threshMidtierApiKey} \\\n    --midtier-id=midtier-node-3 \\\n    --port=8080 \\\n    --tls-verify=false\necho '✅ Mid-tier installed and running'"
+                : $"set -e\necho '📦 Installing Thresh Mid-tier via install.sh (GitHub release)...'\ncd /tmp\ncurl -fsSL -o thresh-midtier.tar.gz {midtierReleaseUrl}\ntar -xzf thresh-midtier.tar.gz install.sh\nchmod +x install.sh\nsudo ./install.sh \\\n    --tarball=/tmp/thresh-midtier.tar.gz \\\n    --hub-url={threshHubUrl} \\\n    --hub-token={threshMidtierApiKey} \\\n    --midtier-id=midtier-node-3 \\\n    --port=8080 \\\n    --tls-verify=false\necho '✅ Mid-tier installed and running'";
+
+            var installMidtierDeps = new InputList<Resource>();
+            if (copyMidtierTar != null && copyMidtierSh != null)
+            {
+                installMidtierDeps.Add(copyMidtierTar);
+                installMidtierDeps.Add(copyMidtierSh);
+            }
+            else
+            {
+                installMidtierDeps.Add(vmLastSteps["thresh-node-3"]);
+            }
 
             var installMidtier = new Command("thresh-node-3-install-midtier", new CommandArgs
             {
                 Connection = node3Connection,
-                Create = "echo '📦 Installing Thresh Mid-tier...'\nmkdir -p ~/thresh-midtier\ncd ~/thresh-midtier\ntar xzf /tmp/thresh-midtier-deploy.tar.gz\nchmod +x ThreshMidTier\nrm /tmp/thresh-midtier-deploy.tar.gz\nls -lah ~/thresh-midtier/ThreshMidTier\necho '✅ Mid-tier installed'"
-            }, new CustomResourceOptions { DependsOn = { copyMidtier } });
+                Create = installMidtierScript
+            }, new CustomResourceOptions { DependsOn = installMidtierDeps });
 
-            var configureMidtier = new Command("thresh-node-3-configure-midtier", new CommandArgs
-            {
-                Connection = node3Connection,
-                Create = Output.Format($"echo '⚙️  Configuring mid-tier...'\ncat > ~/thresh-midtier/appsettings.Production.json << 'MIDCFG'\n{{\n  \"HubUrl\": \"{threshHubUrl}\",\n  \"HubToken\": \"{threshMidtierApiKey}\",\n  \"MidTierId\": \"midtier-node-3\",\n  \"Region\": \"local\",\n  \"Kestrel\": {{\n    \"Endpoints\": {{\n      \"Http\": {{ \"Url\": \"http://0.0.0.0:8080\" }}\n    }}\n  }}\n}}\nMIDCFG\necho '✅ Mid-tier configured'")
-            }, new CustomResourceOptions { DependsOn = { installMidtier } });
-
-            var startMidtier = new Command("thresh-node-3-start-midtier", new CommandArgs
-            {
-                Connection = node3Connection,
-                Create = "echo '🚀 Creating mid-tier systemd service...'\nsudo tee /etc/systemd/system/thresh-midtier.service > /dev/null << 'SVCFILE'\n[Unit]\nDescription=Thresh Mid-Tier Relay\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nType=simple\nUser=thresh\nWorkingDirectory=/home/thresh/thresh-midtier\nEnvironment=ASPNETCORE_ENVIRONMENT=Production\nExecStart=/home/thresh/thresh-midtier/ThreshMidTier\nRestart=always\nRestartSec=10\nStandardOutput=journal\nStandardError=journal\n\n[Install]\nWantedBy=multi-user.target\nSVCFILE\nsudo systemctl daemon-reload\nsudo systemctl enable thresh-midtier\nsudo systemctl start thresh-midtier\necho '✅ Mid-tier service started'"
-            }, new CustomResourceOptions { DependsOn = { configureMidtier } });
-
-            vmOutputs["thresh-node-3_midtier"] = startMidtier.Id.Apply(_ => "✅ Mid-tier relay running on port 8080");
+            vmOutputs["thresh-node-3_midtier"] = installMidtier.Id.Apply(_ => "✅ Mid-tier relay running on port 8080 (via install.sh)");
         }
 
         // ══════════════════════════════════════════════════════════════════
