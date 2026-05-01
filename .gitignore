@@ -154,5 +154,10 @@ docs/FLAGSHIP_BUILD_UBUNTU.md
 docs/ORDER_NOW.md
 docs/QWEN_CODING_AGENT_SETUP.md
 
+# Tools (downloaded binaries)
+tools/
+
 # Private/confidential business documentation
 THRESH_HUB_PRIVATE.md
+# Windows reserved filename phantom
+nul
