@@ -103,9 +103,9 @@ sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
 # Start and enable on boot
 sudo systemctl enable --now postgresql
 
-# Create a database user and database
+# Create a database user and database (replace YOUR_SECURE_PASSWORD with a strong password)
 sudo -u postgres psql <<'SQL'
-CREATE USER hubuser WITH PASSWORD 'change_me_in_production';
+CREATE USER hubuser WITH PASSWORD 'YOUR_SECURE_PASSWORD';
 CREATE DATABASE threshhub OWNER hubuser;
 GRANT ALL PRIVILEGES ON DATABASE threshhub TO hubuser;
 SQL
@@ -118,7 +118,7 @@ docker run -d \
   --name thresh-postgres \
   --restart unless-stopped \
   -e POSTGRES_USER=hubuser \
-  -e POSTGRES_PASSWORD=change_me_in_production \
+  -e POSTGRES_PASSWORD=YOUR_SECURE_PASSWORD \
   -e POSTGRES_DB=threshhub \
   -p 5432:5432 \
   -v thresh-pgdata:/var/lib/postgresql/data \
@@ -128,7 +128,8 @@ docker run -d \
 #### Verify connectivity
 
 ```bash
-psql "host=localhost dbname=threshhub user=hubuser password=change_me_in_production" -c "SELECT version();"
+# Use PGPASSWORD env var to avoid the password appearing in shell history
+PGPASSWORD=YOUR_SECURE_PASSWORD psql "host=localhost dbname=threshhub user=hubuser" -c "SELECT version();"
 ```
 
 ---
@@ -141,12 +142,23 @@ git clone https://github.com/dealer426/thresh-hub.git
 cd thresh-hub/src/ThreshHubV2
 ```
 
-Edit `appsettings.json` (or use the `appsettings.Production.json` override):
+:::warning Never commit credentials to source control
+Do **not** put your real password in `appsettings.json`. Use the environment-variable override shown below, a secrets manager, or `appsettings.Production.json` (excluded from version control via `.gitignore`).
+:::
+
+The safest approach is to pass the connection string as an environment variable at runtime:
+
+```bash
+export ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=threshhub;Username=hubuser;Password=YOUR_SECURE_PASSWORD;Pooling=true;MaxPoolSize=50;Timeout=30"
+dotnet run
+```
+
+If you prefer `appsettings.Production.json` (add to `.gitignore`):
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=threshhub;Username=hubuser;Password=change_me_in_production;Pooling=true;MaxPoolSize=50;Timeout=30"
+    "DefaultConnection": "Host=localhost;Port=5432;Database=threshhub;Username=hubuser;Password=YOUR_SECURE_PASSWORD;Pooling=true;MaxPoolSize=50;Timeout=30"
   },
   "Kestrel": {
     "Endpoints": {
@@ -154,13 +166,6 @@ Edit `appsettings.json` (or use the `appsettings.Production.json` override):
     }
   }
 }
-```
-
-You can also supply the connection string as an environment variable to avoid storing credentials in the file:
-
-```bash
-export ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=threshhub;Username=hubuser;Password=change_me_in_production"
-dotnet run
 ```
 
 The Hub runs EF Core migrations automatically on startup. After first boot you should see tables like `Agents`, `ApiKeys`, `MetricsBatch`, and `Stacks` in the `threshhub` database.
