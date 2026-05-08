@@ -159,6 +159,9 @@ tools/*
 !tools/thresh-mcp-proxy/
 tools/thresh-mcp-proxy/bin/
 tools/thresh-mcp-proxy/obj/
+!tools/thresh-pm-server/
+tools/thresh-pm-server/bin/
+tools/thresh-pm-server/obj/
 
 # Private/confidential business documentation
 THRESH_HUB_PRIVATE.md
