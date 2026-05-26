@@ -1,5 +1,5 @@
 ---
-sidebar_position: 11
+sidebar_position: 3
 title: Hub — Copilot SDK Agent Flow & K8s Architecture
 description: How the GitHub Copilot SDK spins up an agent from the Hub UI, with code-linked diagrams and a Kubernetes deployment reference architecture
 ---
@@ -526,7 +526,7 @@ EF Core migrations run automatically on Hub startup (`Database.MigrateAsync()`).
 
 ## Next Steps
 
-- [Fleet Management with Thresh Hub](/docs/tutorials/fleet-management) — Hub and mid-tier setup (non-K8s)
-- [Midtier ELF Migration — Test Plan](/docs/tutorials/midtier-elf-test-plan) — Validate the AOT binary before deploying
+- [Fleet Management with Thresh Hub](/docs/thresh-hub/fleet-management) — Hub and mid-tier setup (non-K8s)
+- [Midtier ELF Migration — Test Plan](/docs/thresh-hub/midtier-elf-test-plan) — Validate the AOT binary before deploying
 - [GitHub Copilot SDK Configuration](/docs/tutorials/copilot-sdk) — Copilot MCP setup for VS Code
 - [VS Code MCP Integration](/docs/tutorials/vscode-mcp) — Hub MCP bridge deep dive

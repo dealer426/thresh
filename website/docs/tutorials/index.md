@@ -93,7 +93,7 @@ Deploy multi-service applications through the Thresh Hub dashboard and API.
 
 ## Fleet Management
 
-### [Fleet Management with Thresh Hub](/docs/tutorials/fleet-management)
+### [Fleet Management with Thresh Hub](/docs/thresh-hub/fleet-management)
 
 Connect your thresh nodes to a centralized Hub for fleet-wide visibility and orchestration.
 
@@ -107,7 +107,7 @@ Connect your thresh nodes to a centralized Hub for fleet-wide visibility and orc
 **Time:** 30 minutes  
 **Difficulty:** Advanced
 
-### [Midtier ELF Migration — Test Plan](/docs/tutorials/midtier-elf-test-plan)
+### [Midtier ELF Migration — Test Plan](/docs/thresh-hub/midtier-elf-test-plan)
 
 Full test plan for validating thresh-midtier after conversion to a native ELF binary (Native AOT).
 
@@ -122,7 +122,7 @@ Full test plan for validating thresh-midtier after conversion to a native ELF bi
 **Time:** Reference document  
 **Difficulty:** Advanced
 
-### [Hub — Copilot SDK Agent Flow & K8s Architecture](/docs/tutorials/hub-copilot-sdk-agent)
+### [Hub — Copilot SDK Agent Flow & K8s Architecture](/docs/thresh-hub/hub-copilot-sdk-agent)
 
 How the GitHub Copilot SDK spins up an agent from the Hub UI, with code-linked diagrams and a Kubernetes deployment reference architecture.
 
@@ -192,8 +192,8 @@ Deep dive into Model Context Protocol integration for advanced AI workflows.
 
 1. [Creating Custom Blueprints](/docs/tutorials/custom-blueprints) - Blueprint development (20 min)
 2. [VS Code MCP Integration](/docs/tutorials/vscode-mcp) - Advanced AI (30 min)
-3. [Fleet Management](/docs/tutorials/fleet-management) - Hub & fleet (30 min)
-4. [Hub Copilot SDK & K8s Architecture](/docs/tutorials/hub-copilot-sdk-agent) - Reference architecture
+3. [Fleet Management](/docs/thresh-hub/fleet-management) - Hub & fleet (30 min)
+4. [Hub Copilot SDK & K8s Architecture](/docs/thresh-hub/hub-copilot-sdk-agent) - Reference architecture
 
 **Total: 80 minutes**
 
@@ -202,7 +202,7 @@ Deep dive into Model Context Protocol integration for advanced AI workflows.
 1. [Quick Start](/docs/tutorials/quick-start) - Everyone (5 min)
 2. [Creating Custom Blueprints](/docs/tutorials/custom-blueprints) - Team leads (20 min)
 3. [Deploying Stacks](/docs/tutorials/stacks) - DevOps (20 min)
-4. [Fleet Management](/docs/tutorials/fleet-management) - Infra team (30 min)
+4. [Fleet Management](/docs/thresh-hub/fleet-management) - Infra team (30 min)
 
 **Total: 75 minutes**
 

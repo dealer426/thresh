@@ -179,8 +179,8 @@ The mid-tier batches metrics from multiple agents before forwarding to the Hub, 
 
 Already running thresh? Adding fleet management takes about 10 minutes:
 
-1. [Deploy Thresh Hub](/docs/tutorials/fleet-management#setting-up-thresh-hub)
-2. [Connect your first agent](/docs/tutorials/fleet-management#connecting-nodes)
+1. [Deploy Thresh Hub](/docs/thresh-hub/fleet-management#setting-up-thresh-hub)
+2. [Connect your first agent](/docs/thresh-hub/fleet-management#connecting-nodes)
 3. [Deploy a stack remotely](/docs/tutorials/stacks#cli-workflow)
 
 **Happy fleet managing!** 🖧

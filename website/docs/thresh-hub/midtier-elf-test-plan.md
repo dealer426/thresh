@@ -1,5 +1,5 @@
 ---
-sidebar_position: 10
+sidebar_position: 2
 title: Midtier ELF Migration — Test Plan
 description: Full test plan for validating thresh-midtier after conversion to native ELF binary (Native AOT)
 ---
@@ -382,7 +382,7 @@ Before merging the ELF midtier to `main`:
 
 ## Related Pages
 
-- [Fleet Management with Thresh Hub](/docs/tutorials/fleet-management) — Architecture overview and setup
+- [Fleet Management with Thresh Hub](/docs/thresh-hub/fleet-management) — Architecture overview and setup
 - [thresh agent CLI reference](/docs/cli-reference/agent) — Agent configuration keys
 - [thresh auth CLI reference](/docs/cli-reference/auth) — Hub authentication
 - [thresh node CLI reference](/docs/cli-reference/node) — Remote node management

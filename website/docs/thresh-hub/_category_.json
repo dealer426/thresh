@@ -1,0 +1,8 @@
+{
+  "label": "Thresh Hub",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Deploy, configure, and operate Thresh Hub — the fleet-management control plane for thresh agents."
+  }
+}

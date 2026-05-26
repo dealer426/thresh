@@ -1,5 +1,5 @@
 ---
-sidebar_position: 9
+sidebar_position: 1
 title: Fleet Management with Thresh Hub
 description: Connect thresh nodes to a centralized Hub for fleet-wide visibility, real-time metrics, and remote orchestration
 ---

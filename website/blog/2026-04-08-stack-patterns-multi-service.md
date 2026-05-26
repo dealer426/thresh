@@ -325,4 +325,4 @@ These patterns cover most real-world use cases, but v2.0 will bring stack templa
 
 - [Stack CLI Reference](/docs/cli-reference/stack)
 - [Stacks Tutorial](/docs/tutorials/stacks)
-- [Fleet Management Tutorial](/docs/tutorials/fleet-management)
+- [Fleet Management Tutorial](/docs/thresh-hub/fleet-management)

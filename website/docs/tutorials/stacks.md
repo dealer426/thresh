@@ -21,7 +21,7 @@ Stacks are deployed and managed through Thresh Hub — not as a CLI command. The
 ## Prerequisites
 
 - thresh v1.7.0 or later installed
-- A running Thresh Hub instance (see [Fleet Management](/docs/tutorials/fleet-management))
+- A running Thresh Hub instance (see [Fleet Management](/docs/thresh-hub/fleet-management))
 - At least one connected agent node
 - Hub authentication configured (`thresh auth login`)
 
@@ -375,7 +375,7 @@ Verify network connectivity between the Hub, mid-tier, and agent.
 ## Next Steps
 
 - [Stacks CLI Reference](/docs/cli-reference/stack) — Stack definition format and Hub API reference
-- [Fleet Management Tutorial](/docs/tutorials/fleet-management) — Set up Hub, mid-tier, and agents
+- [Fleet Management Tutorial](/docs/thresh-hub/fleet-management) — Set up Hub, mid-tier, and agents
 - [Node CLI Reference](/docs/cli-reference/node) — Remote node management commands
 - [Cluster CLI Reference](/docs/cli-reference/cluster) — Organize nodes into clusters
 - [Volume Tutorial](/docs/tutorials/volumes) — Persistent storage patterns
