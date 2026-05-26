@@ -122,6 +122,21 @@ Full test plan for validating thresh-midtier after conversion to a native ELF bi
 **Time:** Reference document  
 **Difficulty:** Advanced
 
+### [Hub — Copilot SDK Agent Flow & K8s Architecture](/docs/tutorials/hub-copilot-sdk-agent)
+
+How the GitHub Copilot SDK spins up an agent from the Hub UI, with code-linked diagrams and a Kubernetes deployment reference architecture.
+
+**You'll learn:**
+- The full code call-chain from VS Code → HubMcpBridge → Hub → mid-tier → AgentService → GitHubCopilotService
+- How the Copilot CLI subprocess model works
+- Class responsibility map across all key source files
+- Kubernetes deployment topology (Hub, mid-tier, PostgreSQL, Ingress, HPA, Secrets)
+- Ready-to-paste Kubernetes YAML for each component
+- Agent connectivity from nodes to a K8s-hosted Hub
+
+**Time:** Reference document  
+**Difficulty:** Advanced
+
 ---
 
 ## AI Integration
@@ -178,6 +193,7 @@ Deep dive into Model Context Protocol integration for advanced AI workflows.
 1. [Creating Custom Blueprints](/docs/tutorials/custom-blueprints) - Blueprint development (20 min)
 2. [VS Code MCP Integration](/docs/tutorials/vscode-mcp) - Advanced AI (30 min)
 3. [Fleet Management](/docs/tutorials/fleet-management) - Hub & fleet (30 min)
+4. [Hub Copilot SDK & K8s Architecture](/docs/tutorials/hub-copilot-sdk-agent) - Reference architecture
 
 **Total: 80 minutes**
 
