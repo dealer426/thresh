@@ -142,13 +142,24 @@ class Program
         var vmInstances = new Dictionary<string, VirtualMachine>();
         var vmLastSteps = new Dictionary<string, Pulumi.Resource>();
 
-        // Check if devbox-only mode is requested
-        var devboxOnly = Environment.GetEnvironmentVariable("PULUMI_DEVBOX")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+        // Deployment mode — driven by stack name so no env var gymnastics are needed.
+        // Stack "devbox"   → dev workstation only
+        // Stack "k8s-dev"  → single-node k3s cluster
+        // Anything else    → full 5-node agent farm
+        var stackName = Deployment.Instance.StackName;
+        var devboxOnly = stackName == "devbox" ||
+            Environment.GetEnvironmentVariable("PULUMI_DEVBOX")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+        var k8sDevMode = stackName == "k8s-dev" ||
+            Environment.GetEnvironmentVariable("PULUMI_K8S_DEV")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
 
         if (devboxOnly)
         {
-            // Deploy only the dev workstation
             return DevBox.Deploy(vsphereProvider, datacenter, resourcePool, datastore, network, template, sshPublicKey, sshPrivateKey);
+        }
+
+        if (k8sDevMode)
+        {
+            return K8sDevNode.Deploy(vsphereProvider, datacenter, resourcePool, datastore, network, template, sshPublicKey, sshPrivateKey);
         }
 
         foreach (var config in vmConfigs)

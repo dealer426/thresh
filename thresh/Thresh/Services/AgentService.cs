@@ -27,6 +27,8 @@ public class AgentService
     private string _agentId = string.Empty;
     private DateTime _lastFailoverTime = DateTime.MinValue;
     private readonly HttpClient _httpClient = new();
+    // CC-8 — lazy MCP tool server for conductor commands (mcp.fs.read, etc.).
+    private Mcp.McpToolServer? _mcpToolServer;
 
     private static readonly string PidFilePath = Path.Combine(
         System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), ".thresh", "agent.pid");
@@ -710,22 +712,42 @@ public class AgentService
 
         try
         {
-            output = command.Tool switch
+            // CC-8 — conductor MCP tools (mcp.fs.read, mcp.proc.exec, etc.) are
+            // dispatched to McpToolServer rather than the legacy hub-tool surface.
+            if (command.Tool.StartsWith("mcp.", StringComparison.Ordinal))
             {
-                "list_environments" => await AgentToolListEnvironmentsAsync(command.Arguments),
-                "create_environment" => await AgentToolCreateEnvironmentAsync(command.Arguments),
-                "start_environment" => await AgentToolStartStopEnvironmentAsync(command.Arguments, start: true),
-                "stop_environment" => await AgentToolStartStopEnvironmentAsync(command.Arguments, start: false),
-                "destroy_environment" => await AgentToolDestroyEnvironmentAsync(command.Arguments),
-                "list_blueprints" => AgentToolListBlueprints(),
-                "get_blueprint" => AgentToolGetBlueprint(command.Arguments),
-                "save_blueprint" => AgentToolSaveBlueprint(command.Arguments),
-                "get_metrics" => await AgentToolGetMetricsAsync(),
-                "deploy_stack" => await AgentToolDeployStackAsync(command.Arguments),
-                "get_version" => "thresh 1.6.0",
-                "help" => AgentToolHelp(),
-                _ => throw new InvalidOperationException($"Unknown tool: {command.Tool}")
-            };
+                var mcpTool = command.Tool["mcp.".Length..];
+                var server = _mcpToolServer ??= new Mcp.McpToolServer();
+                var resp = await server.CallAsync(mcpTool, command.Arguments, default);
+                if (resp.IsError)
+                {
+                    success = false;
+                    error = resp.Content.Count > 0 ? resp.Content[0].Text : "tool error";
+                }
+                else
+                {
+                    output = resp.Content.Count > 0 ? resp.Content[0].Text : string.Empty;
+                }
+            }
+            else
+            {
+                output = command.Tool switch
+                {
+                    "list_environments" => await AgentToolListEnvironmentsAsync(command.Arguments),
+                    "create_environment" => await AgentToolCreateEnvironmentAsync(command.Arguments),
+                    "start_environment" => await AgentToolStartStopEnvironmentAsync(command.Arguments, start: true),
+                    "stop_environment" => await AgentToolStartStopEnvironmentAsync(command.Arguments, start: false),
+                    "destroy_environment" => await AgentToolDestroyEnvironmentAsync(command.Arguments),
+                    "list_blueprints" => AgentToolListBlueprints(),
+                    "get_blueprint" => AgentToolGetBlueprint(command.Arguments),
+                    "save_blueprint" => AgentToolSaveBlueprint(command.Arguments),
+                    "get_metrics" => await AgentToolGetMetricsAsync(),
+                    "deploy_stack" => await AgentToolDeployStackAsync(command.Arguments),
+                    "get_version" => "thresh 1.6.0",
+                    "help" => AgentToolHelp(),
+                    _ => throw new InvalidOperationException($"Unknown tool: {command.Tool}")
+                };
+            }
         }
         catch (Exception ex)
         {

@@ -154,8 +154,14 @@ docs/FLAGSHIP_BUILD_UBUNTU.md
 docs/ORDER_NOW.md
 docs/QWEN_CODING_AGENT_SETUP.md
 
-# Tools (downloaded binaries)
-tools/
+# Tools (downloaded binaries) — but allow our own thresh-mcp-proxy source
+tools/*
+!tools/thresh-mcp-proxy/
+tools/thresh-mcp-proxy/bin/
+tools/thresh-mcp-proxy/obj/
+!tools/thresh-pm-server/
+tools/thresh-pm-server/bin/
+tools/thresh-pm-server/obj/
 
 # Private/confidential business documentation
 THRESH_HUB_PRIVATE.md
