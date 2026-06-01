@@ -142,9 +142,15 @@ class Program
         var vmInstances = new Dictionary<string, VirtualMachine>();
         var vmLastSteps = new Dictionary<string, Pulumi.Resource>();
 
-        // Check deployment mode
-        var devboxOnly = Environment.GetEnvironmentVariable("PULUMI_DEVBOX")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
-        var k8sDevMode = Environment.GetEnvironmentVariable("PULUMI_K8S_DEV")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+        // Deployment mode — driven by stack name so no env var gymnastics are needed.
+        // Stack "devbox"   → dev workstation only
+        // Stack "k8s-dev"  → single-node k3s cluster
+        // Anything else    → full 5-node agent farm
+        var stackName = Deployment.Instance.StackName;
+        var devboxOnly = stackName == "devbox" ||
+            Environment.GetEnvironmentVariable("PULUMI_DEVBOX")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+        var k8sDevMode = stackName == "k8s-dev" ||
+            Environment.GetEnvironmentVariable("PULUMI_K8S_DEV")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
 
         if (devboxOnly)
         {
@@ -153,7 +159,6 @@ class Program
 
         if (k8sDevMode)
         {
-            // Single-node k3s cluster for K8s readiness testing (KR-1 / KR-2)
             return K8sDevNode.Deploy(vsphereProvider, datacenter, resourcePool, datastore, network, template, sshPublicKey, sshPrivateKey);
         }
 
