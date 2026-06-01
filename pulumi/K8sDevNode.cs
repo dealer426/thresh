@@ -274,7 +274,22 @@ final_message: ""✅ {nodeName} ready for k3s!""
                 "echo '✅ k3s + Traefik ready'"
         }, new CustomResourceOptions { DependsOn = { waitCloudInit } });
 
-        // 3. Apply all base manifests: namespace, redis, postgres, secrets, PDB, dev ingress
+        // 3a. Create GHCR imagePullSecret so k3s can pull ghcr.io/dealer426/thresh-hub.
+        //     Token read from GHCR_TOKEN in .env — never hard-coded.
+        var ghcrToken = Environment.GetEnvironmentVariable("GHCR_TOKEN") ?? "";
+        var createPullSecret = new Command("k8s-dev-ghcr-secret", new CommandArgs
+        {
+            Connection = conn,
+            Create = string.IsNullOrEmpty(ghcrToken)
+                ? "echo 'GHCR_TOKEN not set — skipping imagePullSecret (set in .env for auto-creation)'"
+                : $"sudo k3s kubectl create secret docker-registry ghcr-pull-secret " +
+                  $"--docker-server=ghcr.io --docker-username=dealer426 " +
+                  $"--docker-password={ghcrToken} --docker-email=burnssamuel01@gmail.com " +
+                  $"-n thresh --dry-run=client -o yaml | sudo k3s kubectl apply -f - && " +
+                  $"echo '✅ ghcr-pull-secret created'"
+        }, new CustomResourceOptions { DependsOn = { installK3s } });
+
+        // 3b. Apply all base manifests: namespace, redis, postgres, secrets, PDB, dev ingress
         var deployManifests = new Command("k8s-dev-deploy-manifests", new CommandArgs
         {
             Connection = conn,
@@ -285,7 +300,7 @@ final_message: ""✅ {nodeName} ready for k3s!""
                 $"cat <<'MANIFEST_EOF' | sudo k3s kubectl apply -f -\n{PdbManifest}\nMANIFEST_EOF\n" +
                 $"cat <<'MANIFEST_EOF' | sudo k3s kubectl apply -f -\n{DevIngressManifest}\nMANIFEST_EOF\n" +
                 "echo '✅ Base manifests applied'"
-        }, new CustomResourceOptions { DependsOn = { installK3s } });
+        }, new CustomResourceOptions { DependsOn = { createPullSecret } });
 
         // 4. Export kubeconfig with node IP substituted for 127.0.0.1
         var exportKubeconfig = new Command("k8s-dev-export-kubeconfig", new CommandArgs
