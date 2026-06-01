@@ -50,7 +50,8 @@ public static class CopilotSdkTest
             await using var session = await client.CreateSessionAsync(new SessionConfig
             {
                 Model = "gpt-5",
-                Streaming = false
+                Streaming = false,
+                OnPermissionRequest = PermissionHandler.ApproveAll
             });
             
             Console.WriteLine("✅ Session created successfully!");
