@@ -142,13 +142,19 @@ class Program
         var vmInstances = new Dictionary<string, VirtualMachine>();
         var vmLastSteps = new Dictionary<string, Pulumi.Resource>();
 
-        // Check if devbox-only mode is requested
+        // Check deployment mode
         var devboxOnly = Environment.GetEnvironmentVariable("PULUMI_DEVBOX")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+        var k8sDevMode = Environment.GetEnvironmentVariable("PULUMI_K8S_DEV")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
 
         if (devboxOnly)
         {
-            // Deploy only the dev workstation
             return DevBox.Deploy(vsphereProvider, datacenter, resourcePool, datastore, network, template, sshPublicKey, sshPrivateKey);
+        }
+
+        if (k8sDevMode)
+        {
+            // Single-node k3s cluster for K8s readiness testing (KR-1 / KR-2)
+            return K8sDevNode.Deploy(vsphereProvider, datacenter, resourcePool, datastore, network, template, sshPublicKey, sshPrivateKey);
         }
 
         foreach (var config in vmConfigs)
