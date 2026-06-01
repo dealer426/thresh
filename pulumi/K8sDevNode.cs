@@ -7,18 +7,26 @@ using Pulumi.Command.Remote.Inputs;
 
 /// <summary>
 /// Provisions a single-node k3s cluster on vSphere for K8s readiness testing.
-/// Usage: set PULUMI_K8S_DEV=true before running pulumi up.
+/// Usage: pulumi up --stack k8s-dev  (stack name drives mode automatically)
 ///
 /// What gets deployed:
 ///   - 1 Ubuntu 24.04 VM (4 vCPU / 12 GB RAM / 80 GB disk)
-///   - k3s (single-node control-plane + worker, traefik disabled)
-///   - Redis 7 in namespace "thresh" (NodePort 30379 for external access)
-///   - PostgreSQL 16 in namespace "thresh" (NodePort 30432 for external access)
+///   - k3s with Traefik enabled (standard k3s default)
+///   - thresh namespace + thresh-hub-secrets secret
+///   - Redis 7 (NodePort 30379)
+///   - PostgreSQL 16 (NodePort 30432, password: thresh)
+///   - Traefik IngressRoute for thresh-hub (HTTP, no TLS — dev only)
+///   - PodDisruptionBudget
 ///   - kubeconfig written to ~/.kube/config on the local machine
+///
+/// After provisioning, push the thresh-hub Docker image and then apply:
+///   kubectl apply -f deploy/k8s/statefulset.yaml
 /// </summary>
 public static class K8sDevNode
 {
-    // Manifests are constants to avoid C# string interpolation escaping issues.
+    // Postgres password matches deploy/k8s/secrets.yaml
+    private const string PostgresPassword = "thresh";
+
     private const string RedisManifest = @"apiVersion: v1
 kind: Namespace
 metadata:
@@ -83,7 +91,7 @@ spec:
         - name: POSTGRES_USER
           value: hubuser
         - name: POSTGRES_PASSWORD
-          value: hubpass
+          value: thresh
         ports:
         - containerPort: 5432
         volumeMounts:
@@ -106,6 +114,50 @@ spec:
   - port: 5432
     targetPort: 5432
     nodePort: 30432";
+
+    // Kubernetes Secret matching deploy/k8s/secrets.yaml values.
+    private const string SecretsManifest = @"apiVersion: v1
+kind: Secret
+metadata:
+  name: thresh-hub-secrets
+  namespace: thresh
+type: Opaque
+stringData:
+  postgres-connection: ""Host=postgres;Port=5432;Database=threshhub;Username=hubuser;Password=thresh""
+  redis-connection: ""redis:6379""";
+
+    // PodDisruptionBudget — applied now so it is in place when the StatefulSet lands.
+    private const string PdbManifest = @"apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: thresh-hub-pdb
+  namespace: thresh
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: thresh-hub";
+
+    // Dev IngressRoute — HTTP only, no TLS, catches all traffic on port 80.
+    // Access thresh-hub at http://<node-ip>/ after applying statefulset.yaml.
+    private const string DevIngressManifest = @"apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: thresh-hub-dev
+  namespace: thresh
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: thresh-hub
+          port: 7200
+          sticky:
+            cookie:
+              name: thresh-affinity
+              httpOnly: true";
 
     public static Dictionary<string, object?> Deploy(
         Provider vsphereProvider,
@@ -210,25 +262,32 @@ final_message: ""✅ {nodeName} ready for k3s!""
             Create = "sudo cloud-init status --wait || echo 'cloud-init timed out, continuing'"
         }, new CustomResourceOptions { DependsOn = { vm } });
 
-        // 2. Install k3s — traefik disabled (not needed), wait until node is Ready
+        // 2. Install k3s with Traefik enabled (standard default — no --disable traefik).
+        //    Wait until both the node and Traefik pods are Ready before proceeding.
         var installK3s = new Command("k8s-dev-install-k3s", new CommandArgs
         {
             Connection = conn,
-            Create = "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC='server --disable traefik' sh - && " +
-                     "timeout 120 bash -c 'until sudo k3s kubectl get nodes 2>/dev/null | grep -q \" Ready\"; do sleep 3; done' && " +
-                     "echo '✅ k3s ready'"
+            Create =
+                "curl -sfL https://get.k3s.io | sh - && " +
+                "timeout 180 bash -c 'until sudo k3s kubectl get nodes 2>/dev/null | grep -q \" Ready\"; do sleep 3; done' && " +
+                "timeout 180 bash -c 'until sudo k3s kubectl -n kube-system get pods -l app.kubernetes.io/name=traefik 2>/dev/null | grep -q Running; do sleep 5; done' && " +
+                "echo '✅ k3s + Traefik ready'"
         }, new CustomResourceOptions { DependsOn = { waitCloudInit } });
 
-        // 3. Deploy Redis and Postgres manifests
+        // 3. Apply all base manifests: namespace, redis, postgres, secrets, PDB, dev ingress
         var deployManifests = new Command("k8s-dev-deploy-manifests", new CommandArgs
         {
             Connection = conn,
-            Create = $"cat <<'MANIFEST_EOF' | sudo k3s kubectl apply -f -\n{RedisManifest}\nMANIFEST_EOF\n" +
-                     $"cat <<'MANIFEST_EOF' | sudo k3s kubectl apply -f -\n{PostgresManifest}\nMANIFEST_EOF\n" +
-                     "echo '✅ Redis and Postgres deployed'"
+            Create =
+                $"cat <<'MANIFEST_EOF' | sudo k3s kubectl apply -f -\n{RedisManifest}\nMANIFEST_EOF\n" +
+                $"cat <<'MANIFEST_EOF' | sudo k3s kubectl apply -f -\n{PostgresManifest}\nMANIFEST_EOF\n" +
+                $"cat <<'MANIFEST_EOF' | sudo k3s kubectl apply -f -\n{SecretsManifest}\nMANIFEST_EOF\n" +
+                $"cat <<'MANIFEST_EOF' | sudo k3s kubectl apply -f -\n{PdbManifest}\nMANIFEST_EOF\n" +
+                $"cat <<'MANIFEST_EOF' | sudo k3s kubectl apply -f -\n{DevIngressManifest}\nMANIFEST_EOF\n" +
+                "echo '✅ Base manifests applied'"
         }, new CustomResourceOptions { DependsOn = { installK3s } });
 
-        // 4. Write kubeconfig to a readable location with node IP substituted for 127.0.0.1
+        // 4. Export kubeconfig with node IP substituted for 127.0.0.1
         var exportKubeconfig = new Command("k8s-dev-export-kubeconfig", new CommandArgs
         {
             Connection = conn,
@@ -239,8 +298,7 @@ final_message: ""✅ {nodeName} ready for k3s!""
             )
         }, new CustomResourceOptions { DependsOn = { deployManifests } });
 
-        // 5. Write kubeconfig to Windows ~/.kube/config
-        // Base64-encode the content via remote cat to avoid multi-line shell escaping issues.
+        // 5. Pull kubeconfig to Windows ~/.kube/config via base64 to avoid escaping issues
         var getKubeconfigB64 = new Command("k8s-dev-get-kubeconfig-b64", new CommandArgs
         {
             Connection = conn,
@@ -250,14 +308,12 @@ final_message: ""✅ {nodeName} ready for k3s!""
         var kubeconfigLocalPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".kube", "config");
         var kubeconfigLocalDir = Path.GetDirectoryName(kubeconfigLocalPath)!;
-        // Paths in PS single-quoted strings — backslashes are literal so double them.
         var psPath = kubeconfigLocalPath.Replace("\\", "\\\\");
-        var psDir = kubeconfigLocalDir.Replace("\\", "\\\\");
+        var psDir  = kubeconfigLocalDir.Replace("\\", "\\\\");
 
         var writeKubeconfig = new Pulumi.Command.Local.Command("k8s-dev-write-kubeconfig",
             new Pulumi.Command.Local.CommandArgs
             {
-                // Decode the base64 payload and write to disk — no escaping hazards.
                 Create = getKubeconfigB64.Stdout.Apply(b64 =>
                     $"New-Item -ItemType Directory -Force -Path '{psDir}' | Out-Null; " +
                     $"[System.IO.File]::WriteAllBytes('{psPath}', " +
@@ -267,40 +323,40 @@ final_message: ""✅ {nodeName} ready for k3s!""
             }, new CustomResourceOptions { DependsOn = { getKubeconfigB64 } });
 
         var outputs = new Dictionary<string, object?>();
-        outputs["k8s_dev_ip"] = vm.DefaultIpAddress;
-        outputs["k8s_dev_ssh"] = vm.DefaultIpAddress.Apply(ip => $"ssh thresh@{ip}");
+        outputs["k8s_dev_ip"]         = vm.DefaultIpAddress;
+        outputs["k8s_dev_ssh"]        = vm.DefaultIpAddress.Apply(ip => $"ssh thresh@{ip}");
         outputs["k8s_dev_kubeconfig"] = kubeconfigLocalPath;
-        outputs["k8s_dev_status"] = writeKubeconfig.Id.Apply(_ =>
-            "✅ k3s running — Redis + Postgres deployed — kubeconfig written to ~/.kube/config");
+        outputs["k8s_dev_hub_url"]    = vm.DefaultIpAddress.Apply(ip => $"http://{ip}");
+        outputs["k8s_dev_status"]     = writeKubeconfig.Id.Apply(_ =>
+            "✅ k3s + Traefik running — base manifests applied — kubeconfig written");
 
-        // Connection strings for when thresh-hub is pointed at the cluster from dev machine
-        outputs["k8s_dev_redis_cs"] = vm.DefaultIpAddress.Apply(ip => $"{ip}:30379");
+        outputs["k8s_dev_redis_cs"]    = vm.DefaultIpAddress.Apply(ip => $"{ip}:30379");
         outputs["k8s_dev_postgres_cs"] = vm.DefaultIpAddress.Apply(ip =>
-            $"Host={ip};Port=30432;Database=threshhub;Username=hubuser;Password=hubpass");
+            $"Host={ip};Port=30432;Database=threshhub;Username=hubuser;Password={PostgresPassword}");
 
         outputs["k8s_dev_instructions"] = vm.DefaultIpAddress.Apply(ip => $@"
-╔══════════════════════════════════════════════════════╗
-║            thresh K8s Dev Cluster                   ║
-╚══════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════╗
+║                thresh K8s Dev Cluster                       ║
+╚══════════════════════════════════════════════════════════════╝
 
-Node IP : {ip}
-SSH     : ssh thresh@{ip}
-kubectl : kubectl get nodes  (kubeconfig written to {kubeconfigLocalPath})
+Node IP  : {ip}
+Hub URL  : http://{ip}   (Traefik IngressRoute, HTTP)
+SSH      : ssh thresh@{ip}
+kubectl  : kubectl get nodes
 
-In-cluster services (NodePort — accessible from this machine):
-  Redis     : {ip}:30379
-  Postgres  : {ip}:30432  (db=threshhub, user=hubuser, pass=hubpass)
+In-cluster services:
+  Redis    : {ip}:30379
+  Postgres : {ip}:30432  (db=threshhub user=hubuser pass={PostgresPassword})
 
-To test SignalR Redis backplane (KR-2) with dotnet run on this machine:
-  $env:ConnectionStrings__Redis = '{ip}:30379'
-  dotnet run --project src/ThreshHubV2/ThreshHubV2.csproj
+Next step — deploy thresh-hub:
+  1. Push image:    docker push ghcr.io/dealer426/thresh-hub:latest
+  2. Apply:         kubectl apply -f deploy/k8s/statefulset.yaml
 
-To test DataProtection (KR-1) against in-cluster Postgres:
-  $env:ConnectionStrings__DefaultConnection = 'Host={ip};Port=30432;Database=threshhub;Username=hubuser;Password=hubpass'
-  $env:Database__Provider = 'postgres'
-  dotnet run --project src/ThreshHubV2/ThreshHubV2.csproj
+Verify:
+  kubectl get pods -n thresh
+  kubectl logs -n thresh -l app=thresh-hub
 
-Destroy when done:
+Destroy:
   pulumi destroy --yes --stack k8s-dev
 ");
 
