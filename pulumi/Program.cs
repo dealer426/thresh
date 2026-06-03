@@ -274,11 +274,11 @@ local-hostname: {config.Name}
                 Create = "echo '🐳 Installing Docker...'\nsudo apt-get update -qq\nsudo apt-get install -y docker.io containerd -qq\nsudo systemctl enable docker\nsudo systemctl start docker\nsudo usermod -aG docker thresh\necho '✅ Docker installed'"
             }, new CustomResourceOptions { DependsOn = { waitCloudInit } });
 
-            // Step 4: Download Thresh agent from GitHub releases (latest)
+            // Step 4: Download Thresh agent (skip if already present via SCP)
             var copyThresh = new Command($"{config.Name}-download-thresh", new CommandArgs
             {
                 Connection = keyConnectionInfo,
-                Create = $"set -e\necho '⬇️  Downloading Thresh agent from {agentReleaseUrl}...'\ncurl -fsSL --retry 5 --retry-delay 5 -o /tmp/thresh-agent-deploy.tar.gz '{agentReleaseUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'"
+                Create = $"set -e\nif [ -f /tmp/thresh-agent-deploy.tar.gz ]; then echo '✅ Agent tarball already present (SCP)'; else echo '⬇️  Downloading Thresh agent from {agentReleaseUrl}...'; curl -fsSL --retry 5 --retry-delay 5 -o /tmp/thresh-agent-deploy.tar.gz '{agentReleaseUrl}'; fi\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'"
             }, new CustomResourceOptions { DependsOn = { installDocker } });
 
             var installThresh = new Command($"{config.Name}-install-thresh", new CommandArgs
@@ -545,7 +545,7 @@ local-hostname: {gpuNodeName}
             var gpuDownloadThresh = new Command($"{gpuNodeName}-download-thresh", new CommandArgs
             {
                 Connection = gpuConnectionInfo,
-                Create = $"set -e\necho '⬇️  Downloading Thresh agent from {agentReleaseUrl}...'\ncurl -fsSL --retry 5 --retry-delay 5 -o /tmp/thresh-agent-deploy.tar.gz '{agentReleaseUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'"
+                Create = $"set -e\nif [ -f /tmp/thresh-agent-deploy.tar.gz ]; then echo '✅ Agent tarball already present (SCP)'; else echo '⬇️  Downloading Thresh agent from {agentReleaseUrl}...'; curl -fsSL --retry 5 --retry-delay 5 -o /tmp/thresh-agent-deploy.tar.gz '{agentReleaseUrl}'; fi\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'"
             }, new CustomResourceOptions { DependsOn = { gpuInstallDrivers } });
 
             var gpuInstallThresh = new Command($"{gpuNodeName}-install-thresh", new CommandArgs
