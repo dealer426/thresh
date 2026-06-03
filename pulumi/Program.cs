@@ -54,9 +54,9 @@ class Program
             ?? "https://github.com/dealer426/thresh.git";
 
         // Agent is downloaded from GitHub releases via API (repo is private, token required).
-        // Asset ID 437599721 = thresh-agent-linux-x64.tar.gz in v1.0.0 release.
+        // Asset ID 437684283 = thresh-agent-linux-x64.tar.gz in v1.0.1 release (has deploy_blueprint handler).
         var agentAssetUrl = Environment.GetEnvironmentVariable("THRESH_AGENT_ASSET_URL")
-            ?? "https://api.github.com/repos/dealer426/thresh-agent/releases/assets/437599721";
+            ?? "https://api.github.com/repos/dealer426/thresh-agent/releases/assets/437684283";
         var agentReleaseUrl = agentAssetUrl; // kept for GPU node reference
         var githubToken = Environment.GetEnvironmentVariable("THRESH_GITHUB_TOKEN")
             ?? throw new Exception("THRESH_GITHUB_TOKEN not set — needed to download private thresh-agent release");
@@ -69,8 +69,11 @@ class Program
         var midtierInstallScriptPath = (Environment.GetEnvironmentVariable("THRESH_MIDTIER_INSTALL_SH")
             ?? Path.GetFullPath(Path.Combine(".", "..", "..", "thresh-midtier", "deploy", "install.sh")))
             .Replace('\\', '/');
-        var midtierReleaseUrl = Environment.GetEnvironmentVariable("THRESH_MIDTIER_RELEASE_URL")
-            ?? "https://github.com/dealer426/thresh-midtier/releases/latest/download/thresh-midtier-linux-x64.tar.gz";
+        // thresh-midtier is also private; use GitHub API asset endpoint with Bearer auth.
+        // Asset ID 410161466 = thresh-midtier-linux-x64.tar.gz in v0.9.1 release.
+        var midtierAssetUrl = Environment.GetEnvironmentVariable("THRESH_MIDTIER_ASSET_URL")
+            ?? "https://api.github.com/repos/dealer426/thresh-midtier/releases/assets/410161466";
+        var midtierReleaseUrl = midtierAssetUrl; // kept for legacy reference
 
         var midtierLocalAvailable = System.IO.File.Exists(midtierTarballPath) && System.IO.File.Exists(midtierInstallScriptPath);
         if (!midtierLocalAvailable)
@@ -359,7 +362,7 @@ local-hostname: {config.Name}
             // missing release never blocks the whole stack.
             var installMidtierScript = midtierLocalAvailable
                 ? $"if sudo systemctl is-active thresh-midtier > /dev/null 2>&1; then echo '✅ Mid-tier already running'; else set -e; echo '📦 Installing Thresh Mid-tier...'; cd /tmp; sed -i \"s/\\r//\" install.sh; chmod +x install.sh; sudo bash install.sh --tarball=/tmp/thresh-midtier-linux-x64.tar.gz --hub-url={threshHubUrl} --hub-token={threshMidtierApiKey} --midtier-id=midtier-node-3 --port=8080 --tls-verify=false; fi; echo '✅ Mid-tier done'"
-                : $"if sudo systemctl is-active thresh-midtier > /dev/null 2>&1; then echo '✅ Mid-tier already running'; else echo '📦 Installing Thresh Mid-tier from GitHub...'; cd /tmp && curl -fsSL -o thresh-midtier.tar.gz {midtierReleaseUrl} && tar -xzf thresh-midtier.tar.gz install.sh && chmod +x install.sh && sudo bash install.sh --tarball=/tmp/thresh-midtier.tar.gz --hub-url={threshHubUrl} --hub-token={threshMidtierApiKey} --midtier-id=midtier-node-3 --port=8080 --tls-verify=false || echo '⚠️  Mid-tier install failed — install manually'; fi; echo '✅ Mid-tier done'";
+                : $"if sudo systemctl is-active thresh-midtier > /dev/null 2>&1; then echo '✅ Mid-tier already running'; else set -e; echo '📦 Downloading Thresh Mid-tier...'; curl -fsSL --retry 3 -H 'Authorization: Bearer {githubToken}' -H 'Accept: application/octet-stream' -o /tmp/thresh-midtier.tar.gz '{midtierAssetUrl}'; echo '📦 Extracting install.sh...'; tar -xzf /tmp/thresh-midtier.tar.gz -C /tmp install.sh; chmod +x /tmp/install.sh; sudo bash /tmp/install.sh --tarball=/tmp/thresh-midtier.tar.gz --hub-url={threshHubUrl} --hub-token={threshMidtierApiKey} --midtier-id=midtier-node-3 --port=8080 --tls-verify=false; fi; echo '✅ Mid-tier done'";
 
             var installMidtierDeps = new InputList<Resource>();
             if (copyMidtierTar != null && copyMidtierSh != null)
