@@ -53,10 +53,13 @@ class Program
         var threshGitHubRepo = Environment.GetEnvironmentVariable("THRESH_GITHUB_REPO") 
             ?? "https://github.com/dealer426/thresh.git";
 
-        // Agent is downloaded from GitHub releases (latest) on each node — small + fast.
-        // Override with THRESH_AGENT_RELEASE_URL if you need a specific version.
-        var agentReleaseUrl = Environment.GetEnvironmentVariable("THRESH_AGENT_RELEASE_URL")
-            ?? "https://github.com/dealer426/thresh-agent/releases/latest/download/thresh-agent-linux-x64.tar.gz";
+        // Agent is downloaded from GitHub releases via API (repo is private, token required).
+        // Asset ID 437599721 = thresh-agent-linux-x64.tar.gz in v1.0.0 release.
+        var agentAssetUrl = Environment.GetEnvironmentVariable("THRESH_AGENT_ASSET_URL")
+            ?? "https://api.github.com/repos/dealer426/thresh-agent/releases/assets/437599721";
+        var agentReleaseUrl = agentAssetUrl; // kept for GPU node reference
+        var githubToken = Environment.GetEnvironmentVariable("THRESH_GITHUB_TOKEN")
+            ?? throw new Exception("THRESH_GITHUB_TOKEN not set — needed to download private thresh-agent release");
 
         // Mid-tier: prefer local tarball + install.sh from sibling thresh-midtier repo,
         // fall back to GitHub release URL when the local build isn't present.
@@ -274,11 +277,11 @@ local-hostname: {config.Name}
                 Create = "echo '🐳 Installing Docker...'\nsudo apt-get update -qq\nsudo apt-get install -y docker.io containerd -qq\nsudo systemctl enable docker\nsudo systemctl start docker\nsudo usermod -aG docker thresh\necho '✅ Docker installed'"
             }, new CustomResourceOptions { DependsOn = { waitCloudInit } });
 
-            // Step 4: Download Thresh agent (skip if already present via SCP)
+            // Step 4: Download Thresh agent via GitHub API (repo is private)
             var copyThresh = new Command($"{config.Name}-download-thresh", new CommandArgs
             {
                 Connection = keyConnectionInfo,
-                Create = $"set -e\nif [ -f /tmp/thresh-agent-deploy.tar.gz ]; then echo '✅ Agent tarball already present (SCP)'; else echo '⬇️  Downloading Thresh agent from {agentReleaseUrl}...'; curl -fsSL --retry 5 --retry-delay 5 -o /tmp/thresh-agent-deploy.tar.gz '{agentReleaseUrl}'; fi\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'"
+                Create = Output.Format($"set -e\necho '⬇️  Downloading Thresh agent...'\ncurl -fsSL --retry 3 --retry-delay 5 -H 'Authorization: Bearer {githubToken}' -H 'Accept: application/octet-stream' -o /tmp/thresh-agent-deploy.tar.gz '{agentAssetUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'")
             }, new CustomResourceOptions { DependsOn = { installDocker } });
 
             var installThresh = new Command($"{config.Name}-install-thresh", new CommandArgs
@@ -545,7 +548,7 @@ local-hostname: {gpuNodeName}
             var gpuDownloadThresh = new Command($"{gpuNodeName}-download-thresh", new CommandArgs
             {
                 Connection = gpuConnectionInfo,
-                Create = $"set -e\nif [ -f /tmp/thresh-agent-deploy.tar.gz ]; then echo '✅ Agent tarball already present (SCP)'; else echo '⬇️  Downloading Thresh agent from {agentReleaseUrl}...'; curl -fsSL --retry 5 --retry-delay 5 -o /tmp/thresh-agent-deploy.tar.gz '{agentReleaseUrl}'; fi\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'"
+                Create = Output.Format($"set -e\necho '⬇️  Downloading Thresh agent...'\ncurl -fsSL --retry 3 --retry-delay 5 -H 'Authorization: Bearer {githubToken}' -H 'Accept: application/octet-stream' -o /tmp/thresh-agent-deploy.tar.gz '{agentAssetUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'")
             }, new CustomResourceOptions { DependsOn = { gpuInstallDrivers } });
 
             var gpuInstallThresh = new Command($"{gpuNodeName}-install-thresh", new CommandArgs
