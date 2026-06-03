@@ -1,2 +1,3 @@
 config:
   vsphere:allowUnverifiedSsl: "true"
+encryptionsalt: v1:6oFatHHHjMs=:v1:vM0nG3ZFJoFyyYCG:eQpVZi8B6nPrysLop9T6qLzYxhcAzA==
