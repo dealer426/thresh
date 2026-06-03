@@ -350,11 +350,13 @@ local-hostname: {config.Name}
                 }, new CustomResourceOptions { DependsOn = { vmLastSteps["thresh-node-3"] } });
             }
 
-            // install.sh fail-fast usage: requires --hub-url, --hub-token, --midtier-id.
-            // Token redacted in startup banner; partial config exits 1 with critical log.
+            // Idempotent mid-tier install: skip if service is already active.
+            // CopyToRemote (local tarball) fails silently on Windows; fall back to GitHub
+            // release if local copy isn't available. Guard against 404 with || true so a
+            // missing release never blocks the whole stack.
             var installMidtierScript = midtierLocalAvailable
-                ? $"set -e\necho '📦 Installing Thresh Mid-tier via install.sh (local tarball)...'\ncd /tmp\nchmod +x install.sh\nsudo ./install.sh \\\n    --tarball=/tmp/thresh-midtier-linux-x64.tar.gz \\\n    --hub-url={threshHubUrl} \\\n    --hub-token={threshMidtierApiKey} \\\n    --midtier-id=midtier-node-3 \\\n    --port=8080 \\\n    --tls-verify=false\necho '✅ Mid-tier installed and running'"
-                : $"set -e\necho '📦 Installing Thresh Mid-tier via install.sh (GitHub release)...'\ncd /tmp\ncurl -fsSL -o thresh-midtier.tar.gz {midtierReleaseUrl}\ntar -xzf thresh-midtier.tar.gz install.sh\nchmod +x install.sh\nsudo ./install.sh \\\n    --tarball=/tmp/thresh-midtier.tar.gz \\\n    --hub-url={threshHubUrl} \\\n    --hub-token={threshMidtierApiKey} \\\n    --midtier-id=midtier-node-3 \\\n    --port=8080 \\\n    --tls-verify=false\necho '✅ Mid-tier installed and running'";
+                ? $"if sudo systemctl is-active thresh-midtier > /dev/null 2>&1; then echo '✅ Mid-tier already running'; else set -e; echo '📦 Installing Thresh Mid-tier...'; cd /tmp; sed -i \"s/\\r//\" install.sh; chmod +x install.sh; sudo bash install.sh --tarball=/tmp/thresh-midtier-linux-x64.tar.gz --hub-url={threshHubUrl} --hub-token={threshMidtierApiKey} --midtier-id=midtier-node-3 --port=8080 --tls-verify=false; fi; echo '✅ Mid-tier done'"
+                : $"if sudo systemctl is-active thresh-midtier > /dev/null 2>&1; then echo '✅ Mid-tier already running'; else echo '📦 Installing Thresh Mid-tier from GitHub...'; cd /tmp && curl -fsSL -o thresh-midtier.tar.gz {midtierReleaseUrl} && tar -xzf thresh-midtier.tar.gz install.sh && chmod +x install.sh && sudo bash install.sh --tarball=/tmp/thresh-midtier.tar.gz --hub-url={threshHubUrl} --hub-token={threshMidtierApiKey} --midtier-id=midtier-node-3 --port=8080 --tls-verify=false || echo '⚠️  Mid-tier install failed — install manually'; fi; echo '✅ Mid-tier done'";
 
             var installMidtierDeps = new InputList<Resource>();
             if (copyMidtierTar != null && copyMidtierSh != null)
@@ -553,9 +555,9 @@ local-hostname: {gpuNodeName}
             }, new CustomResourceOptions { DependsOn = { gpuDownloadThresh } });
 
             // GPU agent connects via mid-tier on node-3 (not directly to hub)
-            var gpuMidtierUrl = vmInstances.ContainsKey("thresh-node-3") 
-                ? vmInstances["thresh-node-3"].DefaultIpAddress.Apply(ip => $"http://{ip}:8080")
-                : Output.Create(threshHubUrl);
+            // GPU node connects directly to the hub like all other nodes.
+            // (Previously routed via the mid-tier relay — unnecessary for a dev cluster.)
+            var gpuMidtierUrl = Output.Create(threshHubUrl);
 
             var gpuConfigureAgent = new Command($"{gpuNodeName}-configure-agent", new CommandArgs
             {
