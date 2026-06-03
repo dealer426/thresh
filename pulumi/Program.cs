@@ -278,7 +278,7 @@ local-hostname: {config.Name}
             var copyThresh = new Command($"{config.Name}-download-thresh", new CommandArgs
             {
                 Connection = keyConnectionInfo,
-                Create = $"echo '⬇️  Downloading Thresh agent from {agentReleaseUrl}...'\ncurl -fsSL -o /tmp/thresh-agent-deploy.tar.gz '{agentReleaseUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'"
+                Create = $"set -e\necho '⬇️  Downloading Thresh agent from {agentReleaseUrl}...'\ncurl -fsSL --retry 5 --retry-delay 5 -o /tmp/thresh-agent-deploy.tar.gz '{agentReleaseUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'"
             }, new CustomResourceOptions { DependsOn = { installDocker } });
 
             var installThresh = new Command($"{config.Name}-install-thresh", new CommandArgs
@@ -545,7 +545,7 @@ local-hostname: {gpuNodeName}
             var gpuDownloadThresh = new Command($"{gpuNodeName}-download-thresh", new CommandArgs
             {
                 Connection = gpuConnectionInfo,
-                Create = $"echo '⬇️  Downloading Thresh agent from {agentReleaseUrl}...'\ncurl -fsSL -o /tmp/thresh-agent-deploy.tar.gz '{agentReleaseUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'"
+                Create = $"set -e\necho '⬇️  Downloading Thresh agent from {agentReleaseUrl}...'\ncurl -fsSL --retry 5 --retry-delay 5 -o /tmp/thresh-agent-deploy.tar.gz '{agentReleaseUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'"
             }, new CustomResourceOptions { DependsOn = { gpuInstallDrivers } });
 
             var gpuInstallThresh = new Command($"{gpuNodeName}-install-thresh", new CommandArgs
