@@ -356,13 +356,11 @@ local-hostname: {config.Name}
                 }, new CustomResourceOptions { DependsOn = { vmLastSteps["thresh-node-3"] } });
             }
 
-            // Idempotent mid-tier install: skip if service is already active.
-            // CopyToRemote (local tarball) fails silently on Windows; fall back to GitHub
-            // release if local copy isn't available. Guard against 404 with || true so a
-            // missing release never blocks the whole stack.
+            // Always reinstall mid-tier on Create and Update so pulumi up is idempotent.
+            // Stop any existing service first so install.sh can overwrite cleanly.
             var installMidtierScript = midtierLocalAvailable
-                ? $"if sudo systemctl is-active thresh-midtier > /dev/null 2>&1; then echo '✅ Mid-tier already running'; else set -e; echo '📦 Installing Thresh Mid-tier...'; cd /tmp; sed -i \"s/\\r//\" install.sh; chmod +x install.sh; sudo bash install.sh --tarball=/tmp/thresh-midtier-linux-x64.tar.gz --hub-url={threshHubUrl} --hub-token={threshMidtierApiKey} --midtier-id=midtier-node-3 --port=8080 --tls-verify=false; fi; echo '✅ Mid-tier done'"
-                : $"if sudo systemctl is-active thresh-midtier > /dev/null 2>&1; then echo '✅ Mid-tier already running'; else set -e; echo '📦 Downloading Thresh Mid-tier...'; curl -fsSL --retry 3 -H 'Authorization: Bearer {githubToken}' -H 'Accept: application/octet-stream' -o /tmp/thresh-midtier.tar.gz '{midtierAssetUrl}'; echo '📦 Extracting...'; mkdir -p /tmp/midtier-extract && tar -xzf /tmp/thresh-midtier.tar.gz -C /tmp/midtier-extract; chmod +x /tmp/midtier-extract/install.sh; sudo bash /tmp/midtier-extract/install.sh --tarball=/tmp/thresh-midtier.tar.gz --hub-url={threshHubUrl} --hub-token={threshMidtierApiKey} --midtier-id=midtier-node-3 --port=8080 --tls-verify=false; fi; echo '✅ Mid-tier done'";
+                ? $"set -e; echo '📦 Installing Thresh Mid-tier...'; sudo systemctl stop thresh-midtier 2>/dev/null || true; cd /tmp; sed -i \"s/\\r//\" install.sh; chmod +x install.sh; sudo bash install.sh --tarball=/tmp/thresh-midtier-linux-x64.tar.gz --hub-url={threshHubUrl} --hub-token={threshMidtierApiKey} --midtier-id=midtier-node-3 --port=8080 --tls-verify=false; echo '✅ Mid-tier done'"
+                : $"set -e; echo '📦 Downloading Thresh Mid-tier...'; sudo systemctl stop thresh-midtier 2>/dev/null || true; curl -fsSL --retry 3 -H 'Authorization: Bearer {githubToken}' -H 'Accept: application/octet-stream' -o /tmp/thresh-midtier.tar.gz '{midtierAssetUrl}'; echo '📦 Extracting...'; rm -rf /tmp/midtier-extract && mkdir -p /tmp/midtier-extract && tar -xzf /tmp/thresh-midtier.tar.gz -C /tmp/midtier-extract; chmod +x /tmp/midtier-extract/install.sh; sudo bash /tmp/midtier-extract/install.sh --tarball=/tmp/thresh-midtier.tar.gz --hub-url={threshHubUrl} --hub-token={threshMidtierApiKey} --midtier-id=midtier-node-3 --port=8080 --tls-verify=false; echo '✅ Mid-tier done'";
 
             var installMidtierDeps = new InputList<Resource>();
             if (copyMidtierTar != null && copyMidtierSh != null)
@@ -378,7 +376,8 @@ local-hostname: {config.Name}
             var installMidtier = new Command("thresh-node-3-install-midtier", new CommandArgs
             {
                 Connection = node3Connection,
-                Create = installMidtierScript
+                Create = installMidtierScript,
+                Update = installMidtierScript
             }, new CustomResourceOptions { DependsOn = installMidtierDeps });
 
             vmOutputs["thresh-node-3_midtier"] = installMidtier.Id.Apply(_ => "✅ Mid-tier relay running on port 8080 (via install.sh)");
