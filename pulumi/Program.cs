@@ -290,7 +290,8 @@ local-hostname: {config.Name}
             var installThresh = new Command($"{config.Name}-install-thresh", new CommandArgs
             {
                 Connection = keyConnectionInfo,
-                Create = "echo '📦 Installing Thresh agent...'\nmkdir -p ~/thresh-agent\ncd ~/thresh-agent\ntar xzf /tmp/thresh-agent-deploy.tar.gz\nchmod +x thresh-agent\nrm /tmp/thresh-agent-deploy.tar.gz\nls -lah ~/thresh-agent/thresh-agent\necho '✅ Thresh installed'"
+                Create = "echo '📦 Installing Thresh agent...'\nmkdir -p ~/thresh-agent\ncd ~/thresh-agent\ntar xzf /tmp/thresh-agent-deploy.tar.gz\nchmod +x thresh-agent\nrm /tmp/thresh-agent-deploy.tar.gz\nls -lah ~/thresh-agent/thresh-agent\necho '✅ Thresh installed'",
+                Update = "echo '📦 Updating Thresh agent...'\nmkdir -p ~/thresh-agent\ncd ~/thresh-agent\ntar xzf /tmp/thresh-agent-deploy.tar.gz\nchmod +x thresh-agent\nrm -f /tmp/thresh-agent-deploy.tar.gz\nls -lah ~/thresh-agent/thresh-agent\necho '✅ Thresh updated'"
             }, new CustomResourceOptions { DependsOn = { copyThresh } });
 
             // Step 5: Configure agent using CLI so API key is stored encrypted
@@ -304,7 +305,8 @@ local-hostname: {config.Name}
             var createService = new Command($"{config.Name}-create-service", new CommandArgs
             {
                 Connection = keyConnectionInfo,
-                Create = "echo '🚀 Creating systemd service...'\nsudo tee /etc/systemd/system/thresh-agent.service > /dev/null << 'SVCFILE'\n[Unit]\nDescription=Thresh Agent\nAfter=network-online.target docker.service\nWants=network-online.target\nRequires=docker.service\n\n[Service]\nType=simple\nUser=thresh\nWorkingDirectory=/home/thresh/thresh-agent\nExecStart=/home/thresh/thresh-agent/thresh-agent start\nRestart=always\nRestartSec=10\nStandardOutput=journal\nStandardError=journal\n\n[Install]\nWantedBy=multi-user.target\nSVCFILE\nsudo systemctl daemon-reload\nsudo systemctl enable thresh-agent\nsudo systemctl restart thresh-agent || sudo systemctl start thresh-agent\necho '✅ Service started'"
+                Create = "echo '🚀 Creating systemd service...'\nsudo tee /etc/systemd/system/thresh-agent.service > /dev/null << 'SVCFILE'\n[Unit]\nDescription=Thresh Agent\nAfter=network-online.target docker.service\nWants=network-online.target\nRequires=docker.service\n\n[Service]\nType=simple\nUser=thresh\nWorkingDirectory=/home/thresh/thresh-agent\nExecStart=/home/thresh/thresh-agent/thresh-agent start\nRestart=always\nRestartSec=10\nStandardOutput=journal\nStandardError=journal\n\n[Install]\nWantedBy=multi-user.target\nSVCFILE\nsudo systemctl daemon-reload\nsudo systemctl enable thresh-agent\nsudo systemctl restart thresh-agent || sudo systemctl start thresh-agent\necho '✅ Service started'",
+                Update = "sudo systemctl restart thresh-agent && echo '✅ Agent restarted'"
             }, new CustomResourceOptions { DependsOn = { configureAgent } });
 
             // Export VM details
@@ -556,7 +558,8 @@ local-hostname: {gpuNodeName}
             var gpuInstallThresh = new Command($"{gpuNodeName}-install-thresh", new CommandArgs
             {
                 Connection = gpuConnectionInfo,
-                Create = "echo '📦 Installing Thresh agent...'\nmkdir -p ~/thresh-agent\ncd ~/thresh-agent\ntar xzf /tmp/thresh-agent-deploy.tar.gz\nchmod +x thresh-agent\nrm /tmp/thresh-agent-deploy.tar.gz\nls -lah ~/thresh-agent/thresh-agent\necho '✅ Thresh installed'"
+                Create = "echo '📦 Installing Thresh agent...'\nmkdir -p ~/thresh-agent\ncd ~/thresh-agent\ntar xzf /tmp/thresh-agent-deploy.tar.gz\nchmod +x thresh-agent\nrm /tmp/thresh-agent-deploy.tar.gz\nls -lah ~/thresh-agent/thresh-agent\necho '✅ Thresh installed'",
+                Update = "echo '📦 Updating Thresh agent...'\nmkdir -p ~/thresh-agent\ncd ~/thresh-agent\ntar xzf /tmp/thresh-agent-deploy.tar.gz\nchmod +x thresh-agent\nrm -f /tmp/thresh-agent-deploy.tar.gz\nls -lah ~/thresh-agent/thresh-agent\necho '✅ Thresh updated'"
             }, new CustomResourceOptions { DependsOn = { gpuDownloadThresh } });
 
             // GPU agent connects via mid-tier on node-3 (not directly to hub)
@@ -573,7 +576,8 @@ local-hostname: {gpuNodeName}
             var gpuCreateService = new Command($"{gpuNodeName}-create-service", new CommandArgs
             {
                 Connection = gpuConnectionInfo,
-                Create = "echo '🚀 Creating systemd service...'\nsudo tee /etc/systemd/system/thresh-agent.service > /dev/null << 'SVCFILE'\n[Unit]\nDescription=Thresh Agent\nAfter=network-online.target docker.service\nWants=network-online.target\nRequires=docker.service\n\n[Service]\nType=simple\nUser=thresh\nWorkingDirectory=/home/thresh/thresh-agent\nExecStart=/home/thresh/thresh-agent/thresh-agent start\nRestart=always\nRestartSec=10\nStandardOutput=journal\nStandardError=journal\n\n[Install]\nWantedBy=multi-user.target\nSVCFILE\nsudo systemctl daemon-reload\nsudo systemctl enable thresh-agent\nsudo systemctl restart thresh-agent || sudo systemctl start thresh-agent\necho '✅ Service started'"
+                Create = "echo '🚀 Creating systemd service...'\nsudo tee /etc/systemd/system/thresh-agent.service > /dev/null << 'SVCFILE'\n[Unit]\nDescription=Thresh Agent\nAfter=network-online.target docker.service\nWants=network-online.target\nRequires=docker.service\n\n[Service]\nType=simple\nUser=thresh\nWorkingDirectory=/home/thresh/thresh-agent\nExecStart=/home/thresh/thresh-agent/thresh-agent start\nRestart=always\nRestartSec=10\nStandardOutput=journal\nStandardError=journal\n\n[Install]\nWantedBy=multi-user.target\nSVCFILE\nsudo systemctl daemon-reload\nsudo systemctl enable thresh-agent\nsudo systemctl restart thresh-agent || sudo systemctl start thresh-agent\necho '✅ Service started'",
+                Update = "sudo systemctl restart thresh-agent && echo '✅ Agent restarted'"
             }, new CustomResourceOptions { DependsOn = { gpuConfigureAgent } });
 
             // Export GPU node details
