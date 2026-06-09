@@ -280,11 +280,15 @@ local-hostname: {config.Name}
                 Create = "echo '🐳 Installing Docker...'\nsudo apt-get update -qq\nsudo apt-get install -y docker.io containerd -qq\nsudo systemctl enable docker\nsudo systemctl start docker\nsudo usermod -aG docker thresh\necho '✅ Docker installed'"
             }, new CustomResourceOptions { DependsOn = { waitCloudInit } });
 
-            // Step 4: Download Thresh agent via GitHub API (repo is private)
+            // Step 4: Download and install Thresh agent via GitHub API (repo is private).
+            // Update script re-downloads + installs + restarts in one step so a URL change
+            // takes full effect without relying on intermediate /tmp state.
+            var fullInstallScript = Output.Format($"set -e\necho '⬇️  Downloading Thresh agent...'\ncurl -fsSL --retry 3 --retry-delay 5 -H 'Authorization: Bearer {githubToken}' -H 'Accept: application/octet-stream' -o /tmp/thresh-agent-deploy.tar.gz '{agentAssetUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '📦 Installing...'\nmkdir -p ~/thresh-agent\ncd ~/thresh-agent\ntar xzf /tmp/thresh-agent-deploy.tar.gz\nchmod +x thresh-agent\nrm /tmp/thresh-agent-deploy.tar.gz\nls -lah ~/thresh-agent/thresh-agent\nsudo systemctl restart thresh-agent || sudo systemctl start thresh-agent\necho '✅ Agent installed and restarted'");
             var copyThresh = new Command($"{config.Name}-download-thresh", new CommandArgs
             {
                 Connection = keyConnectionInfo,
-                Create = Output.Format($"set -e\necho '⬇️  Downloading Thresh agent...'\ncurl -fsSL --retry 3 --retry-delay 5 -H 'Authorization: Bearer {githubToken}' -H 'Accept: application/octet-stream' -o /tmp/thresh-agent-deploy.tar.gz '{agentAssetUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'")
+                Create = Output.Format($"set -e\necho '⬇️  Downloading Thresh agent...'\ncurl -fsSL --retry 3 --retry-delay 5 -H 'Authorization: Bearer {githubToken}' -H 'Accept: application/octet-stream' -o /tmp/thresh-agent-deploy.tar.gz '{agentAssetUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'"),
+                Update = fullInstallScript
             }, new CustomResourceOptions { DependsOn = { installDocker } });
 
             var installThresh = new Command($"{config.Name}-install-thresh", new CommandArgs
@@ -549,10 +553,12 @@ local-hostname: {gpuNodeName}
                 Create = "echo '🎮 Installing NVIDIA drivers and container toolkit...'\nsudo apt-get install -y ubuntu-drivers-common -qq\nsudo ubuntu-drivers autoinstall\necho '📦 Installing NVIDIA Container Toolkit...'\ncurl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg\ncurl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list\nsudo apt-get update -qq\nsudo apt-get install -y nvidia-container-toolkit -qq\nsudo nvidia-ctk runtime configure --runtime=docker\nsudo systemctl restart docker\necho '✅ NVIDIA drivers and container toolkit installed'"
             }, new CustomResourceOptions { DependsOn = { gpuInstallDocker } });
 
+            var gpuFullInstallScript = Output.Format($"set -e\necho '⬇️  Downloading Thresh agent...'\ncurl -fsSL --retry 3 --retry-delay 5 -H 'Authorization: Bearer {githubToken}' -H 'Accept: application/octet-stream' -o /tmp/thresh-agent-deploy.tar.gz '{agentAssetUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '📦 Installing...'\nmkdir -p ~/thresh-agent\ncd ~/thresh-agent\ntar xzf /tmp/thresh-agent-deploy.tar.gz\nchmod +x thresh-agent\nrm /tmp/thresh-agent-deploy.tar.gz\nls -lah ~/thresh-agent/thresh-agent\nsudo systemctl restart thresh-agent || sudo systemctl start thresh-agent\necho '✅ Agent installed and restarted'");
             var gpuDownloadThresh = new Command($"{gpuNodeName}-download-thresh", new CommandArgs
             {
                 Connection = gpuConnectionInfo,
-                Create = Output.Format($"set -e\necho '⬇️  Downloading Thresh agent...'\ncurl -fsSL --retry 3 --retry-delay 5 -H 'Authorization: Bearer {githubToken}' -H 'Accept: application/octet-stream' -o /tmp/thresh-agent-deploy.tar.gz '{agentAssetUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'")
+                Create = Output.Format($"set -e\necho '⬇️  Downloading Thresh agent...'\ncurl -fsSL --retry 3 --retry-delay 5 -H 'Authorization: Bearer {githubToken}' -H 'Accept: application/octet-stream' -o /tmp/thresh-agent-deploy.tar.gz '{agentAssetUrl}'\nls -lah /tmp/thresh-agent-deploy.tar.gz\necho '✅ Downloaded'"),
+                Update = gpuFullInstallScript
             }, new CustomResourceOptions { DependsOn = { gpuInstallDrivers } });
 
             var gpuInstallThresh = new Command($"{gpuNodeName}-install-thresh", new CommandArgs
