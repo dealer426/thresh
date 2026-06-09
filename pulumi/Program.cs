@@ -54,9 +54,9 @@ class Program
             ?? "https://github.com/dealer426/thresh.git";
 
         // Agent is downloaded from GitHub releases via API (repo is private, token required).
-        // Asset ID 442197337 = thresh-agent-linux-x64.tar.gz in v1.1.1 release (AOT fix: MCP tools serialization).
+        // Asset ID 443085487 = thresh-agent-linux-x64.tar.gz in v1.1.2 release (provision/destroy environment impl).
         var agentAssetUrl = Environment.GetEnvironmentVariable("THRESH_AGENT_ASSET_URL")
-            ?? "https://api.github.com/repos/dealer426/thresh-agent/releases/assets/442197337";
+            ?? "https://api.github.com/repos/dealer426/thresh-agent/releases/assets/443085487";
         var agentReleaseUrl = agentAssetUrl; // kept for GPU node reference
         var githubToken = Environment.GetEnvironmentVariable("THRESH_GITHUB_TOKEN")
             ?? throw new Exception("THRESH_GITHUB_TOKEN not set — needed to download private thresh-agent release");
