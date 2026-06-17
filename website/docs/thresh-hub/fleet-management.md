@@ -1,5 +1,5 @@
 ---
-sidebar_position: 9
+sidebar_position: 1
 title: Fleet Management with Thresh Hub
 description: Connect thresh nodes to a centralized Hub for fleet-wide visibility, real-time metrics, and remote orchestration
 ---
@@ -74,20 +74,101 @@ Agent keys cannot call mid-tier management APIs, and vice versa. This prevents a
 
 ## Setting Up Thresh Hub
 
-### 1. Deploy the Hub
+### Database: PostgreSQL vs SQLite
+
+Thresh Hub supports both SQLite (for quick local testing) and PostgreSQL (recommended for production).
+
+| | SQLite | PostgreSQL |
+|---|--------|------------|
+| **Setup** | Zero config — single file | Requires a running Postgres server |
+| **Concurrency** | Single-writer only | Full multi-writer / MVCC |
+| **Fleet size** | ≤ 5 nodes, dev/test | Any size — 100s of nodes |
+| **HA / replicas** | ✗ | ✅ Read replicas, streaming replication |
+| **Metrics history** | Fills fast, no partitioning | Table partitioning, BRIN indexes |
+| **Production** | ❌ Not recommended | ✅ Required |
+
+> **Recommendation:** Use PostgreSQL for any real deployment. SQLite is only appropriate for a single-developer local test instance.
+
+The mid-tier itself is **stateless** — it holds no database of its own. Only the Hub needs a database.
+
+---
+
+### 1a. Provision PostgreSQL
+
+#### Linux (Ubuntu/Debian)
+
+```bash
+sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
+
+# Start and enable on boot
+sudo systemctl enable --now postgresql
+
+# Create a database user and database (replace YOUR_SECURE_PASSWORD with a strong password)
+sudo -u postgres psql <<'SQL'
+CREATE USER hubuser WITH PASSWORD 'YOUR_SECURE_PASSWORD';
+CREATE DATABASE threshhub OWNER hubuser;
+GRANT ALL PRIVILEGES ON DATABASE threshhub TO hubuser;
+SQL
+```
+
+#### Docker (single-container, quick start)
+
+```bash
+docker run -d \
+  --name thresh-postgres \
+  --restart unless-stopped \
+  -e POSTGRES_USER=hubuser \
+  -e POSTGRES_PASSWORD=YOUR_SECURE_PASSWORD \
+  -e POSTGRES_DB=threshhub \
+  -p 5432:5432 \
+  -v thresh-pgdata:/var/lib/postgresql/data \
+  postgres:16-alpine
+```
+
+#### Verify connectivity
+
+```bash
+# Use PGPASSWORD env var to avoid the password appearing in shell history
+PGPASSWORD=YOUR_SECURE_PASSWORD psql "host=localhost dbname=threshhub user=hubuser" -c "SELECT version();"
+```
+
+---
+
+### 1b. Deploy the Hub
 
 ```bash
 # Clone and build
 git clone https://github.com/dealer426/thresh-hub.git
 cd thresh-hub/src/ThreshHubV2
+```
 
-# Configure database connection
-# Edit appsettings.json:
-# "ConnectionStrings": { "DefaultConnection": "Host=localhost;Database=threshhub;Username=hubuser;Password=..." }
+:::warning Never commit credentials to source control
+Do **not** put your real password in `appsettings.json`. Use the environment-variable override shown below, a secrets manager, or `appsettings.Production.json` (excluded from version control via `.gitignore`).
+:::
 
-# Run
+The safest approach is to pass the connection string as an environment variable at runtime:
+
+```bash
+export ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=threshhub;Username=hubuser;Password=YOUR_SECURE_PASSWORD;Pooling=true;MaxPoolSize=50;Timeout=30"
 dotnet run
 ```
+
+If you prefer `appsettings.Production.json` (add to `.gitignore`):
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=threshhub;Username=hubuser;Password=YOUR_SECURE_PASSWORD;Pooling=true;MaxPoolSize=50;Timeout=30"
+  },
+  "Kestrel": {
+    "Endpoints": {
+      "Https": { "Url": "https://0.0.0.0:7200" }
+    }
+  }
+}
+```
+
+The Hub runs EF Core migrations automatically on startup. After first boot you should see tables like `Agents`, `ApiKeys`, `MetricsBatch`, and `Stacks` in the `threshhub` database.
 
 The Hub starts on port 7200 by default. Access the dashboard at `https://your-hub:7200`.
 

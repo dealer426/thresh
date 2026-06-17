@@ -291,7 +291,7 @@ graph LR
 
 **Coming in v2.0:** fleet blueprints, RBAC access control, node group policies, and stack templates.
 
-[Stacks reference →](/docs/cli-reference/stack) &nbsp;|&nbsp; [Fleet management tutorial →](/docs/tutorials/fleet-management)
+[Stacks reference →](/docs/cli-reference/stack) &nbsp;|&nbsp; [Fleet management tutorial →](/docs/thresh-hub/fleet-management)
 
 ---
 

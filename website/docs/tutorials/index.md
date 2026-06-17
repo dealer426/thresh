@@ -93,7 +93,7 @@ Deploy multi-service applications through the Thresh Hub dashboard and API.
 
 ## Fleet Management
 
-### [Fleet Management with Thresh Hub](/docs/tutorials/fleet-management)
+### [Fleet Management with Thresh Hub](/docs/thresh-hub/fleet-management)
 
 Connect your thresh nodes to a centralized Hub for fleet-wide visibility and orchestration.
 
@@ -105,6 +105,36 @@ Connect your thresh nodes to a centralized Hub for fleet-wide visibility and orc
 - Three-tier architecture (Hub → Mid-Tier → Agents)
 
 **Time:** 30 minutes  
+**Difficulty:** Advanced
+
+### [Midtier ELF Migration — Test Plan](/docs/thresh-hub/midtier-elf-test-plan)
+
+Full test plan for validating thresh-midtier after conversion to a native ELF binary (Native AOT).
+
+**You'll learn:**
+- Verify ELF binary format, size, and trimming requirements
+- Test Hub connectivity and mid-tier API key enforcement
+- Validate agent handshake, metrics routing, and command dispatch
+- Run resilience and failover scenarios
+- Confirm the platform matrix (x86-64, arm64, Alpine musl)
+- Integrate ELF validation into CI
+
+**Time:** Reference document  
+**Difficulty:** Advanced
+
+### [Hub — Copilot SDK Agent Flow & K8s Architecture](/docs/thresh-hub/hub-copilot-sdk-agent)
+
+How the GitHub Copilot SDK spins up an agent from the Hub UI, with code-linked diagrams and a Kubernetes deployment reference architecture.
+
+**You'll learn:**
+- The full code call-chain from VS Code → HubMcpBridge → Hub → mid-tier → AgentService → GitHubCopilotService
+- How the Copilot CLI subprocess model works
+- Class responsibility map across all key source files
+- Kubernetes deployment topology (Hub, mid-tier, PostgreSQL, Ingress, HPA, Secrets)
+- Ready-to-paste Kubernetes YAML for each component
+- Agent connectivity from nodes to a K8s-hosted Hub
+
+**Time:** Reference document  
 **Difficulty:** Advanced
 
 ---
@@ -162,7 +192,8 @@ Deep dive into Model Context Protocol integration for advanced AI workflows.
 
 1. [Creating Custom Blueprints](/docs/tutorials/custom-blueprints) - Blueprint development (20 min)
 2. [VS Code MCP Integration](/docs/tutorials/vscode-mcp) - Advanced AI (30 min)
-3. [Fleet Management](/docs/tutorials/fleet-management) - Hub & fleet (30 min)
+3. [Fleet Management](/docs/thresh-hub/fleet-management) - Hub & fleet (30 min)
+4. [Hub Copilot SDK & K8s Architecture](/docs/thresh-hub/hub-copilot-sdk-agent) - Reference architecture
 
 **Total: 80 minutes**
 
@@ -171,7 +202,7 @@ Deep dive into Model Context Protocol integration for advanced AI workflows.
 1. [Quick Start](/docs/tutorials/quick-start) - Everyone (5 min)
 2. [Creating Custom Blueprints](/docs/tutorials/custom-blueprints) - Team leads (20 min)
 3. [Deploying Stacks](/docs/tutorials/stacks) - DevOps (20 min)
-4. [Fleet Management](/docs/tutorials/fleet-management) - Infra team (30 min)
+4. [Fleet Management](/docs/thresh-hub/fleet-management) - Infra team (30 min)
 
 **Total: 75 minutes**
 
